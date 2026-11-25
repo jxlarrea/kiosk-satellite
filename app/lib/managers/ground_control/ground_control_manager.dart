@@ -163,6 +163,7 @@ class GroundControlManager extends Manager {
     defs.visionMatchEnabled.key,
     defs.visionMatchFaceDetection.key,
     defs.visionMatchFaceRecognition.key,
+    defs.visionMatchFaceConfirmsVoice.key,
     defs.visionMatchHandGestures.key,
     defs.screensaverDismissOnFace.key,
     defs.screensaverPostponeOnFace.key,
@@ -198,6 +199,10 @@ class GroundControlManager extends Manager {
       'vision_match': s.get(defs.visionMatchEnabled),
       'face_detection': s.get(defs.visionMatchFaceDetection),
       'face_recognition': faceRecognition,
+      // Confirm voices with faces: Ground Control takes a close voice for
+      // the person it sees at the kiosk.
+      'face_confirms_voice':
+          faceRecognition && s.get(defs.visionMatchFaceConfirmsVoice),
       'hand_gestures': s.get(defs.visionMatchHandGestures),
       'dismiss_on_face': s.get(defs.screensaverDismissOnFace),
       'postpone_on_face': s.get(defs.screensaverPostponeOnFace),
@@ -573,6 +578,8 @@ class GroundControlManager extends Manager {
             color: msg['color'] is String ? msg['color'] as String : null,
           ),
         );
+      case 'enroll_face_stop':
+        bus.publish(const FaceEnrollStopRequested());
       case 'enroll':
         final personId = '${msg['person_id'] ?? ''}';
         if (personId.isEmpty) return;

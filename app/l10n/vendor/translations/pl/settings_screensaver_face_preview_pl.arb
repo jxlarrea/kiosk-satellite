@@ -8,5 +8,8 @@
   "settingFacePreviewScaleDescription": "Skaluj podgląd, aby lepiej pasował do rozmiaru ekranu.",
   "settingFacePreviewPositionTitle": "Pozycja podglądu",
   "settingFacePreviewPositionDescription": "W którym rogu wyświetla się podgląd.",
-  "screensaverDetectionPreviewSection": "Podgląd z kamery"
+  "screensaverDetectionPreviewSection": "Podgląd z kamery",
+  "settingFacePreviewPersonTitle": "Pokazuj, kto został rozpoznany",
+  "settingFacePreviewPersonDescription": "Podgląd przybiera kolor osoby, a obok pojawia się jej imię.",
+  "facePreviewRecognized": "Rozpoznano"
 }

@@ -13,5 +13,13 @@
   "screensaverDetectionMotionPrecedence": "Cerrar al detectar movimiento está activado y tiene prioridad. La detección de rostros queda inactiva hasta que lo desactives.",
   "screensaverDetectionFaceTuning": "La frecuencia de cuadros, la cámara y el retraso de inicio se ajustan en la configuración de Cámara.",
   "screensaverDetectionAndroidUnsupported": "No disponible en esta versión de Android.",
-  "screensaverDetectionX86Unsupported": "No disponible en dispositivos x86."
+  "screensaverDetectionX86Unsupported": "No disponible en dispositivos x86.",
+  "settingScreensaverFaceWhoTitle": "Rostros que cuentan",
+  "settingScreensaverFaceWhoDescription": "Qué rostros cierran o aplazan el protector de pantalla. Personas reconocidas requiere el rostro registrado en Ground Control.",
+  "screensaverFaceWhoOptionAnyone": "Cualquiera",
+  "screensaverFaceWhoOptionRecognized": "Personas reconocidas",
+  "screensaverFaceWhoOptionPeople": "Personas elegidas",
+  "settingScreensaverFacePeopleTitle": "Personas",
+  "settingScreensaverFacePeopleDescription": "Para quién se activa la pantalla. Si no eliges a nadie, para cualquier persona reconocida.",
+  "screensaverFacePeopleNone": "Cualquier persona reconocida"
 }

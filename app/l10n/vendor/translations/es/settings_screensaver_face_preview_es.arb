@@ -8,5 +8,8 @@
   "settingFacePreviewScaleDescription": "Ajusta el tamaño de la vista previa a la pantalla.",
   "settingFacePreviewPositionTitle": "Posición de la vista previa",
   "settingFacePreviewPositionDescription": "Esquina en la que se muestra la vista previa.",
-  "screensaverDetectionPreviewSection": "Vista previa de la cámara"
+  "screensaverDetectionPreviewSection": "Vista previa de la cámara",
+  "settingFacePreviewPersonTitle": "Mostrar quién se reconoce",
+  "settingFacePreviewPersonDescription": "La vista previa toma el color de la persona y su nombre aparece al lado.",
+  "facePreviewRecognized": "Reconocido"
 }

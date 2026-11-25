@@ -2435,6 +2435,21 @@ final _messages = <String, String Function(UiStrings)>{
   'faceEnrollEnrolled': (s) => s.faceEnrollEnrolled,
   'faceEnrollNameLabel': (s) => s.faceEnrollNameLabel,
   'faceEnrollStart': (s) => s.faceEnrollStart,
+  'settingVisionMatchFaceConfirmsVoiceTitle': (s) =>
+      s.settingVisionMatchFaceConfirmsVoiceTitle,
+  'settingVisionMatchFaceConfirmsVoiceDescription': (s) =>
+      s.settingVisionMatchFaceConfirmsVoiceDescription,
+  'groundControlUsedElsewhere': (s) => s.groundControlUsedElsewhere,
+  'settingVisionMatchLinkFaceWhoDescription': (s) =>
+      s.settingVisionMatchLinkFaceWhoDescription,
+  'settingVisionMatchLinkPreviewPersonDescription': (s) =>
+      s.settingVisionMatchLinkPreviewPersonDescription,
+  'groundControlValueOn': (s) => s.groundControlValueOn,
+  'groundControlValueOff': (s) => s.groundControlValueOff,
+  'groundControlTagHint': (s) => s.groundControlTagHint,
+  'groundControlTagTitle': (s) => s.groundControlTagTitle,
+  'groundControlTagVision': (s) => s.groundControlTagVision,
+  'groundControlTagVoice': (s) => s.groundControlTagVoice,
   'haCustomPages': (s) => s.haCustomPages,
   'haCustomPagesHintDashboard': (s) => s.haCustomPagesHintDashboard,
   'settingHaCustomPagesSocketTitle': (s) => s.settingHaCustomPagesSocketTitle,
@@ -3852,6 +3867,18 @@ final _messages = <String, String Function(UiStrings)>{
       s.screensaverDetectionAndroidUnsupported,
   'screensaverDetectionX86Unsupported': (s) =>
       s.screensaverDetectionX86Unsupported,
+  'settingScreensaverFaceWhoTitle': (s) => s.settingScreensaverFaceWhoTitle,
+  'settingScreensaverFaceWhoDescription': (s) =>
+      s.settingScreensaverFaceWhoDescription,
+  'screensaverFaceWhoOptionAnyone': (s) => s.screensaverFaceWhoOptionAnyone,
+  'screensaverFaceWhoOptionRecognized': (s) =>
+      s.screensaverFaceWhoOptionRecognized,
+  'screensaverFaceWhoOptionPeople': (s) => s.screensaverFaceWhoOptionPeople,
+  'settingScreensaverFacePeopleTitle': (s) =>
+      s.settingScreensaverFacePeopleTitle,
+  'settingScreensaverFacePeopleDescription': (s) =>
+      s.settingScreensaverFacePeopleDescription,
+  'screensaverFacePeopleNone': (s) => s.screensaverFacePeopleNone,
   'settingFacePreviewTitle': (s) => s.settingFacePreviewTitle,
   'settingFacePreviewDescription': (s) => s.settingFacePreviewDescription,
   'settingFacePreviewSecondsTitle': (s) => s.settingFacePreviewSecondsTitle,
@@ -3865,6 +3892,10 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingFacePreviewPositionDescription,
   'screensaverDetectionPreviewSection': (s) =>
       s.screensaverDetectionPreviewSection,
+  'settingFacePreviewPersonTitle': (s) => s.settingFacePreviewPersonTitle,
+  'settingFacePreviewPersonDescription': (s) =>
+      s.settingFacePreviewPersonDescription,
+  'facePreviewRecognized': (s) => s.facePreviewRecognized,
   'settingScreensaverEnabledTitle': (s) => s.settingScreensaverEnabledTitle,
   'settingScreensaverEnabledDescription': (s) =>
       s.settingScreensaverEnabledDescription,

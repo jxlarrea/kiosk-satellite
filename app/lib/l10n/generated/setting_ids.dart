@@ -2872,4 +2872,28 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVisionMatchFaceRecognitionTitle",
     "description": "settingVisionMatchFaceRecognitionDescriptionGroundControl",
   },
+  "screensaver.face_who": {
+    "title": "settingScreensaverFaceWhoTitle",
+    "description": "settingScreensaverFaceWhoDescription",
+  },
+  "screensaver.face_people": {
+    "title": "settingScreensaverFacePeopleTitle",
+    "description": "settingScreensaverFacePeopleDescription",
+  },
+  "face.preview_person": {
+    "title": "settingFacePreviewPersonTitle",
+    "description": "settingFacePreviewPersonDescription",
+  },
+  "vision_match.face_confirms_voice": {
+    "title": "settingVisionMatchFaceConfirmsVoiceTitle",
+    "description": "settingVisionMatchFaceConfirmsVoiceDescription",
+  },
+  "vision_match.link_face_who": {
+    "title": "settingScreensaverFaceWhoTitle",
+    "description": "settingVisionMatchLinkFaceWhoDescription",
+  },
+  "vision_match.link_preview_person": {
+    "title": "settingFacePreviewPersonTitle",
+    "description": "settingVisionMatchLinkPreviewPersonDescription",
+  },
 };

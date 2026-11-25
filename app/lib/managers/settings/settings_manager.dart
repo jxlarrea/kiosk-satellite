@@ -1041,6 +1041,7 @@ class SettingsManager extends Manager {
         if (def.hidden || deviceHiddenKeys.contains(def.key)) 'hidden': true,
         if (def.multiline) 'multiline': true,
         if (def.linksTo != null) 'linksTo': def.linksTo,
+        if (def.groundControl != null) 'groundControl': def.groundControl,
         if (def.placeholder != null) 'placeholder': def.placeholder,
         if (def.options != null) 'options': optionsFor(def),
         if (def.key == cameraRtspResolution.key)

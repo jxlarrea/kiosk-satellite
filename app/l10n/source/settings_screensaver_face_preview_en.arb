@@ -116,5 +116,41 @@
         "Screensaver > Face Detection > Camera Preview"
       ]
     }
+  },
+  "settingFacePreviewPersonTitle": "Show who is recognized",
+  "@settingFacePreviewPersonTitle": {
+    "context": "Settings > Screensaver > Face Detection > Camera Preview",
+    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Camera Preview"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Camera Preview"
+      ]
+    }
+  },
+  "settingFacePreviewPersonDescription": "The preview takes the person's color and their name shows next to it.",
+  "@settingFacePreviewPersonDescription": {
+    "context": "Settings > Screensaver > Face Detection > Camera Preview",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Camera Preview > Show who is recognized"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Camera Preview > Show who is recognized"
+      ]
+    }
+  },
+  "facePreviewRecognized": "Recognized",
+  "@facePreviewRecognized": {
+    "context": "Kiosk screen > camera preview",
+    "description": "Under the person's name in the card next to the camera preview, when Face Recognition names them.",
+    "x-locations": {
+      "device": [
+        "Kiosk screen > camera preview > name card"
+      ]
+    }
   }
 }

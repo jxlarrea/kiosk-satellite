@@ -49,7 +49,7 @@ import { dashboardField } from './dashboard_picker.js';
 import { drawerItemsText, openDrawerItemsPicker } from './drawer_items.js';
 import { compassLayoutRow, compassStyleRow } from './compass.js';
 import { KIOSK_ICON, openShareWithPicker, shareKiosksSpec, shareWithPicked, shareWithText } from './timers.js';
-import { PERSON_ICON, openPeoplePicker, peopleChosen, peopleMissingText, peopleText, voiceMatchPeopleSpec } from './ground_control.js';
+import { PERSON_ICON, groundControlTag, groundControlValueText, openPeoplePicker, peopleChosen, peopleMissingText, peopleText, voiceMatchPeopleSpec } from './ground_control.js';
 import { SEARCH_CATEGORY_TABS, jumpToResult } from './search.js';
 import { updatePlayerRow } from './panels.js';
 import {
@@ -285,6 +285,7 @@ export function settingRow(s) {
   const info = document.createElement('div'); info.className = 'info';
   info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
   info.querySelector('.name').textContent = s.title;
+  if (s.groundControl) info.querySelector('.name').append(' ', groundControlTag(s.groundControl));
   info.querySelector('.desc').textContent = s.description;
   row.appendChild(info);
   const save = async (value) => {
@@ -644,24 +645,24 @@ export function settingRow(s) {
   // People under Answer on Ground Control's Voice Match page, mirroring
   // the device's row: the chosen people by name in a dropdown-style box that
   // opens a checkbox dialog over everyone enrolled. A JSON list of {id, name}.
-  if (s.key === 'voice_match.people') {
+  if (s.key === 'voice_match.people' || s.key === 'screensaver.face_people') {
     const missing = document.createElement('div');
     missing.className = 'desc dp-missing';
     missing.hidden = true;
     row.querySelector('.info .name').after(missing);
     const paint = () => {
-      field.setText(peopleText());
-      field.setIcon(peopleChosen());
-      missing.textContent = peopleMissingText();
+      field.setText(peopleText(s.key));
+      field.setIcon(peopleChosen(s.key));
+      missing.textContent = peopleMissingText(s.key);
       missing.hidden = !missing.textContent;
     };
-    const field = choiceBox(peopleText(), async () => {
-      const value = await openPeoplePicker(s.title);
+    const field = choiceBox(peopleText(s.key), async () => {
+      const value = await openPeoplePicker(s.title, s.key);
       if (value == null) return;
       await save(value);
       paint();
     }, { iconPath: PERSON_ICON });
-    const spec = voiceMatchPeopleSpec();
+    const spec = voiceMatchPeopleSpec(s.key);
     onListLoaded(spec.key, field.el, paint);
     loadList(spec);
     bindUpdate(field.el, paint);
@@ -737,6 +738,16 @@ export function settingRow(s) {
     chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
       + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
       + '<path d="m9 18 6-6-6-6"/></svg>';
+    // Vision Match > Used in other settings: the setting's value too.
+    const linked = (state.settings || []).find((o) => o.key === s.linksTo);
+    if (linked?.groundControl) {
+      const val = document.createElement('span');
+      val.className = 'link-value';
+      const paint = () => { val.textContent = groundControlValueText(s.linksTo); };
+      paint();
+      row.updateSetting = () => { paint(); return true; };
+      row.appendChild(val);
+    }
     row.appendChild(chev);
     row.addEventListener('click', () => {
       const target = (state.settings || []).find((o) => o.key === s.linksTo);

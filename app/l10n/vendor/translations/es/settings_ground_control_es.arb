@@ -33,5 +33,17 @@
   "faceEnrollNewPerson": "Nueva persona",
   "faceEnrollEnrolled": "Rostro registrado",
   "faceEnrollNameLabel": "Nombre",
-  "faceEnrollStart": "Empezar"
+  "faceEnrollStart": "Empezar",
+  "settingVisionMatchFaceConfirmsVoiceTitle": "Confirmar voces con rostros",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Una voz parecida pero no segura se acepta cuando el rostro frente al kiosko es de la misma persona. Un rostro nunca identifica una voz por sí solo.",
+  "groundControlUsedElsewhere": "Usado en otros ajustes",
+  "settingVisionMatchLinkFaceWhoDescription": "Protector de pantalla > Detección de rostros",
+  "settingVisionMatchLinkPreviewPersonDescription": "Protector de pantalla > Detección de rostros > Vista previa de la cámara",
+  "groundControlValueOn": "Activado",
+  "groundControlValueOff": "Desactivado",
+  "groundControlValuePeople": "{option}: {names}",
+  "groundControlTagHint": "Un ajuste de Ground Control. Más información",
+  "groundControlTagTitle": "Un ajuste de Ground Control",
+  "groundControlTagVision": "Este ajuste funciona con Kiosk Satellite Ground Control, una aplicación aparte que se ejecuta en un ordenador de tu casa. Usa el reconocimiento facial y solo aparece mientras está activado, en Configuración > Ground Control > Vision Match.",
+  "groundControlTagVoice": "Este ajuste funciona con Kiosk Satellite Ground Control, una aplicación aparte que se ejecuta en un ordenador de tu casa. Usa Voice Match y solo aparece mientras está activado, en Configuración > Ground Control > Voice Match."
 }

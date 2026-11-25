@@ -204,4 +204,54 @@ void main() {
     await c.lost.future.timeout(const Duration(seconds: 2));
     expect(c.ready.isCompleted, isFalse);
   });
+
+  test('Face Recognition: the person at the kiosk and everyone in view, '
+      'said once when either changes', () async {
+    final seen = <String>[];
+    final socket = VisionMatchSocket.open(
+      baseUrl: 'http://127.0.0.1:${server.port}',
+      token: 'tok',
+      deviceId: 'kitchen',
+      deviceName: 'Kitchen',
+      want: const ['face'],
+      onReady: (_, _) {},
+      onResult: (_) {},
+      onLost: () {},
+      recognize: true,
+      onPerson: (person, people) => seen.add(
+        '${person?['id']}: ${people.map((p) => p['id']).join(', ')}',
+      ),
+    );
+    final gc = await sockets.stream.first;
+    final ana = {'id': 'ana', 'name': 'Ana', 'color': '#56814F', 'score': 0.7};
+    final leo = {'id': 'leo', 'name': 'Leo', 'score': 0.5};
+    gc
+      ..add(
+        jsonEncode({
+          'type': 'person',
+          'person': ana,
+          'people': [ana],
+        }),
+      )
+      ..add(
+        jsonEncode({
+          'type': 'person',
+          'person': ana,
+          'people': [ana],
+        }),
+      )
+      ..add(
+        jsonEncode({
+          'type': 'person',
+          'person': ana,
+          'people': [ana, leo],
+        }),
+      )
+      // An older Ground Control: the person at the kiosk alone.
+      ..add(jsonEncode({'type': 'person', 'person': leo}))
+      ..add(jsonEncode({'type': 'person', 'person': null, 'people': []}));
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    expect(seen, ['ana: ana', 'ana: ana, leo', 'leo: leo', 'null: ']);
+    await socket.close();
+  });
 }

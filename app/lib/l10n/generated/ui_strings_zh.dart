@@ -8294,6 +8294,48 @@ class UiStringsZh extends UiStrings {
   String get faceEnrollStart => '开始';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle => '用人脸确认声音';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      '当声音接近但不确定，而 Kiosk 前的人脸是同一个人时，会采纳该声音。人脸绝不会单独确定声音是谁的。';
+
+  @override
+  String get groundControlUsedElsewhere => '在其他设置中使用';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription => '屏保 > 人脸检测';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      '屏保 > 人脸检测 > 摄像头预览';
+
+  @override
+  String get groundControlValueOn => '开';
+
+  @override
+  String get groundControlValueOff => '关';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option：$names';
+  }
+
+  @override
+  String get groundControlTagHint => 'Ground Control 设置。了解详情';
+
+  @override
+  String get groundControlTagTitle => 'Ground Control 设置';
+
+  @override
+  String get groundControlTagVision =>
+      '此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。';
+
+  @override
+  String get groundControlTagVoice =>
+      '此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启时显示。';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -11841,6 +11883,32 @@ class UiStringsZh extends UiStrings {
   String get screensaverDetectionX86Unsupported => '不支持 x86 设备。';
 
   @override
+  String get settingScreensaverFaceWhoTitle => '计入的人脸';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      '哪些人脸会关闭或推迟屏保。“已识别的人”需要先在 Ground Control 中录入人脸。';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => '任何人';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => '已识别的人';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => '指定人员';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => '人员';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      '屏幕为谁唤醒。如果没有选择任何人，则为任何已识别的人。';
+
+  @override
+  String get screensaverFacePeopleNone => '任何已识别的人';
+
+  @override
   String get settingFacePreviewTitle => '显示摄像头预览';
 
   @override
@@ -11867,6 +11935,15 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => '摄像头预览';
+
+  @override
+  String get settingFacePreviewPersonTitle => '显示识别出的人';
+
+  @override
+  String get settingFacePreviewPersonDescription => '预览会变成此人的颜色，并在旁边显示其姓名。';
+
+  @override
+  String get facePreviewRecognized => '已识别';
 
   @override
   String get settingScreensaverEnabledTitle => '屏保';
@@ -24683,6 +24760,48 @@ class UiStringsZhCn extends UiStringsZh {
   String get faceEnrollStart => '开始';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle => '用人脸确认声音';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      '当声音接近但不确定，而 Kiosk 前的人脸是同一个人时，会采纳该声音。人脸绝不会单独确定声音是谁的。';
+
+  @override
+  String get groundControlUsedElsewhere => '在其他设置中使用';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription => '屏保 > 人脸检测';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      '屏保 > 人脸检测 > 摄像头预览';
+
+  @override
+  String get groundControlValueOn => '开';
+
+  @override
+  String get groundControlValueOff => '关';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option：$names';
+  }
+
+  @override
+  String get groundControlTagHint => 'Ground Control 设置。了解详情';
+
+  @override
+  String get groundControlTagTitle => 'Ground Control 设置';
+
+  @override
+  String get groundControlTagVision =>
+      '此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。';
+
+  @override
+  String get groundControlTagVoice =>
+      '此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启时显示。';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -28230,6 +28349,32 @@ class UiStringsZhCn extends UiStringsZh {
   String get screensaverDetectionX86Unsupported => '不支持 x86 设备。';
 
   @override
+  String get settingScreensaverFaceWhoTitle => '计入的人脸';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      '哪些人脸会关闭或推迟屏保。“已识别的人”需要先在 Ground Control 中录入人脸。';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => '任何人';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => '已识别的人';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => '指定人员';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => '人员';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      '屏幕为谁唤醒。如果没有选择任何人，则为任何已识别的人。';
+
+  @override
+  String get screensaverFacePeopleNone => '任何已识别的人';
+
+  @override
   String get settingFacePreviewTitle => '显示摄像头预览';
 
   @override
@@ -28256,6 +28401,15 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get screensaverDetectionPreviewSection => '摄像头预览';
+
+  @override
+  String get settingFacePreviewPersonTitle => '显示识别出的人';
+
+  @override
+  String get settingFacePreviewPersonDescription => '预览会变成此人的颜色，并在旁边显示其姓名。';
+
+  @override
+  String get facePreviewRecognized => '已识别';
 
   @override
   String get settingScreensaverEnabledTitle => '屏保';

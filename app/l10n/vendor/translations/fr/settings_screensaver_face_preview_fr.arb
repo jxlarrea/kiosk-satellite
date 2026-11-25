@@ -8,5 +8,8 @@
   "settingFacePreviewScaleDescription": "Ajuste la taille de l'aperçu à votre écran.",
   "settingFacePreviewPositionTitle": "Position de l'aperçu",
   "settingFacePreviewPositionDescription": "Dans quel coin l'aperçu apparaît.",
-  "screensaverDetectionPreviewSection": "Aperçu caméra"
+  "screensaverDetectionPreviewSection": "Aperçu caméra",
+  "settingFacePreviewPersonTitle": "Afficher qui est reconnu",
+  "settingFacePreviewPersonDescription": "L'aperçu prend la couleur de la personne et son nom s'affiche à côté.",
+  "facePreviewRecognized": "Reconnu"
 }

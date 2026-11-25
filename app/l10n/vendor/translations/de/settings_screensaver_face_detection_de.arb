@@ -13,5 +13,13 @@
   "screensaverDetectionMotionPrecedence": "„Bei Bewegung schließen“ ist aktiviert und hat Vorrang. Die Gesichtserkennung bleibt deaktiviert, bis diese Funktion ausgeschaltet wird.",
   "screensaverDetectionFaceTuning": "Bildrate, Kamera und Startverzögerung werden in den Kamera-Einstellungen konfiguriert.",
   "screensaverDetectionAndroidUnsupported": "Auf dieser Android-Version nicht verfügbar.",
-  "screensaverDetectionX86Unsupported": "Auf x86-Geräten nicht verfügbar."
+  "screensaverDetectionX86Unsupported": "Auf x86-Geräten nicht verfügbar.",
+  "settingScreensaverFaceWhoTitle": "Zählende Gesichter",
+  "settingScreensaverFaceWhoDescription": "Welche Gesichter den Bildschirmschoner schließen oder aufschieben. Erkannte Personen setzt ein in Ground Control eingelerntes Gesicht voraus.",
+  "screensaverFaceWhoOptionAnyone": "Alle",
+  "screensaverFaceWhoOptionRecognized": "Erkannte Personen",
+  "screensaverFaceWhoOptionPeople": "Ausgewählte Personen",
+  "settingScreensaverFacePeopleTitle": "Personen",
+  "settingScreensaverFacePeopleDescription": "Für wen der Bildschirm aufwacht. Ist niemand ausgewählt, für alle erkannten Personen.",
+  "screensaverFacePeopleNone": "Alle erkannten Personen"
 }

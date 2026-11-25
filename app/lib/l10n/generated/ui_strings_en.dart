@@ -8652,6 +8652,50 @@ class UiStringsEn extends UiStrings {
   String get faceEnrollStart => 'Start';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle =>
+      'Confirm voices with faces';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      'A voice that is close but not sure is taken when the face in front of the kiosk is the same person. A face never names a voice on its own.';
+
+  @override
+  String get groundControlUsedElsewhere => 'Used in other settings';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      'Screensaver > Face Detection';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      'Screensaver > Face Detection > Camera Preview';
+
+  @override
+  String get groundControlValueOn => 'On';
+
+  @override
+  String get groundControlValueOff => 'Off';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option: $names';
+  }
+
+  @override
+  String get groundControlTagHint => 'A Ground Control setting. Learn more';
+
+  @override
+  String get groundControlTagTitle => 'A Ground Control setting';
+
+  @override
+  String get groundControlTagVision =>
+      'This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Face Recognition and shows only while that is on, under Settings > Ground Control > Vision Match.';
+
+  @override
+  String get groundControlTagVoice =>
+      'This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Voice Match and shows only while that is on, under Settings > Ground Control > Voice Match.';
+
+  @override
   String get haCustomPages => 'Custom Pages';
 
   @override
@@ -12419,6 +12463,32 @@ class UiStringsEn extends UiStrings {
       'Not available on x86 devices.';
 
   @override
+  String get settingScreensaverFaceWhoTitle => 'Faces that count';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      'Which faces dismiss or postpone the screensaver. Recognized people needs the face enrolled in Ground Control.';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => 'Anyone';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => 'Recognized people';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => 'Chosen people';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => 'People';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      'Who the screen wakes for. With nobody chosen, anyone recognized.';
+
+  @override
+  String get screensaverFacePeopleNone => 'Anyone recognized';
+
+  @override
   String get settingFacePreviewTitle => 'Show camera preview';
 
   @override
@@ -12448,6 +12518,16 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Camera Preview';
+
+  @override
+  String get settingFacePreviewPersonTitle => 'Show who is recognized';
+
+  @override
+  String get settingFacePreviewPersonDescription =>
+      'The preview takes the person\'s color and their name shows next to it.';
+
+  @override
+  String get facePreviewRecognized => 'Recognized';
 
   @override
   String get settingScreensaverEnabledTitle => 'Screensaver';

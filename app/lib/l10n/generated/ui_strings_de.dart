@@ -8835,6 +8835,51 @@ class UiStringsDe extends UiStrings {
   String get faceEnrollStart => 'Starten';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle =>
+      'Stimmen mit Gesichtern bestätigen';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      'Eine ähnliche, aber nicht sichere Stimme wird angenommen, wenn das Gesicht vor dem Kiosk dieselbe Person ist. Ein Gesicht ordnet eine Stimme nie allein zu.';
+
+  @override
+  String get groundControlUsedElsewhere => 'In anderen Einstellungen verwendet';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      'Bildschirmschoner > Gesichtserkennung';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      'Bildschirmschoner > Gesichtserkennung > Kameravorschau';
+
+  @override
+  String get groundControlValueOn => 'An';
+
+  @override
+  String get groundControlValueOff => 'Aus';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option: $names';
+  }
+
+  @override
+  String get groundControlTagHint =>
+      'Eine Ground-Control-Einstellung. Mehr erfahren';
+
+  @override
+  String get groundControlTagTitle => 'Eine Ground-Control-Einstellung';
+
+  @override
+  String get groundControlTagVision =>
+      'Diese Einstellung funktioniert mit Kiosk Satellite Ground Control, einer eigenen App, die auf einem Computer bei dir zu Hause läuft. Sie nutzt die Gesichtswiedererkennung und wird nur angezeigt, solange diese unter Einstellungen > Ground Control > Vision Match aktiviert ist.';
+
+  @override
+  String get groundControlTagVoice =>
+      'Diese Einstellung funktioniert mit Kiosk Satellite Ground Control, einer eigenen App, die auf einem Computer bei dir zu Hause läuft. Sie nutzt Voice Match und wird nur angezeigt, solange es unter Einstellungen > Ground Control > Voice Match aktiviert ist.';
+
+  @override
   String get haCustomPages => 'Eigene Seiten';
 
   @override
@@ -12680,6 +12725,32 @@ class UiStringsDe extends UiStrings {
       'Auf x86-Geräten nicht verfügbar.';
 
   @override
+  String get settingScreensaverFaceWhoTitle => 'Zählende Gesichter';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      'Welche Gesichter den Bildschirmschoner schließen oder aufschieben. Erkannte Personen setzt ein in Ground Control eingelerntes Gesicht voraus.';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => 'Alle';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => 'Erkannte Personen';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => 'Ausgewählte Personen';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => 'Personen';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      'Für wen der Bildschirm aufwacht. Ist niemand ausgewählt, für alle erkannten Personen.';
+
+  @override
+  String get screensaverFacePeopleNone => 'Alle erkannten Personen';
+
+  @override
   String get settingFacePreviewTitle => 'Kameravorschau anzeigen';
 
   @override
@@ -12709,6 +12780,16 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Kameravorschau';
+
+  @override
+  String get settingFacePreviewPersonTitle => 'Zeigen, wer erkannt wurde';
+
+  @override
+  String get settingFacePreviewPersonDescription =>
+      'Die Vorschau nimmt die Farbe der Person an und ihr Name erscheint daneben.';
+
+  @override
+  String get facePreviewRecognized => 'Erkannt';
 
   @override
   String get settingScreensaverEnabledTitle => 'Bildschirmschoner';

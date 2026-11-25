@@ -546,6 +546,13 @@
   .row.subpage-entry, .row.setting-link { cursor: pointer; }
   .row.setting-link .chev { color: var(--muted); display: flex; flex: none; }
   .row.setting-link .chev svg { width: 18px; height: 18px; }
+  .row.setting-link .link-value { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+  /* The GC tag after the title of a setting that only works with Ground Control. */
+  .gc-tag { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px 0 6px; margin-left: 4px;
+    border: 0; border-radius: 999px; background: var(--primary-container, #D4E3E4); color: var(--on-primary-container, #1B3437);
+    font: inherit; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; vertical-align: middle; cursor: pointer; }
+  .gc-tag svg { width: 14px; height: 14px; fill: currentColor; }
+  .gc-tag:hover { filter: brightness(.96); }
   .row.subpage-entry .chev { color: var(--muted); display: flex; flex: none; }
   .row.subpage-entry .chev svg { width: 18px; height: 18px; }
   /* The page's glyph ahead of the name, drawn like the device's ListTile

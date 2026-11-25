@@ -13,5 +13,13 @@
   "screensaverDetectionMotionPrecedence": "Opcja „Zamykaj po wykryciu ruchu” jest włączona i ma pierwszeństwo, więc wykrywanie twarzy pozostaje nieaktywne do czasu jej wyłączenia.",
   "screensaverDetectionFaceTuning": "Liczbę klatek na sekundę, wybór kamery i opóźnienie uruchomienia ustawia się w ustawieniach kamery.",
   "screensaverDetectionAndroidUnsupported": "Niedostępne w tej wersji Androida.",
-  "screensaverDetectionX86Unsupported": "Niedostępne na urządzeniach x86."
+  "screensaverDetectionX86Unsupported": "Niedostępne na urządzeniach x86.",
+  "settingScreensaverFaceWhoTitle": "Uwzględniane twarze",
+  "settingScreensaverFaceWhoDescription": "Które twarze zamykają lub odkładają wygaszacz ekranu. Opcja Rozpoznane osoby wymaga twarzy zarejestrowanej w Ground Control.",
+  "screensaverFaceWhoOptionAnyone": "Każdy",
+  "screensaverFaceWhoOptionRecognized": "Rozpoznane osoby",
+  "screensaverFaceWhoOptionPeople": "Wybrane osoby",
+  "settingScreensaverFacePeopleTitle": "Osoby",
+  "settingScreensaverFacePeopleDescription": "Dla kogo ekran się wybudza. Jeśli nikt nie jest wybrany, dla każdej rozpoznanej osoby.",
+  "screensaverFacePeopleNone": "Każda rozpoznana osoba"
 }

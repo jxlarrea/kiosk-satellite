@@ -183,6 +183,7 @@ class EspEntitySurface {
   final Map<String, DateTime?> _lastAnchor = {};
   String _speaker = '';
   String _face = '';
+  String _faces = '';
 
   /// Who Face Recognition sees looking at the kiosk, from Ground Control.
   bool get _faceSensor =>
@@ -991,6 +992,15 @@ class EspEntitySurface {
           'objectId': 'face',
           'name': 'Face',
           'icon': 'mdi:face-recognition',
+        },
+      // Everyone Face Recognition names in view, the person at the kiosk
+      // first, comma separated: ESPHome text sensors have no attributes.
+      if (_faceSensor)
+        {
+          'type': 'text_sensor',
+          'objectId': 'people_in_view',
+          'name': 'People in view',
+          'icon': 'mdi:account-group',
         },
       // Someone in view of the device's own person sensor (discussion
       // #353): occupancy, since it reports people at any angle, not a
@@ -2243,7 +2253,11 @@ class EspEntitySurface {
     _subs.add(
       bus.on<FaceInViewChanged>().listen((e) {
         _face = e.name;
-        if (_faceSensor) _send('face', e.name);
+        _faces = e.people.map((p) => p.name).join(', ');
+        if (_faceSensor) {
+          _send('face', e.name);
+          _send('people_in_view', _faces);
+        }
       }),
     );
     _subs.add(
@@ -2948,7 +2962,10 @@ class EspEntitySurface {
       if (match != null) await _send('dashboard_view', match);
     }
     await _sendMotionState();
-    if (_faceSensor) await _send('face', _face);
+    if (_faceSensor) {
+      await _send('face', _face);
+      await _send('people_in_view', _faces);
+    }
   }
 
   /// The kiosk's own Bluetooth links, and the proxy's connection budget

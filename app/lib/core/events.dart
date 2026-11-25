@@ -816,13 +816,25 @@ class FaceDismissedScreensaver extends AppEvent {
   const FaceDismissedScreensaver();
 }
 
-/// Face Recognition: who Ground Control sees looking at the kiosk, or
-/// nobody ([name] empty). Feeds the Face sensor.
+/// Face Recognition: who Ground Control sees at the kiosk, or nobody
+/// ([name] empty), and everyone it names in view ([people], the person at
+/// the kiosk first). Feeds the Face and People in view sensors, Faces that
+/// count and the camera preview.
 class FaceInViewChanged extends AppEvent {
-  const FaceInViewChanged({this.id, this.name = '', this.score});
+  const FaceInViewChanged({
+    this.id,
+    this.name = '',
+    this.score,
+    this.color,
+    this.people = const [],
+  });
   final String? id;
   final String name;
   final double? score;
+
+  /// The person's color on the kiosk, as Ground Control keeps it (#RRGGBB).
+  final String? color;
+  final List<({String id, String name})> people;
 }
 
 /// Ground Control asked this kiosk to enroll a person's face, or someone
@@ -836,6 +848,12 @@ class FaceEnrollRequested extends AppEvent {
   final String? personId;
   final String name;
   final String? color;
+}
+
+/// Ground Control asked this kiosk to stop its face capture early, as its
+/// own Stop does.
+class FaceEnrollStopRequested extends AppEvent {
+  const FaceEnrollStopRequested();
 }
 
 /// A face put off the next screensaver (Postpone on face). Repeats with

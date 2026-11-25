@@ -8,5 +8,8 @@
   "settingFacePreviewScaleDescription": "Pas de grootte van de voorbeeldweergave aan zodat deze beter op het scherm past.",
   "settingFacePreviewPositionTitle": "Positie van voorbeeldweergave",
   "settingFacePreviewPositionDescription": "In welke hoek de voorbeeldweergave verschijnt.",
-  "screensaverDetectionPreviewSection": "Cameravoorbeeld"
+  "screensaverDetectionPreviewSection": "Cameravoorbeeld",
+  "settingFacePreviewPersonTitle": "Tonen wie er herkend is",
+  "settingFacePreviewPersonDescription": "Het voorbeeld krijgt de kleur van de persoon en de naam verschijnt ernaast.",
+  "facePreviewRecognized": "Herkend"
 }

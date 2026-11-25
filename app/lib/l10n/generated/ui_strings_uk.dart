@@ -8723,6 +8723,51 @@ class UiStringsUk extends UiStrings {
   String get faceEnrollStart => 'Почати';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle =>
+      'Підтверджувати голоси обличчями';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      'Схожий, але непевний голос приймається, коли обличчя перед кіоском належить тій самій людині. Обличчя ніколи саме не визначає голос.';
+
+  @override
+  String get groundControlUsedElsewhere =>
+      'Використовується в інших налаштуваннях';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      'Заставка > Розпізнавання обличчя';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      'Заставка > Розпізнавання обличчя > Попередній перегляд камери';
+
+  @override
+  String get groundControlValueOn => 'Увімкнено';
+
+  @override
+  String get groundControlValueOff => 'Вимкнено';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option: $names';
+  }
+
+  @override
+  String get groundControlTagHint => 'Налаштування Ground Control. Докладніше';
+
+  @override
+  String get groundControlTagTitle => 'Налаштування Ground Control';
+
+  @override
+  String get groundControlTagVision =>
+      'Це налаштування працює з Kiosk Satellite Ground Control, окремим застосунком, що працює на комп\'ютері у вас удома. Воно використовує впізнавання облич і показується лише тоді, коли воно ввімкнене в Налаштування > Ground Control > Vision Match.';
+
+  @override
+  String get groundControlTagVoice =>
+      'Це налаштування працює з Kiosk Satellite Ground Control, окремим застосунком, що працює на комп\'ютері у вас удома. Воно використовує Voice Match і показується лише тоді, коли його ввімкнено в Налаштування > Ground Control > Voice Match.';
+
+  @override
   String get haCustomPages => 'Власні сторінки';
 
   @override
@@ -12554,6 +12599,32 @@ class UiStringsUk extends UiStrings {
       'Не підтримується на пристроях з архітектурою x86.';
 
   @override
+  String get settingScreensaverFaceWhoTitle => 'Обличчя, що враховуються';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      'Які обличчя вимикають або відкладають заставку. Для варіанта «Впізнані люди» обличчя має бути зареєстроване в Ground Control.';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => 'Будь-хто';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => 'Впізнані люди';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => 'Вибрані люди';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => 'Люди';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      'Для кого вмикається екран. Якщо нікого не вибрано, для будь-кого впізнаного.';
+
+  @override
+  String get screensaverFacePeopleNone => 'Будь-хто впізнаний';
+
+  @override
   String get settingFacePreviewTitle => 'Показувати попередній перегляд камери';
 
   @override
@@ -12583,6 +12654,16 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Попередній перегляд камери';
+
+  @override
+  String get settingFacePreviewPersonTitle => 'Показувати, кого впізнано';
+
+  @override
+  String get settingFacePreviewPersonDescription =>
+      'Попередній перегляд набуває кольору людини, а поруч з\'являється її ім\'я.';
+
+  @override
+  String get facePreviewRecognized => 'Впізнано';
 
   @override
   String get settingScreensaverEnabledTitle => 'Заставка';

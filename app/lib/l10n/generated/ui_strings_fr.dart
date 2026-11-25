@@ -8791,6 +8791,51 @@ class UiStringsFr extends UiStrings {
   String get faceEnrollStart => 'Commencer';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle =>
+      'Confirmer les voix par les visages';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      'Une voix proche mais incertaine est acceptée quand le visage devant le kiosque est celui de la même personne. Un visage n\'identifie jamais une voix à lui seul.';
+
+  @override
+  String get groundControlUsedElsewhere => 'Utilisé dans d\'autres paramètres';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      'Économiseur d\'écran > Détection de visage';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      'Économiseur d\'écran > Détection de visage > Aperçu caméra';
+
+  @override
+  String get groundControlValueOn => 'Activé';
+
+  @override
+  String get groundControlValueOff => 'Désactivé';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option : $names';
+  }
+
+  @override
+  String get groundControlTagHint =>
+      'Un paramètre Ground Control. En savoir plus';
+
+  @override
+  String get groundControlTagTitle => 'Un paramètre Ground Control';
+
+  @override
+  String get groundControlTagVision =>
+      'Ce paramètre fonctionne avec Kiosk Satellite Ground Control, une application distincte qui tourne sur un ordinateur de votre maison. Il utilise la reconnaissance faciale et ne s\'affiche que lorsqu\'elle est activée, dans Paramètres > Ground Control > Vision Match.';
+
+  @override
+  String get groundControlTagVoice =>
+      'Ce paramètre fonctionne avec Kiosk Satellite Ground Control, une application distincte qui tourne sur un ordinateur de votre maison. Il utilise Voice Match et ne s\'affiche que lorsqu\'il est activé, dans Paramètres > Ground Control > Voice Match.';
+
+  @override
   String get haCustomPages => 'Pages personnalisées';
 
   @override
@@ -12643,6 +12688,32 @@ class UiStringsFr extends UiStrings {
       'Non disponible sur les appareils x86.';
 
   @override
+  String get settingScreensaverFaceWhoTitle => 'Visages pris en compte';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      'Les visages qui ferment ou repoussent l\'économiseur d\'écran. Personnes reconnues nécessite un visage enregistré dans Ground Control.';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => 'Tout le monde';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => 'Personnes reconnues';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => 'Personnes choisies';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => 'Personnes';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      'Pour qui l\'écran se réveille. Si personne n\'est choisi, pour toute personne reconnue.';
+
+  @override
+  String get screensaverFacePeopleNone => 'Toute personne reconnue';
+
+  @override
   String get settingFacePreviewTitle => 'Afficher l\'aperçu caméra';
 
   @override
@@ -12672,6 +12743,16 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Aperçu caméra';
+
+  @override
+  String get settingFacePreviewPersonTitle => 'Afficher qui est reconnu';
+
+  @override
+  String get settingFacePreviewPersonDescription =>
+      'L\'aperçu prend la couleur de la personne et son nom s\'affiche à côté.';
+
+  @override
+  String get facePreviewRecognized => 'Reconnu';
 
   @override
   String get settingScreensaverEnabledTitle => 'Économiseur d\'écran';

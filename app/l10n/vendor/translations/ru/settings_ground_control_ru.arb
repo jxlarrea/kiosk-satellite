@@ -33,5 +33,17 @@
   "faceEnrollNewPerson": "Новый человек",
   "faceEnrollEnrolled": "Лицо записано",
   "faceEnrollNameLabel": "Имя",
-  "faceEnrollStart": "Начать"
+  "faceEnrollStart": "Начать",
+  "settingVisionMatchFaceConfirmsVoiceTitle": "Подтверждать голоса лицами",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Похожий, но неуверенно распознанный голос принимается, если лицо перед киоском принадлежит тому же человеку. Лицо никогда само не определяет голос.",
+  "groundControlUsedElsewhere": "Используется в других настройках",
+  "settingVisionMatchLinkFaceWhoDescription": "Заставка > Определение лица",
+  "settingVisionMatchLinkPreviewPersonDescription": "Заставка > Определение лица > Превью камеры",
+  "groundControlValueOn": "Вкл.",
+  "groundControlValueOff": "Выкл.",
+  "groundControlValuePeople": "{option}: {names}",
+  "groundControlTagHint": "Настройка Ground Control. Подробнее",
+  "groundControlTagTitle": "Настройка Ground Control",
+  "groundControlTagVision": "Эта настройка работает с Kiosk Satellite Ground Control, отдельным приложением, которое запущено на компьютере у вас дома. Она использует распознавание лиц и показывается только пока оно включено в разделе Настройки > Ground Control > Vision Match.",
+  "groundControlTagVoice": "Эта настройка работает с Kiosk Satellite Ground Control, отдельным приложением, которое запущено на компьютере у вас дома. Она использует Voice Match и показывается только пока он включён в разделе Настройки > Ground Control > Voice Match."
 }

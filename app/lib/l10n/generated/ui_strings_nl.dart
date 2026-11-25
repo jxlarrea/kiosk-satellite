@@ -8746,6 +8746,51 @@ class UiStringsNl extends UiStrings {
   String get faceEnrollStart => 'Starten';
 
   @override
+  String get settingVisionMatchFaceConfirmsVoiceTitle =>
+      'Stemmen met gezichten bevestigen';
+
+  @override
+  String get settingVisionMatchFaceConfirmsVoiceDescription =>
+      'Een stem die dichtbij maar niet zeker is, wordt aangenomen als het gezicht voor de kiosk van dezelfde persoon is. Een gezicht wijst nooit op zichzelf een stem toe.';
+
+  @override
+  String get groundControlUsedElsewhere => 'Gebruikt in andere instellingen';
+
+  @override
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      'Schermbeveiliging > Gezichtsdetectie';
+
+  @override
+  String get settingVisionMatchLinkPreviewPersonDescription =>
+      'Schermbeveiliging > Gezichtsdetectie > Cameravoorbeeld';
+
+  @override
+  String get groundControlValueOn => 'Aan';
+
+  @override
+  String get groundControlValueOff => 'Uit';
+
+  @override
+  String groundControlValuePeople(String option, String names) {
+    return '$option: $names';
+  }
+
+  @override
+  String get groundControlTagHint =>
+      'Een Ground Control-instelling. Meer informatie';
+
+  @override
+  String get groundControlTagTitle => 'Een Ground Control-instelling';
+
+  @override
+  String get groundControlTagVision =>
+      'Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt gezichtsherkenning en is alleen zichtbaar zolang die aan staat, onder Instellingen > Ground Control > Vision Match.';
+
+  @override
+  String get groundControlTagVoice =>
+      'Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt Voice Match en is alleen zichtbaar zolang dat aan staat, onder Instellingen > Ground Control > Voice Match.';
+
+  @override
   String get haCustomPages => 'Eigen pagina\'s';
 
   @override
@@ -12564,6 +12609,32 @@ class UiStringsNl extends UiStrings {
       'Niet beschikbaar op x86-apparaten.';
 
   @override
+  String get settingScreensaverFaceWhoTitle => 'Gezichten die tellen';
+
+  @override
+  String get settingScreensaverFaceWhoDescription =>
+      'Welke gezichten de schermbeveiliging sluiten of uitstellen. Herkende personen vereist een gezicht dat in Ground Control is ingeschreven.';
+
+  @override
+  String get screensaverFaceWhoOptionAnyone => 'Iedereen';
+
+  @override
+  String get screensaverFaceWhoOptionRecognized => 'Herkende personen';
+
+  @override
+  String get screensaverFaceWhoOptionPeople => 'Gekozen personen';
+
+  @override
+  String get settingScreensaverFacePeopleTitle => 'Personen';
+
+  @override
+  String get settingScreensaverFacePeopleDescription =>
+      'Voor wie het scherm wakker wordt. Is er niemand gekozen, dan voor iedereen die herkend wordt.';
+
+  @override
+  String get screensaverFacePeopleNone => 'Iedereen die herkend wordt';
+
+  @override
   String get settingFacePreviewTitle => 'Cameravoorbeeld tonen';
 
   @override
@@ -12593,6 +12664,16 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Cameravoorbeeld';
+
+  @override
+  String get settingFacePreviewPersonTitle => 'Tonen wie er herkend is';
+
+  @override
+  String get settingFacePreviewPersonDescription =>
+      'Het voorbeeld krijgt de kleur van de persoon en de naam verschijnt ernaast.';
+
+  @override
+  String get facePreviewRecognized => 'Herkend';
 
   @override
   String get settingScreensaverEnabledTitle => 'Schermbeveiliging';

@@ -7,6 +7,7 @@ import '../core/events.dart';
 import '../l10n/messages.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'entity_picker.dart';
+import 'ground_control_tag.dart';
 import 'kit.dart';
 
 /// The Ground Control page's status rows, under Enable Ground Control:
@@ -158,10 +159,16 @@ class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
 /// The people Answer can choose: everyone enrolled in Ground Control, then
 /// the chosen ones it no longer has, dimmed, so a pick is never lost while
 /// Ground Control is away. Mirrored on the remote admin (ground_control.js).
-PickSpec voiceMatchPeopleSpec(BuildContext context, AppContainer container) {
+PickSpec voiceMatchPeopleSpec(
+  BuildContext context,
+  AppContainer container, [
+  defs.SettingDef<String> def = defs.voiceMatchPeople,
+]) {
   final strings = l10n(context);
   return PickSpec(
-    key: 'voice-match:people',
+    key: def == defs.voiceMatchPeople
+        ? 'voice-match:people'
+        : 'ground-control:${def.key}',
     loader: () async {
       final found = <PickItem>[
         for (final p in container.groundControl.people)
@@ -178,7 +185,7 @@ PickSpec voiceMatchPeopleSpec(BuildContext context, AppContainer container) {
       return PickList([
         ...found,
         for (final p in defs.decodeVoiceMatchPeople(
-          container.settings.get(defs.voiceMatchPeople),
+          container.settings.get(def),
         ))
           if (!ids.contains(p.id))
             PickItem(
@@ -203,10 +210,20 @@ PickSpec voiceMatchPeopleSpec(BuildContext context, AppContainer container) {
 /// Ground Control > Voice Match > People, under Answer on Chosen people: the
 /// people this kiosk answers, by name in a box that opens a checkbox list of
 /// everyone enrolled. Mirrored on the remote admin (rows.js).
+///
+/// Also Screensaver > Face Detection > People ([def]), whose faces dismiss
+/// or postpone the screensaver on Faces that count: Chosen people.
 class VoiceMatchPeopleRow extends StatefulWidget {
-  const VoiceMatchPeopleRow({super.key, required this.container});
+  const VoiceMatchPeopleRow({
+    super.key,
+    required this.container,
+    this.def = defs.voiceMatchPeople,
+  });
 
   final AppContainer container;
+
+  /// The setting that holds the picks, stored as [defs.voiceMatchPeople].
+  final defs.SettingDef<String> def;
 
   @override
   State<VoiceMatchPeopleRow> createState() => _VoiceMatchPeopleRowState();
@@ -225,7 +242,7 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
     _subs
       ..add(
         c.bus.on<SettingChanged>().listen((e) {
-          if (e.key == defs.voiceMatchPeople.key && mounted) setState(() {});
+          if (e.key == widget.def.key && mounted) setState(() {});
         }),
       )
       ..add(
@@ -244,12 +261,12 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
   }
 
   List<defs.VoiceMatchPick> get _picks =>
-      defs.decodeVoiceMatchPeople(c.settings.get(defs.voiceMatchPeople));
+      defs.decodeVoiceMatchPeople(c.settings.get(widget.def));
 
   Future<void> _pick(PickSpec spec) async {
     final ids = await showItemMultiPicker(
       context,
-      title: defs.voiceMatchPeople.localizedTitle(context),
+      title: widget.def.localizedTitle(context),
       spec: spec,
       selected: [for (final p in _picks) p.id],
     );
@@ -258,7 +275,7 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
     // Named from the list, so a renamed person is stored under the new name.
     final stored = {for (final p in _picks) p.id: p.name};
     await c.settings.set(
-      defs.voiceMatchPeople,
+      widget.def,
       defs.encodeVoiceMatchPeople([
         for (final id in ids)
           (id: id, name: list?.find(id)?.name ?? stored[id] ?? ''),
@@ -269,7 +286,7 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
 
   @override
   Widget build(BuildContext context) {
-    final spec = voiceMatchPeopleSpec(context, c);
+    final spec = voiceMatchPeopleSpec(context, c, widget.def);
     if (!identical(_people, c.groundControl.people)) {
       _people = c.groundControl.people;
       PickCatalog.load(spec.key, spec.loader);
@@ -296,7 +313,9 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
               Expanded(
                 child: Text(
                   picks.isEmpty
-                      ? l10n(context).voiceMatchPeopleNone
+                      ? (widget.def == defs.voiceMatchPeople
+                            ? l10n(context).voiceMatchPeopleNone
+                            : l10n(context).screensaverFacePeopleNone)
                       : names.join(', '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -329,11 +348,9 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
                   if (!have.contains(p.id)) p.name.isEmpty ? p.id : p.name,
               ]
             : const <String>[];
-        final description = Text(
-          defs.voiceMatchPeople.localizedDescription(context),
-        );
+        final description = Text(widget.def.localizedDescription(context));
         return SettingsRow(
-          title: Text(defs.voiceMatchPeople.localizedTitle(context)),
+          title: settingTitle(context, widget.def),
           stack: true,
           subtitle: missing.isEmpty
               ? description

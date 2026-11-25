@@ -437,12 +437,25 @@ To conserve system resources, the face detection model executes only when frame 
 
 Under [Lockdown Mode](kiosk.md), face events will neither dismiss nor postpone screensavers.
 
+#### Faces That Count
+
+With [Face Recognition](ground-control.md#face-recognition) on Ground Control, **Faces that count** picks which faces dismiss or postpone the screensaver:
+
+| Option | What counts |
+| --- | --- |
+| Anyone | Any face looking at the kiosk. This is the default. |
+| Recognized people | Only a face Ground Control recognizes. A guest or a passing child doesn't wake the screen. |
+| Chosen people | Only the people picked under **People**. With nobody picked, anyone recognized. |
+
+A face counts once Ground Control names it, which takes a look or two, so the screen wakes about a second later than with Anyone. With someone else in view as well, a chosen person still counts. The row and **People** carry the GC tag and appear only while Face Recognition is on. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control).
+
 ### Camera Preview
 
 **Show camera preview** (under Camera Preview) displays a temporary visual overlay showing what the camera detected upon a face wake event. It renders a small, circular live camera preview with a white border in a screen corner for a few seconds before fading out. This shows the exact frames analyzed by the detector, aiding in camera placement and sensitivity tuning. The preview renders live frames without saving or transmitting data, and touch events pass through the preview to the underlying dashboard.
 
 | Setting | What it does |
 | --- | --- |
+| Show who is recognized | With Face Recognition on Ground Control, a ring in the person's color draws around the preview and a card with their name slides out beside it. On by default. With several people in view, the one with the highest score is shown. |
 | Preview duration | Controls preview display time from 3 to 10 seconds (5 seconds default). |
 | Preview scaling | Scales preview size from 50% to 150% of default. |
 | Preview position | Selects the display corner for the preview overlay (top-right default). |

@@ -574,6 +574,11 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   "screensaver.immich_progress_bar_position": {
     "top": "screensaverImmichProgressBarTop",
     "bottom": "screensaverImmichProgressBarBottom"
+  },
+  "screensaver.face_who": {
+    "anyone": "screensaverFaceWhoOptionAnyone",
+    "recognized": "screensaverFaceWhoOptionRecognized",
+    "people": "screensaverFaceWhoOptionPeople"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

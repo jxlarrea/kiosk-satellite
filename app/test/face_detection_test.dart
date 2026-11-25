@@ -522,13 +522,14 @@ void main() {
       expect(dismissals, hasLength(1));
     });
 
-    test('the four settings live in one Camera Preview group on the Face '
+    test('the five settings live in one Camera Preview group on the Face '
         'Detection page, gated on the switch and it on Dismiss on face', () {
       final group = defs.allSettings.where(
         (d) => d.section == 'Camera Preview',
       );
       expect(group.map((d) => d.key), [
         'face.preview',
+        'face.preview_person',
         'face.preview_seconds',
         'face.preview_scale',
         'face.preview_position',
@@ -538,6 +539,13 @@ void main() {
         expect(d.category, 'Screensaver');
       }
       expect(defs.facePreview.dependsOn, defs.screensaverDismissOnFace.key);
+      expect(defs.facePreviewPerson.dependsOn, defs.facePreview.key);
+      // Show who is recognized needs Face Recognition on Ground Control.
+      expect(
+        defs.facePreviewPerson.alsoDependsOn,
+        defs.visionMatchFaceRecognition.key,
+      );
+      expect(defs.facePreviewPerson.groundControl, 'vision');
       expect(defs.facePreviewSeconds.dependsOn, defs.facePreview.key);
       expect(defs.facePreviewScale.dependsOn, defs.facePreview.key);
       expect(defs.facePreviewPosition.dependsOn, defs.facePreview.key);

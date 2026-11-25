@@ -15133,6 +15133,78 @@ abstract class UiStrings {
   /// **'Start'**
   String get faceEnrollStart;
 
+  /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm voices with faces'**
+  String get settingVisionMatchFaceConfirmsVoiceTitle;
+
+  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'A voice that is close but not sure is taken when the face in front of the kiosk is the same person. A face never names a voice on its own.'**
+  String get settingVisionMatchFaceConfirmsVoiceDescription;
+
+  /// Section heading: settings on other pages that work with Face Recognition, each a link to it. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Used in other settings'**
+  String get groundControlUsedElsewhere;
+
+  /// Where the Faces that count setting is, as a path of page names. Use the translated names of these pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Screensaver > Face Detection'**
+  String get settingVisionMatchLinkFaceWhoDescription;
+
+  /// Where the Show who is recognized setting is, as a path of page names. Use the translated names of these pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Screensaver > Face Detection > Camera Preview'**
+  String get settingVisionMatchLinkPreviewPersonDescription;
+
+  /// The value of a switch on another page.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get groundControlValueOn;
+
+  /// The value of a switch on another page.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get groundControlValueOff;
+
+  /// Faces that count set to Chosen people, with the people chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'{option}: {names}'**
+  String groundControlValuePeople(String option, String names);
+
+  /// Read by screen readers for the GC tag after the title of a setting that works with Ground Control. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'A Ground Control setting. Learn more'**
+  String get groundControlTagHint;
+
+  /// Title of the dialog a tap on the GC tag opens. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'A Ground Control setting'**
+  String get groundControlTagTitle;
+
+  /// Dialog text for a setting that needs Face Recognition. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Face Recognition and shows only while that is on, under Settings > Ground Control > Vision Match.'**
+  String get groundControlTagVision;
+
+  /// Dialog text for a setting that needs Voice Match. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Voice Match and shows only while that is on, under Settings > Ground Control > Voice Match.'**
+  String get groundControlTagVoice;
+
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///
   /// In en, this message translates to:
@@ -21721,6 +21793,54 @@ abstract class UiStrings {
   /// **'Not available on x86 devices.'**
   String get screensaverDetectionX86Unsupported;
 
+  /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Faces that count'**
+  String get settingScreensaverFaceWhoTitle;
+
+  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Which faces dismiss or postpone the screensaver. Recognized people needs the face enrolled in Ground Control.'**
+  String get settingScreensaverFaceWhoDescription;
+
+  /// Option of Faces that count: any face looking at the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get screensaverFaceWhoOptionAnyone;
+
+  /// Option of Faces that count: only a face Face Recognition names.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized people'**
+  String get screensaverFaceWhoOptionRecognized;
+
+  /// Option of Faces that count: only the people picked below.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen people'**
+  String get screensaverFaceWhoOptionPeople;
+
+  /// Setting label: the people whose face counts.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get settingScreensaverFacePeopleTitle;
+
+  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Who the screen wakes for. With nobody chosen, anyone recognized.'**
+  String get settingScreensaverFacePeopleDescription;
+
+  /// Shown in the People box when nobody is chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone recognized'**
+  String get screensaverFacePeopleNone;
+
   /// Setting label.
   ///
   /// In en, this message translates to:
@@ -21774,6 +21894,24 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Camera Preview'**
   String get screensaverDetectionPreviewSection;
+
+  /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Show who is recognized'**
+  String get settingFacePreviewPersonTitle;
+
+  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The preview takes the person\'s color and their name shows next to it.'**
+  String get settingFacePreviewPersonDescription;
+
+  /// Under the person's name in the card next to the camera preview, when Face Recognition names them.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized'**
+  String get facePreviewRecognized;
 
   /// Setting label.
   ///

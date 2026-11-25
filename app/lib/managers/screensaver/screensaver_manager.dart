@@ -844,9 +844,16 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (!_settings.get(defs.motionUseEntity)) return;
       _onMotion(held: e.held);
     });
+    bus.on<FaceInViewChanged>().listen((e) {
+      _facesInView = {for (final p in e.people) p.id, ?e.id};
+    });
     bus.on<FaceDetected>().listen((_) {
       // Same lockdown rule as motion.
       if (_settings.get(defs.lockdownEnabled)) return;
+      // Faces that count: with Face Recognition, only someone recognized,
+      // or one of the chosen people. A face not named yet waits for the
+      // next sighting, about a second later.
+      if (!_faceCounts) return;
       if (!_active) {
         // Between screensavers a face can only postpone the next one,
         // under Postpone on motion's rules: the postpone switch extends
@@ -1606,6 +1613,32 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       start();
     });
     _setIdleDue(clock().add(wait));
+  }
+
+  /// Everyone Face Recognition names in view, for Faces that count.
+  Set<String> _facesInView = const {};
+
+  /// Whether a face in view dismisses or postpones the screensaver under
+  /// Faces that count. Anyone when Face Recognition is off, since the
+  /// setting is then hidden.
+  bool get _faceCounts {
+    if (!_settings.visible(defs.screensaverFaceWho)) return true;
+    switch (_settings.get(defs.screensaverFaceWho)) {
+      case 'recognized':
+        return _facesInView.isNotEmpty;
+      case 'people':
+        final chosen = {
+          for (final p in defs.decodeVoiceMatchPeople(
+            _settings.get(defs.screensaverFacePeople),
+          ))
+            p.id,
+        };
+        return chosen.isEmpty
+            ? _facesInView.isNotEmpty
+            : _facesInView.any(chosen.contains);
+      default:
+        return true;
+    }
   }
 
   void _stopForInteraction() {

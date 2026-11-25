@@ -50,6 +50,7 @@ class SettingDef<T> {
     this.multiline = false,
     this.placeholder,
     this.linksTo,
+    this.groundControl,
   });
 
   final String key;
@@ -181,6 +182,13 @@ class SettingDef<T> {
   /// the target's page and lands on its row. Never stored, exported or
   /// synced; [defaultValue] only keeps the type.
   final String? linksTo;
+
+  /// A setting outside Settings > Ground Control that only works with it:
+  /// `vision` for Vision Match, `voice` for Voice Match. Both UIs mark its
+  /// row with a GC tag in that feature's icon, and a tap on the tag says
+  /// what Ground Control is. Shown only while the feature is on, through
+  /// [dependsOn].
+  final String? groundControl;
 
   /// Example text shown in the empty editor instead of [description] —
   /// a code sample reads better than prose where code is expected.
@@ -6253,6 +6261,66 @@ const facePreview = SettingDef<bool>(
   dependsOn: 'screensaver.dismiss_on_face',
 );
 
+/// Which faces dismiss or postpone the screensaver, with Face Recognition
+/// on Ground Control: anyone, anyone recognized or the chosen people.
+const screensaverFaceWho = SettingDef<String>(
+  key: 'screensaver.face_who',
+  type: SettingType.string,
+  defaultValue: 'anyone',
+  title: 'Faces that count',
+  description:
+      'Which faces dismiss or postpone the screensaver. Recognized people '
+      'needs the face enrolled in Ground Control.',
+  category: 'Screensaver',
+  section: 'Face Detection',
+  subpage: 'Face Detection',
+  options: ['anyone', 'recognized', 'people'],
+  optionLabels: {
+    'anyone': 'Anyone',
+    'recognized': 'Recognized people',
+    'people': 'Chosen people',
+  },
+  dependsOn: 'screensaver.dismiss_on_face',
+  alsoDependsOn: 'vision_match.face_recognition',
+  groundControl: 'vision',
+);
+
+/// The people whose face dismisses or postpones the screensaver, on Chosen
+/// people, stored like [voiceMatchPeople]. With nobody chosen, anyone
+/// recognized.
+const screensaverFacePeople = SettingDef<String>(
+  key: 'screensaver.face_people',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'People',
+  description:
+      'Who the screen wakes for. With nobody chosen, anyone recognized.',
+  category: 'Screensaver',
+  section: 'Face Detection',
+  subpage: 'Face Detection',
+  dependsOn: 'screensaver.face_who',
+  dependsOnValue: 'people',
+  normalizer: normalizeVoiceMatchPeople,
+  groundControl: 'vision',
+);
+
+/// The camera preview takes the recognized person's color, with their name
+/// next to it.
+const facePreviewPerson = SettingDef<bool>(
+  key: 'face.preview_person',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show who is recognized',
+  description:
+      "The preview takes the person's color and their name shows next to it.",
+  category: 'Screensaver',
+  section: 'Camera Preview',
+  subpage: 'Face Detection',
+  dependsOn: 'face.preview',
+  alsoDependsOn: 'vision_match.face_recognition',
+  groundControl: 'vision',
+);
+
 const facePreviewSeconds = SettingDef<num>(
   key: 'face.preview_seconds',
   type: SettingType.number,
@@ -8304,6 +8372,54 @@ const visionMatchFaceRecognition = SettingDef<bool>(
   section: 'Face Recognition',
   dependsOn: 'vision_match.enabled',
   alsoDependsOn: 'vision_match.face_detection',
+);
+
+/// Confirm voices with faces: a voice under the recognition threshold is
+/// taken for the person Face Recognition sees at the kiosk, when they are
+/// also the closest voiceprint. Off by default: a guest talking while
+/// someone enrolled stands at the kiosk can then be taken for them now and
+/// then.
+const visionMatchFaceConfirmsVoice = SettingDef<bool>(
+  key: 'vision_match.face_confirms_voice',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Confirm voices with faces',
+  description:
+      'A voice that is close but not sure is taken when the face in front of '
+      'the kiosk is the same person. A face never names a voice on its own.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Face Recognition',
+  dependsOn: 'vision_match.face_recognition',
+  alsoDependsOn: 'voice_match.enabled',
+);
+
+/// Vision Match > Used in other settings: rows to the settings outside
+/// Ground Control that react to Face Recognition, with their value.
+const visionMatchLinkFaceWho = SettingDef<String>(
+  key: 'vision_match.link_face_who',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Faces that count',
+  description: 'Screensaver > Face Detection',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'screensaver.face_who',
+);
+
+const visionMatchLinkPreviewPerson = SettingDef<String>(
+  key: 'vision_match.link_preview_person',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Show who is recognized',
+  description: 'Screensaver > Face Detection > Camera Preview',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'face.preview_person',
 );
 
 /// Show fingers gestures, on Ground Control.
@@ -15267,8 +15383,11 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDismissOnFace,
   screensaverDismissOnFaceScreenOffOnly,
   screensaverPostponeOnFace,
+  screensaverFaceWho,
+  screensaverFacePeople,
   faceSensitivity,
   facePreview,
+  facePreviewPerson,
   facePreviewSeconds,
   facePreviewScale,
   facePreviewPosition,
@@ -15384,6 +15503,9 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchEnabled,
   visionMatchFaceDetection,
   visionMatchFaceRecognition,
+  visionMatchFaceConfirmsVoice,
+  visionMatchLinkFaceWho,
+  visionMatchLinkPreviewPerson,
   visionMatchHandGestures,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,

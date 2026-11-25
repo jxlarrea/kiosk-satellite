@@ -681,6 +681,12 @@ class MotionManager extends Manager {
     // the screensaver's stop, so the hold is up before the stop's
     // ScreensaverStateChanged runs [_sync].
     bus.on<FaceEnrollRequested>().listen(_startFaceEnroll);
+    bus.on<FaceEnrollStopRequested>().listen((_) {
+      if (_enrolling) {
+        log.info(name, 'face capture stopped from Ground Control');
+        stopFaceEnroll();
+      }
+    });
     bus.on<FaceDismissedScreensaver>().listen((_) {
       _showPreview();
       if (_streamRemoteFaces) _visionSocket?.outcome('screensaver_dismissed');
@@ -1400,25 +1406,51 @@ class MotionManager extends Manager {
   }
 
   /// Face Recognition: who Ground Control sees, said when it changes.
-  String? _inViewId;
+  String _inViewKey = 'null|';
 
-  void _inView(Map<String, Object?>? person) {
+  /// Who Face Recognition says is at the kiosk, for the camera preview's
+  /// name card. Null when nobody known is in view.
+  final atKiosk = ValueNotifier<FaceInViewChanged?>(null);
+
+  void _inView(
+    Map<String, Object?>? person, [
+    List<Map<String, Object?>> people = const [],
+  ]) {
     final id = person?['id'] as String?;
-    if (id == _inViewId) return;
-    _inViewId = id;
-    if (person == null) {
+    final everyone = [
+      for (final p in people)
+        if (p['id'] is String)
+          (id: p['id'] as String, name: '${p['name'] ?? ''}'),
+    ];
+    final key = '$id|${everyone.map((p) => p.id).join(',')}';
+    if (key == _inViewKey) return;
+    _inViewKey = key;
+    if (person == null && everyone.isEmpty) {
       log.debug(name, 'nobody known in view');
+      atKiosk.value = null;
       bus.publish(const FaceInViewChanged());
       return;
     }
-    log.info(name, '${person['name']} is in view (${person['score']})');
-    bus.publish(
-      FaceInViewChanged(
-        id: id,
-        name: '${person['name'] ?? ''}',
-        score: (person['score'] as num?)?.toDouble(),
-      ),
+    final others = [
+      for (final p in everyone)
+        if (p.id != id) p.name,
+    ];
+    if (person != null) {
+      log.info(
+        name,
+        '${person['name']} is at the kiosk (${person['score']})'
+        '${others.isEmpty ? '' : ', also in view: ${others.join(', ')}'}',
+      );
+    }
+    final event = FaceInViewChanged(
+      id: id,
+      name: '${person?['name'] ?? ''}',
+      score: (person?['score'] as num?)?.toDouble(),
+      color: person?['color'] as String?,
+      people: everyone,
     );
+    atKiosk.value = id == null ? null : event;
+    bus.publish(event);
   }
 
   /// One look off the analyzer: to Ground Control, or answered as failed

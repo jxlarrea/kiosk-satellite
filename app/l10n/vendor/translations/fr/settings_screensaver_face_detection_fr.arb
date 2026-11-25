@@ -13,5 +13,13 @@
   "screensaverDetectionMotionPrecedence": "« Fermer sur mouvement » est activé et prend le dessus : la détection de visage reste inactive tant qu'il n'est pas désactivé.",
   "screensaverDetectionFaceTuning": "La fréquence d'images, le choix de la caméra et le délai de démarrage se règlent dans les paramètres de la Caméra.",
   "screensaverDetectionAndroidUnsupported": "Non disponible sur cette version d'Android.",
-  "screensaverDetectionX86Unsupported": "Non disponible sur les appareils x86."
+  "screensaverDetectionX86Unsupported": "Non disponible sur les appareils x86.",
+  "settingScreensaverFaceWhoTitle": "Visages pris en compte",
+  "settingScreensaverFaceWhoDescription": "Les visages qui ferment ou repoussent l'économiseur d'écran. Personnes reconnues nécessite un visage enregistré dans Ground Control.",
+  "screensaverFaceWhoOptionAnyone": "Tout le monde",
+  "screensaverFaceWhoOptionRecognized": "Personnes reconnues",
+  "screensaverFaceWhoOptionPeople": "Personnes choisies",
+  "settingScreensaverFacePeopleTitle": "Personnes",
+  "settingScreensaverFacePeopleDescription": "Pour qui l'écran se réveille. Si personne n'est choisi, pour toute personne reconnue.",
+  "screensaverFacePeopleNone": "Toute personne reconnue"
 }

@@ -41,6 +41,7 @@ Navigate to **Settings > Ground Control > Vision Match**. With **Enable Vision M
 | Enable Vision Match | off | Runs the features below on Ground Control. Needs the camera and Ground Control. |
 | Enable Face Detection | on | Runs face detection on Ground Control. Off, it runs on the device. |
 | Enable Face Recognition | on | Recognizes who is looking at the kiosk and shows it in the **Face** sensor. Needs Face Detection on Ground Control. |
+| Confirm voices with faces | off | A voice that is close but not sure is taken for the person Face Recognition sees at the kiosk. Needs Voice Match. See [Confirm Voices With Faces](#confirm-voices-with-faces). |
 | Enroll a face | | Picks a person from Ground Control, or a new one, and starts the guided capture. See [Face Recognition](#face-recognition). |
 | Enable Hand Gestures | on | Runs palm and finger gesture detection on Ground Control. Off, it runs on the device. |
 
@@ -58,6 +59,8 @@ Vision Match needs a Ground Control version with Vision Match. Choose its models
 
 With **Enable Face Recognition** on, Ground Control tells who is looking at the kiosk, from the faces enrolled in it, and the kiosk shows the name in its **Face** sensor in Home Assistant. The sensor is empty when nobody known is in view, and it clears 3 seconds after the face goes. Face Recognition uses Face Detection's looks, so with it on they also run whenever the screen is on, still only after something moves.
 
+Ground Control recognizes up to three faces looking at the kiosk at once. One of them is the person at the kiosk, the one the **Face** sensor names and the camera preview shows: the highest score. Someone else becomes the person at the kiosk only after they score higher two checks in a row, or when the person at the kiosk leaves, so two people side by side don't make it flip. The **People in view** sensor lists everyone recognized, the person at the kiosk first.
+
 Each person's face is enrolled once through a kiosk's camera, in a guided capture of about half a minute. Choose **Enroll a face** on the Vision Match page and pick the person, or start it from the person's page in the Ground Control app. The kiosk shows its camera's view and the steps:
 
 1. Look at the screen.
@@ -65,7 +68,15 @@ Each person's face is enrolled once through a kiosk's camera, in a guided captur
 3. Now a little to the other side.
 4. Take a step back.
 
-Under the view, the kiosk says what to fix: no face in view, only one person in view, come closer, turn more or less, too dark. A different face is left out. **Stop** ends it early, and the pictures from a finished first step are kept. A capture started while the screensaver is up dismisses it, so the screen is at its normal brightness, and the screensaver waits until the capture ends. Ground Control keeps only small pictures of the face, never the frames.
+Under the view, the kiosk says what to fix: no face in view, only one person in view, come closer, turn more or less, too dark. A different face is left out. **Stop**, on the kiosk or on the person's page in the Ground Control app, ends it early, and the pictures from a finished first step are kept. A capture started while the screensaver is up dismisses it, so the screen is at its normal brightness, and the screensaver waits until the capture ends. Ground Control keeps only small pictures of the face, never the frames.
+
+### Confirm Voices With Faces
+
+With **Confirm voices with faces** on, Voice Match takes a voice that is close to someone's voiceprint but under the recognition threshold when Face Recognition sees that same person at the kiosk. This helps most with short commands and answers to questions, which are too short to recognize by voice alone. The voice still has to be closest to that person's voiceprint, so a face never names a voice on its own. It is off by default: with it on, a guest talking while someone enrolled stands at the kiosk can now and then be taken for them. Ground Control's session page says when a voice was taken this way.
+
+### Settings That Work With Ground Control
+
+Some settings outside Settings > Ground Control only work with it, such as **Faces that count** under **Settings > Screensaver > Face Detection**. They carry a **GC** tag after their title, with Vision Match's face icon or Voice Match's voice icon, and appear only while that feature is on. Tap the tag for what it means. The Vision Match page lists them under **Used in other settings**, each with its value, and a tap goes to the setting.
 
 ## Status
 

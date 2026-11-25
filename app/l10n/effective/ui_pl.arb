@@ -32671,6 +32671,172 @@
       ]
     }
   },
+  "settingVisionMatchFaceConfirmsVoiceTitle": "Potwierdzaj głosy twarzami",
+  "@settingVisionMatchFaceConfirmsVoiceTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition"
+      ]
+    }
+  },
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Głos podobny, ale niepewny jest przyjmowany, gdy twarz przed kioskiem należy do tej samej osoby. Twarz nigdy sama nie przypisuje głosu.",
+  "@settingVisionMatchFaceConfirmsVoiceDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Confirm voices with faces"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition > Confirm voices with faces"
+      ]
+    }
+  },
+  "groundControlUsedElsewhere": "Używane w innych ustawieniach",
+  "@groundControlUsedElsewhere": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Section heading: settings on other pages that work with Face Recognition, each a link to it. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match"
+      ]
+    }
+  },
+  "settingVisionMatchLinkFaceWhoDescription": "Wygaszacz ekranu > Wykrywanie twarzy",
+  "@settingVisionMatchLinkFaceWhoDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the Faces that count setting is, as a path of page names. Use the translated names of these pages.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings > Faces that count"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings > Faces that count"
+      ]
+    }
+  },
+  "settingVisionMatchLinkPreviewPersonDescription": "Wygaszacz ekranu > Wykrywanie twarzy > Podgląd z kamery",
+  "@settingVisionMatchLinkPreviewPersonDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the Show who is recognized setting is, as a path of page names. Use the translated names of these pages.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings > Show who is recognized"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings > Show who is recognized"
+      ]
+    }
+  },
+  "groundControlValueOn": "Włączone",
+  "@groundControlValueOn": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "The value of a switch on another page.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
+  },
+  "groundControlValueOff": "Wyłączone",
+  "@groundControlValueOff": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "The value of a switch on another page.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
+  },
+  "groundControlValuePeople": "{option}: {names}",
+  "@groundControlValuePeople": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Faces that count set to Chosen people, with the people chosen.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings > Faces that count"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings > Faces that count"
+      ]
+    },
+    "placeholders": {
+      "option": {
+        "type": "String",
+        "description": "The option, Chosen people."
+      },
+      "names": {
+        "type": "String",
+        "description": "The chosen people, comma separated."
+      }
+    }
+  },
+  "groundControlTagHint": "Ustawienie Ground Control. Więcej informacji",
+  "@groundControlTagHint": {
+    "context": "Settings, GC tag",
+    "description": "Read by screen readers for the GC tag after the title of a setting that works with Ground Control. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > any setting with a GC tag"
+      ],
+      "remoteAdmin": [
+        "Any setting with a GC tag"
+      ]
+    }
+  },
+  "groundControlTagTitle": "Ustawienie Ground Control",
+  "@groundControlTagTitle": {
+    "context": "Settings, GC tag",
+    "description": "Title of the dialog a tap on the GC tag opens. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > GC tag > dialog"
+      ],
+      "remoteAdmin": [
+        "GC tag > dialog"
+      ]
+    }
+  },
+  "groundControlTagVision": "To ustawienie działa z Kiosk Satellite Ground Control, osobną aplikacją działającą na komputerze w Twoim domu. Korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy jest ono włączone w Ustawienia > Ground Control > Vision Match.",
+  "@groundControlTagVision": {
+    "context": "Settings, GC tag",
+    "description": "Dialog text for a setting that needs Face Recognition. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > GC tag > dialog"
+      ],
+      "remoteAdmin": [
+        "GC tag > dialog"
+      ]
+    }
+  },
+  "groundControlTagVoice": "To ustawienie działa z Kiosk Satellite Ground Control, osobną aplikacją działającą na komputerze w Twoim domu. Korzysta z Voice Match i jest widoczne tylko wtedy, gdy jest on włączony w Ustawienia > Ground Control > Voice Match.",
+  "@groundControlTagVoice": {
+    "context": "Settings, GC tag",
+    "description": "Dialog text for a setting that needs Voice Match. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > GC tag > dialog"
+      ],
+      "remoteAdmin": [
+        "GC tag > dialog"
+      ]
+    }
+  },
   "haCustomPages": "Własne strony",
   "@haCustomPages": {
     "context": "Settings:Home Assistant:Custom Pages",
@@ -46706,6 +46872,110 @@
       ]
     }
   },
+  "settingScreensaverFaceWhoTitle": "Uwzględniane twarze",
+  "@settingScreensaverFaceWhoTitle": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection"
+      ]
+    }
+  },
+  "settingScreensaverFaceWhoDescription": "Które twarze zamykają lub odkładają wygaszacz ekranu. Opcja Rozpoznane osoby wymaga twarzy zarejestrowanej w Ground Control.",
+  "@settingScreensaverFaceWhoDescription": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Faces that count"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Faces that count"
+      ]
+    }
+  },
+  "screensaverFaceWhoOptionAnyone": "Każdy",
+  "@screensaverFaceWhoOptionAnyone": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Option of Faces that count: any face looking at the kiosk.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Faces that count"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Faces that count"
+      ]
+    }
+  },
+  "screensaverFaceWhoOptionRecognized": "Rozpoznane osoby",
+  "@screensaverFaceWhoOptionRecognized": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Option of Faces that count: only a face Face Recognition names.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Faces that count"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Faces that count"
+      ]
+    }
+  },
+  "screensaverFaceWhoOptionPeople": "Wybrane osoby",
+  "@screensaverFaceWhoOptionPeople": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Option of Faces that count: only the people picked below.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Faces that count"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Faces that count"
+      ]
+    }
+  },
+  "settingScreensaverFacePeopleTitle": "Osoby",
+  "@settingScreensaverFacePeopleTitle": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Setting label: the people whose face counts.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection"
+      ]
+    }
+  },
+  "settingScreensaverFacePeopleDescription": "Dla kogo ekran się wybudza. Jeśli nikt nie jest wybrany, dla każdej rozpoznanej osoby.",
+  "@settingScreensaverFacePeopleDescription": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > People"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > People"
+      ]
+    }
+  },
+  "screensaverFacePeopleNone": "Każda rozpoznana osoba",
+  "@screensaverFacePeopleNone": {
+    "context": "Settings > Screensaver > Face Detection",
+    "description": "Shown in the People box when nobody is chosen.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > People"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > People"
+      ]
+    }
+  },
   "settingFacePreviewTitle": "Pokazuj podgląd z kamery",
   "@settingFacePreviewTitle": {
     "context": "Settings > Screensaver > Face Detection > Camera Preview",
@@ -46820,6 +47090,42 @@
       ],
       "remoteAdmin": [
         "Screensaver > Face Detection > Camera Preview"
+      ]
+    }
+  },
+  "settingFacePreviewPersonTitle": "Pokazuj, kto został rozpoznany",
+  "@settingFacePreviewPersonTitle": {
+    "context": "Settings > Screensaver > Face Detection > Camera Preview",
+    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Camera Preview"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Camera Preview"
+      ]
+    }
+  },
+  "settingFacePreviewPersonDescription": "Podgląd przybiera kolor osoby, a obok pojawia się jej imię.",
+  "@settingFacePreviewPersonDescription": {
+    "context": "Settings > Screensaver > Face Detection > Camera Preview",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Camera Preview > Show who is recognized"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Camera Preview > Show who is recognized"
+      ]
+    }
+  },
+  "facePreviewRecognized": "Rozpoznano",
+  "@facePreviewRecognized": {
+    "context": "Kiosk screen > camera preview",
+    "description": "Under the person's name in the card next to the camera preview, when Face Recognition names them.",
+    "x-locations": {
+      "device": [
+        "Kiosk screen > camera preview > name card"
       ]
     }
   },

@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "1cbc6e9871aa96f2b4cf20e312f2d543dfb21b0a",
+  "revision": "a94f0874ceae3c3794955a53bb6a5d828fcd665e",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -111,7 +111,7 @@
     "settings_esphome_setup_en.arb": "c4c7a944ea206ffc62f04ecfb5936b9d17eaf0a85abee2222cdd2ae74cf5bb90",
     "settings_footer_en.arb": "2b6279c9f3a304b5ad3fe7aec3e8dcd07ada7704de51489dc2f6866d147950a4",
     "settings_gestures_en.arb": "30a3d7c7867d80faeed298d2e11e46bbd99182f4d58d8e585faadbec551939f0",
-    "settings_ground_control_en.arb": "69be005ed820c9598cff3eb25ea775f77effe006e43ebedf9b8db4ad9ae3ad4e",
+    "settings_ground_control_en.arb": "ef3d2ca082c2a5edb7d85cf35eb573d9fddb9518963e5363b0406b6fc17c28cd",
     "settings_home_assistant_custom_pages_en.arb": "7ff2971d55e9fce55f50423c185d357ddd1c2f1af72a3ab09947713a03789bf7",
     "settings_home_assistant_hold_en.arb": "65c0336973aa9ced2a0ceff298a569b2a6d034c2016569727f3a84de2fe819b2",
     "settings_home_assistant_optimizations_en.arb": "6848f403e77ebbe6a51c201b09cbc75c385debfbce96168830772418b7afdcf7",
@@ -156,8 +156,8 @@
     "settings_screensaver_celestial_en.arb": "60602ad23fd9ca784628354b49e0a76b8c826235f51f2ea2532bc65fe305de6b",
     "settings_screensaver_clock_en.arb": "5dfed8c2227422bbf791214ac36c5b7c0876fbb5d083e850f152d7b73647b577",
     "settings_screensaver_entity_picker_en.arb": "95f3f0519bcd315bac1cbffb9ccdf2c1fa9a67315fea45b2acf5a364de10d085",
-    "settings_screensaver_face_detection_en.arb": "498665376d9b47d83f4932baf0952dfff3807f4510fea02f0a930f764f1dd932",
-    "settings_screensaver_face_preview_en.arb": "9f75439ce71a8947426a0f382eb06632a74c2c145a5642918065e40ae91f9957",
+    "settings_screensaver_face_detection_en.arb": "3753bee9da2dc0cbe26ff47ad1bbe2e7a9b6f0b24bc73ad7ae32b50c4a4f5232",
+    "settings_screensaver_face_preview_en.arb": "2e62e1b5f850fd8d24170001042e12ab11445a2d8cf576421774b26499f5321f",
     "settings_screensaver_general_en.arb": "656495cc1fa2ac9333cd79667afe22828c5f12a305d300be640c54abd8adf7eb",
     "settings_screensaver_glance_appearance_en.arb": "b574a776553d61438bb268830e45cdcb30aa79995d3a865aa3caab8c741d628e",
     "settings_screensaver_glance_en.arb": "c6c2806cd1be55d7ae9a1b671729a8fb22759456c025f9e3e3ec834e40f56f0d",

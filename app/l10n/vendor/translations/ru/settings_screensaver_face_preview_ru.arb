@@ -8,5 +8,8 @@
   "settingFacePreviewScaleDescription": "Масштабируйте превью под размер экрана.",
   "settingFacePreviewPositionTitle": "Позиция превью",
   "settingFacePreviewPositionDescription": "В каком углу находится превью.",
-  "screensaverDetectionPreviewSection": "Превью камеры"
+  "screensaverDetectionPreviewSection": "Превью камеры",
+  "settingFacePreviewPersonTitle": "Показывать, кто распознан",
+  "settingFacePreviewPersonDescription": "Превью принимает цвет человека, а рядом появляется его имя.",
+  "facePreviewRecognized": "Распознан"
 }

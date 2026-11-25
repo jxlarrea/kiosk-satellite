@@ -8,5 +8,8 @@
   "settingFacePreviewScaleDescription": "Passt die Größe der Vorschau an den Bildschirm an.",
   "settingFacePreviewPositionTitle": "Position der Vorschau",
   "settingFacePreviewPositionDescription": "Die Ecke, in der die Vorschau angezeigt wird.",
-  "screensaverDetectionPreviewSection": "Kameravorschau"
+  "screensaverDetectionPreviewSection": "Kameravorschau",
+  "settingFacePreviewPersonTitle": "Zeigen, wer erkannt wurde",
+  "settingFacePreviewPersonDescription": "Die Vorschau nimmt die Farbe der Person an und ihr Name erscheint daneben.",
+  "facePreviewRecognized": "Erkannt"
 }

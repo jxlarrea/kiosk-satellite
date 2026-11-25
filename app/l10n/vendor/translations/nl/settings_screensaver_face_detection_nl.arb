@@ -13,5 +13,13 @@
   "screensaverDetectionMotionPrecedence": "Sluiten bij beweging staat aan en heeft voorrang. Gezichtsdetectie blijft daarom inactief totdat bewegingsdetectie wordt uitgeschakeld.",
   "screensaverDetectionFaceTuning": "Framesnelheid, camerakeuze en opstartvertraging worden ingesteld bij de camera-instellingen.",
   "screensaverDetectionAndroidUnsupported": "Niet beschikbaar op deze Android-versie.",
-  "screensaverDetectionX86Unsupported": "Niet beschikbaar op x86-apparaten."
+  "screensaverDetectionX86Unsupported": "Niet beschikbaar op x86-apparaten.",
+  "settingScreensaverFaceWhoTitle": "Gezichten die tellen",
+  "settingScreensaverFaceWhoDescription": "Welke gezichten de schermbeveiliging sluiten of uitstellen. Herkende personen vereist een gezicht dat in Ground Control is ingeschreven.",
+  "screensaverFaceWhoOptionAnyone": "Iedereen",
+  "screensaverFaceWhoOptionRecognized": "Herkende personen",
+  "screensaverFaceWhoOptionPeople": "Gekozen personen",
+  "settingScreensaverFacePeopleTitle": "Personen",
+  "settingScreensaverFacePeopleDescription": "Voor wie het scherm wakker wordt. Is er niemand gekozen, dan voor iedereen die herkend wordt.",
+  "screensaverFacePeopleNone": "Iedereen die herkend wordt"
 }

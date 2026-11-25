@@ -13,5 +13,13 @@
   "screensaverDetectionMotionPrecedence": "“检测到运动时关闭屏保”已开启，且优先于人脸检测。关闭该选项前，人脸检测不会运行。",
   "screensaverDetectionFaceTuning": "帧率、摄像头选择和启动延迟可在摄像头设置中调整。",
   "screensaverDetectionAndroidUnsupported": "此 Android 版本不支持。",
-  "screensaverDetectionX86Unsupported": "不支持 x86 设备。"
+  "screensaverDetectionX86Unsupported": "不支持 x86 设备。",
+  "settingScreensaverFaceWhoTitle": "计入的人脸",
+  "settingScreensaverFaceWhoDescription": "哪些人脸会关闭或推迟屏保。“已识别的人”需要先在 Ground Control 中录入人脸。",
+  "screensaverFaceWhoOptionAnyone": "任何人",
+  "screensaverFaceWhoOptionRecognized": "已识别的人",
+  "screensaverFaceWhoOptionPeople": "指定人员",
+  "settingScreensaverFacePeopleTitle": "人员",
+  "settingScreensaverFacePeopleDescription": "屏幕为谁唤醒。如果没有选择任何人，则为任何已识别的人。",
+  "screensaverFacePeopleNone": "任何已识别的人"
 }

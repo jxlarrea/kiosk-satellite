@@ -33,5 +33,17 @@
   "faceEnrollNewPerson": "Nieuwe persoon",
   "faceEnrollEnrolled": "Gezicht ingeschreven",
   "faceEnrollNameLabel": "Naam",
-  "faceEnrollStart": "Starten"
+  "faceEnrollStart": "Starten",
+  "settingVisionMatchFaceConfirmsVoiceTitle": "Stemmen met gezichten bevestigen",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die dichtbij maar niet zeker is, wordt aangenomen als het gezicht voor de kiosk van dezelfde persoon is. Een gezicht wijst nooit op zichzelf een stem toe.",
+  "groundControlUsedElsewhere": "Gebruikt in andere instellingen",
+  "settingVisionMatchLinkFaceWhoDescription": "Schermbeveiliging > Gezichtsdetectie",
+  "settingVisionMatchLinkPreviewPersonDescription": "Schermbeveiliging > Gezichtsdetectie > Cameravoorbeeld",
+  "groundControlValueOn": "Aan",
+  "groundControlValueOff": "Uit",
+  "groundControlValuePeople": "{option}: {names}",
+  "groundControlTagHint": "Een Ground Control-instelling. Meer informatie",
+  "groundControlTagTitle": "Een Ground Control-instelling",
+  "groundControlTagVision": "Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt gezichtsherkenning en is alleen zichtbaar zolang die aan staat, onder Instellingen > Ground Control > Vision Match.",
+  "groundControlTagVoice": "Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt Voice Match en is alleen zichtbaar zolang dat aan staat, onder Instellingen > Ground Control > Voice Match."
 }

@@ -23,8 +23,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// [outcome] says what the kiosk did with a result.
 ///
 /// With [recognize], Ground Control also says who is looking at the kiosk
-/// (Face Recognition), through [onPerson]: a person's id, name and score
-/// when it names someone, null when nobody known is in view.
+/// (Face Recognition), through [onPerson]: the person at the kiosk (id,
+/// name, color and score) when it names someone, null when nobody known is
+/// in view, and everyone it names in view, the person at the kiosk first.
 class VisionMatchSocket {
   VisionMatchSocket._(
     this._onReady,
@@ -35,7 +36,11 @@ class VisionMatchSocket {
   );
 
   final void Function(double? face, double? hands) _onReady;
-  final void Function(Map<String, Object?>? person)? _onPerson;
+  final void Function(
+    Map<String, Object?>? person,
+    List<Map<String, Object?>> people,
+  )?
+  _onPerson;
   final void Function(Map<String, Object?> answer) _onResult;
   final void Function() _onLost;
   final void Function(String line)? _log;
@@ -68,7 +73,11 @@ class VisionMatchSocket {
     required void Function() onLost,
     void Function(String line)? log,
     bool recognize = false,
-    void Function(Map<String, Object?>? person)? onPerson,
+    void Function(
+      Map<String, Object?>? person,
+      List<Map<String, Object?>> people,
+    )?
+    onPerson,
   }) {
     final socket = VisionMatchSocket._(
       onReady,
@@ -185,9 +194,9 @@ class VisionMatchSocket {
           _roundTripMs = (sent.elapsedMicroseconds / 100).round() / 10;
           _onResult(e);
         }
-        if (e.containsKey('person')) _person(e['person']);
+        if (e.containsKey('person')) _person(e['person'], e['people']);
       case 'person':
-        _person(e['person']);
+        _person(e['person'], e['people']);
       case 'dropped':
         _fail(e['id']);
       case 'error':
@@ -207,14 +216,24 @@ class VisionMatchSocket {
   /// Who is in view, said once when it changes.
   Object? _lastPerson = const Object();
 
-  void _person(Object? raw) {
+  void _person(Object? raw, Object? rawPeople) {
     final person = raw is Map && raw['id'] is String
         ? raw.cast<String, Object?>()
         : null;
-    final key = person?['id'];
+    // Ground Control before several faces: only the person at the kiosk.
+    final people = rawPeople is List
+        ? [
+            for (final p in rawPeople)
+              if (p is Map && p['id'] is String) p.cast<String, Object?>(),
+          ]
+        : [?person];
+    if (person != null && people.every((p) => p['id'] != person['id'])) {
+      people.insert(0, person);
+    }
+    final key = '${person?['id']}|${people.map((p) => p['id']).join(',')}';
     if (key == _lastPerson) return;
     _lastPerson = key;
-    _onPerson?.call(person);
+    _onPerson?.call(person, people);
   }
 
   void _fail(Object? id) {
