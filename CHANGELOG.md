@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.33 - 2026-11-26
 
 ### Added
 - **Wake Word Aligner group.** The Voice Match page has a **Wake Word Aligner** group with **Enable Wake Word Aligner**, on by default, so a kiosk can turn it off for itself. It shows with Trimming and **Talk right after the wake word** on.
