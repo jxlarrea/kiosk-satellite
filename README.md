@@ -90,9 +90,17 @@ Also built in: [PIN-protected kiosk mode](https://kiosksatellite.com/docs/kiosk/
 
 ## Ground Control
 
-[Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) is a companion service for Kiosk Satellite. It runs on a computer or server in your home and handles the voice and vision processing that kiosks don't have the computing power for. It has two components. [Voice Match](https://kiosksatellite.com/docs/voice-match/) does speaker recognition, plus trimming and isolation that leave only the voice of the person who said the wake word, even when a TV or another person talks over them. [Vision Match](https://kiosksatellite.com/docs/vision-match/) runs Face Detection, Hand Gestures and Face Recognition on the kiosk's camera frames. Install it as a Home Assistant app or run it in Docker on a CPU or an NVIDIA GPU. See [Ground Control](https://kiosksatellite.com/docs/ground-control/) for the kiosk setup.
+[Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) is a companion service for Kiosk Satellite. It runs on a computer or server in your home and handles the voice and vision processing that kiosks don't have the computing power for. Install it as a Home Assistant app or run it in Docker on a CPU or an NVIDIA GPU. See [Ground Control](https://kiosksatellite.com/docs/ground-control/) for the kiosk setup.
+
+&bull; **[Voice Match](https://kiosksatellite.com/docs/voice-match/):** Speaker recognition, plus trimming and isolation that leave only the voice of the person who said the wake word, even when a TV or another person talks over them.
 
 https://github.com/user-attachments/assets/4485f1fc-af2a-4d17-a7de-2b0b3ebe7f3f
+
+&bull; **[Vision Match](https://kiosksatellite.com/docs/vision-match/):** Face Detection, Hand Gestures and Face Recognition on the kiosk's camera frames.
+
+<p align="center">
+  <img src="assets/vision-match-demo-lossy.gif" alt="Vision Match recognizing a face on a Kiosk Satellite dashboard" width="650" />
+</p>
 
 ## Get started
 

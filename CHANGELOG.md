@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **Voice Match and Vision Match in the README.** The Ground Control section now has a Voice Match entry with the Isolation demo video and a Vision Match entry with a Face Recognition demo.
+
 ## v2026.11.32 - 2026-11-25
 
 ### Added
