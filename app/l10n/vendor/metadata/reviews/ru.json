@@ -32085,5 +32085,17 @@
     "translation": "9bdf657f6e48deae8c375c8e2c4cdb33650eeb52d9ccd9c5e449b327dd28ad12",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "recognitionCardCalendarFocused": {
+    "source": "dfc66981fba42acd47d31a7a1eb2b605417e90280a0ab52e0b3bd64aed312c16",
+    "translation": "86b88624b1fb7860f6bd9dc4fa6d4355b27574a749c44c3eb32430e024dbfb08",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchShowActionsGeneralDescription": {
+    "source": "665eb752546be12de7e89d92a51492e505e3788d16b07db2365510dadc03e2e4",
+    "translation": "7b57a7223330f6b52cbbc0748f08b276658b6f79e649cd92ffe817fbd90d9425",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

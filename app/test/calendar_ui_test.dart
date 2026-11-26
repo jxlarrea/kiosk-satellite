@@ -409,6 +409,28 @@ void main() {
       await letGo(tester, c);
     });
 
+    testWidgets('the action card is asked for once per person at the kiosk', (
+      tester,
+    ) async {
+      final c = await recognizing(tester, 'day');
+      final focused = <FaceCalendarFocused>[];
+      final heard = c.bus.on<FaceCalendarFocused>().listen(focused.add);
+      addTearDown(heard.cancel);
+      maya(c);
+      await tester.pump(const Duration(milliseconds: 50));
+      // Leo comes into view: Maya is still the person at the kiosk.
+      maya(c, also: ['l1']);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect([for (final e in focused) e.name], ['Maya']);
+      expect(focused.single.id, 'm1');
+      // Opened again with Maya there, as open() does on an open calendar:
+      // the card again.
+      c.calendar.reopened.value++;
+      await tester.pump(const Duration(milliseconds: 50));
+      expect([for (final e in focused) e.name], ['Maya', 'Maya']);
+      await letGo(tester, c);
+    });
+
     testWidgets('nothing moves under a finger', (tester) async {
       final c = await recognizing(tester, 'day');
       // A touch on Leo's lane header, which does nothing else.

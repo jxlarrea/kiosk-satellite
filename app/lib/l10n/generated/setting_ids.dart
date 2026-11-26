@@ -2910,7 +2910,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "vision_match.show_actions": {
     "title": "settingVisionMatchShowActionsTitle",
-    "description": "settingVisionMatchShowActionsDescription",
+    "description": "settingVisionMatchShowActionsGeneralDescription",
   },
   "vision_match.card_position": {
     "title": "settingVisionMatchCardPositionTitle",

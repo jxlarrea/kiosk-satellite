@@ -8872,8 +8872,8 @@ class UiStringsIt extends UiStrings {
       'Mostra le azioni tramite volto';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Mostra una piccola scheda ogni volta che il PIN viene saltato, la modalità blocco viene disattivata o una voce viene confermata perché è stato riconosciuto un volto.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Mostra una piccola scheda ogni volta che qualcosa cambia sul kiosk perché è stato riconosciuto un volto.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Posizione delle schede';
@@ -8890,6 +8890,9 @@ class UiStringsIt extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voce confermata';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Calendario in evidenza';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Sensori di presenza';

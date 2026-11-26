@@ -8823,8 +8823,8 @@ class UiStringsUk extends UiStrings {
   String get settingVisionMatchShowActionsTitle => 'Показувати дії за обличчям';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Показує маленьку картку щоразу, коли PIN-код пропущено, режим блокування вимкнено або голос підтверджено, бо впізнано обличчя.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Показує маленьку картку щоразу, коли щось у кіоску змінюється, бо впізнано обличчя.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Розташування карток';
@@ -8841,6 +8841,9 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Голос підтверджено';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Календар виділено';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Датчики присутності';

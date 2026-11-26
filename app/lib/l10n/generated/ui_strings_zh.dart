@@ -8392,8 +8392,8 @@ class UiStringsZh extends UiStrings {
   String get settingVisionMatchShowActionsTitle => '显示人脸操作';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      '每当因识别到人脸而免输 PIN 码、关闭锁定模式或确认声音时，显示一张小卡片。';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      '每当因识别到人脸而使 Kiosk 上的内容发生变化时，显示一张小卡片。';
 
   @override
   String get settingVisionMatchCardPositionTitle => '卡片位置';
@@ -8410,6 +8410,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => '声音已确认';
+
+  @override
+  String get recognitionCardCalendarFocused => '日历已突出显示';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => '存在传感器';
@@ -24989,8 +24992,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingVisionMatchShowActionsTitle => '显示人脸操作';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      '每当因识别到人脸而免输 PIN 码、关闭锁定模式或确认声音时，显示一张小卡片。';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      '每当因识别到人脸而使 Kiosk 上的内容发生变化时，显示一张小卡片。';
 
   @override
   String get settingVisionMatchCardPositionTitle => '卡片位置';
@@ -25007,6 +25010,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get recognitionCardVoiceConfirmed => '声音已确认';
+
+  @override
+  String get recognitionCardCalendarFocused => '日历已突出显示';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => '存在传感器';

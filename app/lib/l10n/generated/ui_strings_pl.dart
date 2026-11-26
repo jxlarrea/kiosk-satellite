@@ -8842,8 +8842,8 @@ class UiStringsPl extends UiStrings {
   String get settingVisionMatchShowActionsTitle => 'Pokazuj działania twarzą';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Pokazuje małą kartę za każdym razem, gdy PIN zostanie pominięty, tryb blokady wyłączony lub głos potwierdzony, ponieważ rozpoznano twarz.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Pokazuje małą kartę za każdym razem, gdy coś na kiosku się zmienia, ponieważ rozpoznano twarz.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Pozycja kart';
@@ -8860,6 +8860,9 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Głos potwierdzony';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Kalendarz wyróżniony';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Czujniki obecności';

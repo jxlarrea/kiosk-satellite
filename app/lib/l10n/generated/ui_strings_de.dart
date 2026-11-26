@@ -8935,8 +8935,8 @@ class UiStringsDe extends UiStrings {
   String get settingVisionMatchShowActionsTitle => 'Gesichtsaktionen anzeigen';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Zeigt eine kleine Karte, wenn die PIN übersprungen, der Sperrmodus ausgeschaltet oder eine Stimme bestätigt wird, weil ein Gesicht erkannt wurde.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Zeigt eine kleine Karte, wenn sich am Kiosk etwas ändert, weil ein Gesicht erkannt wurde.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Position der Karten';
@@ -8953,6 +8953,9 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Stimme bestätigt';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Kalender hervorgehoben';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Anwesenheitssensoren';

@@ -67,6 +67,7 @@ With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the
 - **Day:** their lanes come first, the person at the kiosk's first, then everyone else in the order of Settings.
 - **Schedule:** Up next shows the next event of the person at the kiosk, as **Up next for** and their name. When they have nothing left today it shows the household's next event.
 - **New event:** the form starts with the person at the kiosk's calendar picked. A tap on an empty hour in the Day view still picks that lane's calendar.
+- **Action card:** a small **Calendar focused** card with the person's picture shows when the calendar first puts their calendar forward, once each time the calendar opens or someone else becomes the person at the kiosk. Turn it off with **Show face actions** under [Recognition Cards](vision-match.md#recognition-cards).
 
 Each person's calendar is found the same way as "my calendar" by voice: the calendar set for them on Ground Control's People page, the calendar with their Home Assistant person or the one with their name. Someone without a calendar changes nothing.
 

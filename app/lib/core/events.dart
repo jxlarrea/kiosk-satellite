@@ -870,6 +870,16 @@ class FaceLeft extends AppEvent {
   final String name;
 }
 
+/// Calendar > Focus on who is at the kiosk put [name]'s calendar forward on
+/// screen: the calendar showed it for them for the first time since it
+/// opened or since someone else was the person at the kiosk. [id] is their
+/// Ground Control person id, for the action card.
+class FaceCalendarFocused extends AppEvent {
+  const FaceCalendarFocused({required this.id, required this.name});
+  final String id;
+  final String name;
+}
+
 /// Who Face Recognition sees at the kiosk changed, in the shape plugins
 /// with the face.recognition capability and Home Assistant and custom
 /// pages read it (GroundControlManager.faceRecognitionState). No

@@ -33048,8 +33048,8 @@
       ]
     }
   },
-  "settingVisionMatchShowActionsDescription": "Zeigt eine kleine Karte, wenn die PIN übersprungen, der Sperrmodus ausgeschaltet oder eine Stimme bestätigt wird, weil ein Gesicht erkannt wurde.",
-  "@settingVisionMatchShowActionsDescription": {
+  "settingVisionMatchShowActionsGeneralDescription": "Zeigt eine kleine Karte, wenn sich am Kiosk etwas ändert, weil ein Gesicht erkannt wurde.",
+  "@settingVisionMatchShowActionsGeneralDescription": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
@@ -33111,6 +33111,16 @@
   "@recognitionCardVoiceConfirmed": {
     "context": "Kiosk screen > recognition card",
     "description": "Next to the person's picture on the small card on the kiosk screen: a voice close to the person's voiceprint was accepted because their face was recognized. Keep it to two or three words.",
+    "x-locations": {
+      "device": [
+        "Kiosk screen > recognition card"
+      ]
+    }
+  },
+  "recognitionCardCalendarFocused": "Kalender hervorgehoben",
+  "@recognitionCardCalendarFocused": {
+    "context": "Kiosk screen > recognition card",
+    "description": "Next to the person's picture on the small card on the kiosk screen: the calendar put the person's calendar forward because their face was recognized (Settings > Calendar > Focus on who is at the kiosk). Keep it to two or three words.",
     "x-locations": {
       "device": [
         "Kiosk screen > recognition card"

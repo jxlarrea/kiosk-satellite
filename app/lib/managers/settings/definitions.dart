@@ -8673,8 +8673,8 @@ const visionMatchShowActions = SettingDef<bool>(
   defaultValue: true,
   title: 'Show face actions',
   description:
-      'Show a small card each time the PIN is skipped, Lockdown Mode is turned '
-      'off or a voice is confirmed because a face was recognized.',
+      'Show a small card each time something on the kiosk changes because a '
+      'face was recognized.',
   category: 'Ground Control',
   subpage: 'Vision Match',
   section: 'Recognition cards',

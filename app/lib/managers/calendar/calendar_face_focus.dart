@@ -15,6 +15,7 @@ class CalendarFocus {
   const CalendarFocus({
     this.entities = const [],
     this.lead,
+    this.leadId,
     this.leadName = '',
   });
 
@@ -28,6 +29,9 @@ class CalendarFocus {
   /// left.
   final String? lead;
 
+  /// The person at the kiosk's Ground Control id, with [lead].
+  final String? leadId;
+
   /// The person at the kiosk's name, for Up next.
   final String leadName;
 
@@ -39,11 +43,13 @@ class CalendarFocus {
   bool operator ==(Object other) =>
       other is CalendarFocus &&
       other.lead == lead &&
+      other.leadId == leadId &&
       other.leadName == leadName &&
       listEquals(other.entities, entities);
 
   @override
-  int get hashCode => Object.hash(lead, leadName, Object.hashAll(entities));
+  int get hashCode =>
+      Object.hash(lead, leadId, leadName, Object.hashAll(entities));
 }
 
 /// Who Face Recognition names at the kiosk, kept on the arrival card's
@@ -125,6 +131,7 @@ class CalendarFaceFocus {
     value.value = CalendarFocus(
       entities: entities,
       lead: lead,
+      leadId: lead == null ? null : _lead,
       leadName: lead == null ? '' : _here[_lead] ?? '',
     );
   }

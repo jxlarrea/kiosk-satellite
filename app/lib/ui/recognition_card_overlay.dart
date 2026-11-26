@@ -20,6 +20,7 @@ String faceActionText(BuildContext context, FaceAction action) {
     FaceAction.pinSkipped => t.recognitionCardPinSkipped,
     FaceAction.lockdownOff => t.recognitionCardLockdownOff,
     FaceAction.voiceConfirmed => t.recognitionCardVoiceConfirmed,
+    FaceAction.calendarFocused => t.recognitionCardCalendarFocused,
   };
 }
 

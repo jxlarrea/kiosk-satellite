@@ -8846,8 +8846,8 @@ class UiStringsNl extends UiStrings {
   String get settingVisionMatchShowActionsTitle => 'Gezichtsacties tonen';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Toont een kleine kaart telkens wanneer de pincode wordt overgeslagen, de vergrendelingsmodus wordt uitgeschakeld of een stem wordt bevestigd omdat een gezicht is herkend.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Toont een kleine kaart telkens wanneer er iets op de kiosk verandert omdat een gezicht is herkend.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Positie van de kaarten';
@@ -8864,6 +8864,9 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Stem bevestigd';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Agenda uitgelicht';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Aanwezigheidssensoren';

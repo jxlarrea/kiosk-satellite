@@ -8,7 +8,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
 /// What a recognized face made happen, for the action card.
-enum FaceAction { pinSkipped, lockdownOff, voiceConfirmed }
+enum FaceAction { pinSkipped, lockdownOff, voiceConfirmed, calendarFocused }
 
 /// The card showing now: the person, and [action] when a face made
 /// something happen (null on an arrival). [arrival] is the large card, and
@@ -39,7 +39,8 @@ class RecognitionCard {
 /// An arrival card (Show arrivals) when someone is recognized at the kiosk,
 /// again for them only after [defs.recognitionArrivalAway] out of view. A
 /// small action card (Show face actions) each time a face skips the kiosk
-/// PIN, turns Lockdown Mode off or confirms a voice. An action for the
+/// PIN, turns Lockdown Mode off, confirms a voice or puts the person's
+/// calendar forward. An action for the
 /// person on an arrival card shows on that card instead of a second one.
 ///
 /// The kiosk screen's RecognitionCardOverlay draws [card] in its corner,
@@ -81,6 +82,11 @@ class RecognitionCards extends Manager {
       ..add(
         bus.on<FacePinSkipped>().listen(
           (e) => _act(e.id, e.name, FaceAction.pinSkipped),
+        ),
+      )
+      ..add(
+        bus.on<FaceCalendarFocused>().listen(
+          (e) => _act(e.id, e.name, FaceAction.calendarFocused),
         ),
       )
       ..add(

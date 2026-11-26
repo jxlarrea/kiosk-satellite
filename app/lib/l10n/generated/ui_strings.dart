@@ -15306,8 +15306,8 @@ abstract class UiStrings {
   /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Show a small card each time the PIN is skipped, Lockdown Mode is turned off or a voice is confirmed because a face was recognized.'**
-  String get settingVisionMatchShowActionsDescription;
+  /// **'Show a small card each time something on the kiosk changes because a face was recognized.'**
+  String get settingVisionMatchShowActionsGeneralDescription;
 
   /// Setting label.
   ///
@@ -15338,6 +15338,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Voice confirmed'**
   String get recognitionCardVoiceConfirmed;
+
+  /// Next to the person's picture on the small card on the kiosk screen: the calendar put the person's calendar forward because their face was recognized (Settings > Calendar > Focus on who is at the kiosk). Keep it to two or three words.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar focused'**
+  String get recognitionCardCalendarFocused;
 
   /// Setting label: binary sensors in Home Assistant for someone in front of the kiosk and someone looking at it. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.
   ///

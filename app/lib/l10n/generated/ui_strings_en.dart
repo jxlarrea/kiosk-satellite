@@ -8751,8 +8751,8 @@ class UiStringsEn extends UiStrings {
   String get settingVisionMatchShowActionsTitle => 'Show face actions';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Show a small card each time the PIN is skipped, Lockdown Mode is turned off or a voice is confirmed because a face was recognized.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Show a small card each time something on the kiosk changes because a face was recognized.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Card position';
@@ -8769,6 +8769,9 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voice confirmed';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Calendar focused';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Presence sensors';

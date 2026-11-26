@@ -399,6 +399,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   /// under a finger.
   CalendarFocus _focus = CalendarFocus.none;
   Timer? _touchHold;
+
+  /// The person whose calendar this screen last put forward, for the
+  /// action card: it shows once per person while the calendar is open.
+  String? _focusedFor;
   static const _focusHold = Duration(seconds: 5);
 
   @override
@@ -409,6 +413,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _armMidnight();
     cal.calendars.addListener(_watch);
     _focus = cal.focus.value;
+    _announceFocus();
     cal.focus.addListener(_onFocus);
     _settingsSub = c.bus.on<SettingChanged>().listen((e) {
       if ((e.key == defs.calendarAllowEdit.key ||
@@ -438,7 +443,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void _onFocus() {
     if (_touchHold?.isActive ?? false) return;
     final next = cal.focus.value;
-    if (next != _focus && mounted) setState(() => _focus = next);
+    if (next == _focus || !mounted) return;
+    setState(() => _focus = next);
+    _announceFocus();
+  }
+
+  /// Vision Match's action card, the standard sign that a face changed
+  /// something: when the calendar first shows a person's calendar first.
+  void _announceFocus() {
+    final id = _focus.leadId;
+    if (id == null || id == _focusedFor) return;
+    _focusedFor = id;
+    c.bus.publish(FaceCalendarFocused(id: id, name: _focus.leadName));
   }
 
   /// Someone touched the calendar or a dialog over it.
@@ -468,9 +484,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     setState(_take);
     _armIdle();
     _watch();
-    // Opened again: the people in front of it show at once.
+    // Opened again: the people in front of it show at once, with the card.
     _touchHold?.cancel();
+    _focusedFor = null;
     _onFocus();
+    _announceFocus();
   }
 
   @override

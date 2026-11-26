@@ -182,6 +182,20 @@ void main() {
     });
   });
 
+  test('the calendar put forward for a face shows the action card', () {
+    fakeAsync((async) {
+      build(async, {'ks.vision_match.show_arrivals': false});
+      see(async, [ana]);
+      bus.publish(const FaceCalendarFocused(id: 'ana', name: 'Ana'));
+      async.flushMicrotasks();
+      expect(cards.card.value?.action, FaceAction.calendarFocused);
+      expect(cards.card.value?.name, 'Ana');
+      expect(cards.card.value?.color, '#56814F');
+      pass(async, RecognitionCards.actionSpan);
+      expect(cards.card.value, isNull);
+    });
+  });
+
   test('both cards can be turned off', () {
     fakeAsync((async) {
       build(async, {

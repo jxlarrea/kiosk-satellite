@@ -2472,8 +2472,8 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingVisionMatchShowArrivalsDescription,
   'settingVisionMatchShowActionsTitle': (s) =>
       s.settingVisionMatchShowActionsTitle,
-  'settingVisionMatchShowActionsDescription': (s) =>
-      s.settingVisionMatchShowActionsDescription,
+  'settingVisionMatchShowActionsGeneralDescription': (s) =>
+      s.settingVisionMatchShowActionsGeneralDescription,
   'settingVisionMatchCardPositionTitle': (s) =>
       s.settingVisionMatchCardPositionTitle,
   'settingVisionMatchCardPositionDescription': (s) =>
@@ -2481,6 +2481,7 @@ final _messages = <String, String Function(UiStrings)>{
   'recognitionCardPinSkipped': (s) => s.recognitionCardPinSkipped,
   'recognitionCardLockdownOff': (s) => s.recognitionCardLockdownOff,
   'recognitionCardVoiceConfirmed': (s) => s.recognitionCardVoiceConfirmed,
+  'recognitionCardCalendarFocused': (s) => s.recognitionCardCalendarFocused,
   'settingVisionMatchPresenceSensorsTitle': (s) =>
       s.settingVisionMatchPresenceSensorsTitle,
   'settingVisionMatchPresenceSensorsDescription': (s) =>

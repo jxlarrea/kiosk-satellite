@@ -8895,8 +8895,8 @@ class UiStringsEs extends UiStrings {
       'Mostrar acciones con rostro';
 
   @override
-  String get settingVisionMatchShowActionsDescription =>
-      'Muestra una tarjeta pequeña cada vez que se omite el PIN, se desactiva el modo de bloqueo o se confirma una voz porque se reconoció un rostro.';
+  String get settingVisionMatchShowActionsGeneralDescription =>
+      'Muestra una tarjeta pequeña cada vez que algo cambia en el kiosko porque se reconoció un rostro.';
 
   @override
   String get settingVisionMatchCardPositionTitle => 'Posición de las tarjetas';
@@ -8913,6 +8913,9 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voz confirmada';
+
+  @override
+  String get recognitionCardCalendarFocused => 'Calendario destacado';
 
   @override
   String get settingVisionMatchPresenceSensorsTitle => 'Sensores de presencia';

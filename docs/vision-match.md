@@ -33,7 +33,7 @@ Vision Match runs on [Ground Control](ground-control.md), a Home Assistant app o
 | Enroll a face | | Pick a person from Ground Control or a new one to start the guided capture. See [Enrolling a Face](#enrolling-a-face). |
 | **Recognition cards** | | |
 | Show arrivals | on | Shows a card with the person's picture and name when someone is recognized at the kiosk. See [Recognition Cards](#recognition-cards). |
-| Show face actions | on | Shows a small card with the person's picture when the PIN is skipped, Lockdown Mode is turned off or a voice is confirmed because of their face. |
+| Show face actions | on | Shows a small card with the person's picture each time something on the kiosk changes because their face was recognized. |
 | Card position | Bottom left | The corner where both cards show. |
 | **Hand Gestures** | | |
 | Enable Hand Gestures | on | Runs palm and finger gesture detection on Ground Control. When it is off, gesture detection runs on the device. |
@@ -135,7 +135,7 @@ With Face Recognition on, cards on the kiosk screen show who was recognized and 
 | Setting | What it does |
 | --- | --- |
 | Show arrivals | On by default. Shows a card with the person's picture and name for 4 seconds when someone is recognized at the kiosk. It shows again for the same person only after they have been away for a minute. When several people are in view, the card is for the person with the highest score. |
-| Show face actions | On by default. Shows a small card for 3 seconds with the person's picture and what happened: **PIN skipped**, **Lockdown Mode off** or **Voice confirmed**. If the arrival card for the same person is up, the action shows on that card instead. |
+| Show face actions | On by default. Shows a small card for 3 seconds with the person's picture and what happened: **PIN skipped**, **Lockdown Mode off**, **Voice confirmed** or **Calendar focused**. If the arrival card for the same person is up, the action shows on that card instead. |
 | Card position | The corner where both cards show. Bottom left by default. |
 
 The picture is the person's Home Assistant picture when they are linked to a Home Assistant person on Ground Control's People page. Otherwise the card shows the first letter of their name in their color. While the camera preview shows, the cards show next to it in the preview's corner instead and a ring in the person's color appears around the preview.
