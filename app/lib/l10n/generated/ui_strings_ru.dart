@@ -10209,6 +10209,13 @@ class UiStringsRu extends UiStrings {
       'Позволяет заставке работать во время блокировки. «Прятать при движении» остаётся выключенным до снятия блокировки.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Разрешить Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Продолжает слушать слово пробуждения во время блокировки. Касания остаются заблокированными.';
+
+  @override
   String get settingLockdownExitGestureTitle => 'Жест выхода из блокировки';
 
   @override

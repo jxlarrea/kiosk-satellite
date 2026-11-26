@@ -1538,6 +1538,21 @@ const lockdownAllowScreensaver = SettingDef<bool>(
   dependsOn: 'lockdown.enabled',
 );
 
+/// Voice Satellite keeps listening while Lockdown Mode holds: the wake
+/// word engine stays on, and the answer shows under the shield, which
+/// still takes every touch. Off by default: a locked tablet answers
+/// neither touch nor voice.
+const lockdownAllowVoice = SettingDef<bool>(
+  key: 'lockdown.allow_voice',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow Voice Satellite',
+  description:
+      'Keeps listening for the wake word while locked. Touches stay blocked.',
+  category: 'Lockdown',
+  dependsOn: 'lockdown.enabled',
+);
+
 const lockdownExitGesture = SettingDef<String>(
   key: 'lockdown.exit_gesture',
   type: SettingType.select,
@@ -15500,6 +15515,7 @@ const List<SettingDef<Object>> allSettings = [
   lockdownAutoUnlockMinutes,
   lockdownBlackout,
   lockdownAllowScreensaver,
+  lockdownAllowVoice,
   lockdownExitGesture,
   lockdownFaceDisable,
   lockdownFacePeople,

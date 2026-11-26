@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Делает экран чёрным во время блокировки.",
   "settingLockdownAllowScreensaverTitle": "Разрешить заставку",
   "settingLockdownAllowScreensaverDescription": "Позволяет заставке работать во время блокировки. «Прятать при движении» остаётся выключенным до снятия блокировки.",
+  "settingLockdownAllowVoiceTitle": "Разрешить Voice Satellite",
+  "settingLockdownAllowVoiceDescription": "Продолжает слушать слово пробуждения во время блокировки. Касания остаются заблокированными.",
   "settingLockdownExitGestureTitle": "Жест выхода из блокировки",
   "settingLockdownExitGestureDescription": "Быстрые нажатия где угодно выключают режим блокировки, после PIN киоска, если он задан. Варианты с удержанием требуют удержания последнего нажатия. Если выключено, выключить сможет только удалённое администрирование или Home Assistant.",
   "lockdownGestureNone": "Выключено (только удалённо)",

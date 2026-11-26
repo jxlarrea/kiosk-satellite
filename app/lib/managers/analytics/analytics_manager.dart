@@ -982,6 +982,7 @@ class AnalyticsManager extends Manager {
       'gesture_actions': actions.toList()..sort(),
       'kiosk_mode': s.get(defs.kioskEnabled),
       'lockdown': s.get(defs.lockdownEnabled),
+      'lockdown_allow_voice': s.get(defs.lockdownAllowVoice),
       'app_launcher': s.get(defs.launcherEnabled),
       'home_launcher': s.get(defs.homeLauncherEnabled),
       'ha_kiosk_mode': s.get(defs.haKioskMode),

@@ -2973,6 +2973,9 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingLockdownAllowScreensaverTitle,
   'settingLockdownAllowScreensaverDescription': (s) =>
       s.settingLockdownAllowScreensaverDescription,
+  'settingLockdownAllowVoiceTitle': (s) => s.settingLockdownAllowVoiceTitle,
+  'settingLockdownAllowVoiceDescription': (s) =>
+      s.settingLockdownAllowVoiceDescription,
   'settingLockdownExitGestureTitle': (s) => s.settingLockdownExitGestureTitle,
   'settingLockdownExitGestureDescription': (s) =>
       s.settingLockdownExitGestureDescription,

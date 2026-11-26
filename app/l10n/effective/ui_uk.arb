@@ -38250,6 +38250,26 @@
       ]
     }
   },
+  "settingLockdownAllowVoiceTitle": "Дозволити Voice Satellite",
+  "@settingLockdownAllowVoiceTitle": {
+    "context": "Lockdown Mode > Allow Voice Satellite",
+    "description": "Setting label: the wake word keeps working while the screen is locked. Voice Satellite is a name: keep it unchanged.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Allow Voice Satellite"
+      ]
+    }
+  },
+  "settingLockdownAllowVoiceDescription": "Слухає слово активації під час блокування. Дотики залишаються заблокованими.",
+  "@settingLockdownAllowVoiceDescription": {
+    "context": "Lockdown Mode > Allow Voice Satellite",
+    "description": "Help below this setting. Use the same term for the wake word as elsewhere in the app.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Allow Voice Satellite"
+      ]
+    }
+  },
   "settingLockdownExitGestureTitle": "Жест виходу з блокування",
   "@settingLockdownExitGestureTitle": {
     "context": "Lockdown Mode > Lockdown exit gesture",

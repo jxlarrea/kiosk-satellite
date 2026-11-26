@@ -17709,6 +17709,18 @@ abstract class UiStrings {
   /// **'Lets the screensaver run while locked. Dismiss on motion stays deactivated until the lock lifts.'**
   String get settingLockdownAllowScreensaverDescription;
 
+  /// Setting label: the wake word keeps working while the screen is locked. Voice Satellite is a name: keep it unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Voice Satellite'**
+  String get settingLockdownAllowVoiceTitle;
+
+  /// Help below this setting. Use the same term for the wake word as elsewhere in the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps listening for the wake word while locked. Touches stay blocked.'**
+  String get settingLockdownAllowVoiceDescription;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

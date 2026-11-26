@@ -937,7 +937,8 @@ class WakeWordManager extends Manager
       }
       if (e.key == defs.wakeWordEnabled.key ||
           e.key == defs.wakeWordBackground.key ||
-          e.key == defs.lockdownEnabled.key) {
+          e.key == defs.lockdownEnabled.key ||
+          e.key == defs.lockdownAllowVoice.key) {
         _sync();
       } else if (e.key == defs.audioMicDevice.key) {
         // The engine reads its capture device when the mic opens, so a new
@@ -1716,8 +1717,11 @@ class WakeWordManager extends Manager
     // answer voice any more than touch. The engine stops (mic closed) and
     // comes back through this same sync when the mode lifts, exactly as if
     // the wake word toggle had been flipped, without touching the setting.
-    final shouldRun =
-        enabled && available && !_settings.get(defs.lockdownEnabled);
+    // Allow Voice Satellite keeps it listening under the lock.
+    final lockdownMutes =
+        _settings.get(defs.lockdownEnabled) &&
+        !_settings.get(defs.lockdownAllowVoice);
+    final shouldRun = enabled && available && !lockdownMutes;
     // A config that switched runners (vsWakeWord -> microWakeWord) leaves the
     // previous engine running and holding the mic. Stop it before starting the
     // new one, or two engines fight over the microphone.

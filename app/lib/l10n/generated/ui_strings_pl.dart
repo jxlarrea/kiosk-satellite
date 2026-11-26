@@ -10246,6 +10246,13 @@ class UiStringsPl extends UiStrings {
       'Wygaszacz ekranu może działać podczas blokady. Zamykanie wygaszacza po wykryciu ruchu pozostaje wyłączone do czasu zdjęcia blokady.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Zezwalaj na Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Nasłuchuje słowa wybudzającego podczas blokady. Dotyk pozostaje zablokowany.';
+
+  @override
   String get settingLockdownExitGestureTitle => 'Gest wyjścia z trybu blokady';
 
   @override

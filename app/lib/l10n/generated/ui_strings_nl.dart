@@ -10249,6 +10249,13 @@ class UiStringsNl extends UiStrings {
       'Laat de schermbeveiliging actief zijn terwijl het scherm is vergrendeld. Sluiten bij beweging blijft uitgeschakeld totdat de vergrendeling wordt opgeheven.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Voice Satellite toestaan';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Blijft luisteren naar het wekwoord terwijl het scherm is vergrendeld. Aanrakingen blijven geblokkeerd.';
+
+  @override
   String get settingLockdownExitGestureTitle =>
       'Afsluitgebaar voor vergrendelingsmodus';
 

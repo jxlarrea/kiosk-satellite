@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Podczas blokady ekran jest czarny.",
   "settingLockdownAllowScreensaverTitle": "Zezwalaj na wygaszacz ekranu",
   "settingLockdownAllowScreensaverDescription": "Wygaszacz ekranu może działać podczas blokady. Zamykanie wygaszacza po wykryciu ruchu pozostaje wyłączone do czasu zdjęcia blokady.",
+  "settingLockdownAllowVoiceTitle": "Zezwalaj na Voice Satellite",
+  "settingLockdownAllowVoiceDescription": "Nasłuchuje słowa wybudzającego podczas blokady. Dotyk pozostaje zablokowany.",
   "settingLockdownExitGestureTitle": "Gest wyjścia z trybu blokady",
   "settingLockdownExitGestureDescription": "Szybkie dotknięcia w dowolnym miejscu wyłączają tryb blokady, po podaniu PIN-u kiosku, jeśli został ustawiony. Warianty z przytrzymaniem wymagają przytrzymania ostatniego dotknięcia. Gdy gest jest wyłączony, tryb mogą wyłączyć tylko zdalna administracja lub Home Assistant.",
   "lockdownGestureNone": "Wyłączony (tylko zdalnie)",

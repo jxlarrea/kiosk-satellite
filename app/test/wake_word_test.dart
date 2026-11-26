@@ -341,6 +341,43 @@ void main() {
     expect(engine.running, isTrue);
   });
 
+  test('Lockdown Mode stops the engine unless Allow Voice Satellite keeps '
+      'it listening', () async {
+    await wakeWord.dispose();
+    await bus.dispose();
+    bus = EventBus();
+    commands = CommandRegistry(log);
+    settings = SettingsManager(bus, commands, log);
+    await settings.init();
+    final engine = _FakeEngine();
+    wakeWord = WakeWordManager(
+      bus,
+      commands,
+      log,
+      settings,
+      engines: {WakeWordEngineType.microWakeWord: engine},
+    );
+    await wakeWord.init();
+    await commands.execute('setWakeWordConfig', vsConfig);
+    Future<void> settle() async {
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    await settle();
+    expect(engine.running, isTrue);
+    await settings.set(defs.lockdownEnabled, true);
+    await settle();
+    expect(engine.running, isFalse);
+    await settings.set(defs.lockdownAllowVoice, true);
+    await settle();
+    expect(engine.running, isTrue);
+    await settings.set(defs.lockdownEnabled, false);
+    await settle();
+    expect(engine.running, isTrue);
+  });
+
   group('the self-heal after a handoff', () {
     // The page must call setWakeWordActive(true) when its turn ends. When it
     // never does (crash, navigation) the timer re-arms detection. It must not

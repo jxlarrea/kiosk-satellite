@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Pone la pantalla en negro mientras está bloqueada.",
   "settingLockdownAllowScreensaverTitle": "Permitir el protector de pantalla",
   "settingLockdownAllowScreensaverDescription": "Permite que el protector de pantalla funcione mientras la pantalla está bloqueada. La detección de movimiento no lo desactiva hasta que se quite el bloqueo.",
+  "settingLockdownAllowVoiceTitle": "Permitir Voice Satellite",
+  "settingLockdownAllowVoiceDescription": "Sigue escuchando la palabra de activación mientras la pantalla está bloqueada. Los toques siguen bloqueados.",
   "settingLockdownExitGestureTitle": "Gesto de salida del bloqueo",
   "settingLockdownExitGestureDescription": "Los toques rápidos en cualquier parte desactivan el modo de bloqueo, después de introducir el PIN del kiosko si hay uno. Las variantes que requieren mantener el toque necesitan que mantengas pulsado el último. Si se desactiva el gesto, solo la administración remota o Home Assistant pueden quitar el bloqueo.",
   "lockdownGestureNone": "Desactivado (solo de forma remota)",

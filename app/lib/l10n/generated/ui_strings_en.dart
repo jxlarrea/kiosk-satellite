@@ -10137,6 +10137,13 @@ class UiStringsEn extends UiStrings {
       'Lets the screensaver run while locked. Dismiss on motion stays deactivated until the lock lifts.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Allow Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Keeps listening for the wake word while locked. Touches stay blocked.';
+
+  @override
   String get settingLockdownExitGestureTitle => 'Lockdown exit gesture';
 
   @override

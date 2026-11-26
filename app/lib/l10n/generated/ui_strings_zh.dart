@@ -9684,6 +9684,12 @@ class UiStringsZh extends UiStrings {
       '锁定期间允许运行屏保。“检测到运动时关闭屏保”会停用，直到解除锁定。';
 
   @override
+  String get settingLockdownAllowVoiceTitle => '允许 Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription => '锁定期间继续监听唤醒词。触摸仍被阻止。';
+
+  @override
   String get settingLockdownExitGestureTitle => '锁定模式退出手势';
 
   @override
@@ -26289,6 +26295,12 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingLockdownAllowScreensaverDescription =>
       '锁定期间允许运行屏保。“检测到运动时关闭屏保”会停用，直到解除锁定。';
+
+  @override
+  String get settingLockdownAllowVoiceTitle => '允许 Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription => '锁定期间继续监听唤醒词。触摸仍被阻止。';
 
   @override
   String get settingLockdownExitGestureTitle => '锁定模式退出手势';

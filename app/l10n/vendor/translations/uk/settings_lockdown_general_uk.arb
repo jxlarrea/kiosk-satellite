@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Робить екран чорним під час блокування.",
   "settingLockdownAllowScreensaverTitle": "Дозволити заставку",
   "settingLockdownAllowScreensaverDescription": "Дозволяє заставці працювати під час блокування. Вимкнення за рухом залишається деактивованим, доки діє блокування.",
+  "settingLockdownAllowVoiceTitle": "Дозволити Voice Satellite",
+  "settingLockdownAllowVoiceDescription": "Слухає слово активації під час блокування. Дотики залишаються заблокованими.",
   "settingLockdownExitGestureTitle": "Жест виходу з блокування",
   "settingLockdownExitGestureDescription": "Швидкі дотики в будь-якому місці вимикають режим блокування після введення PIN-коду кіоска, якщо його встановлено. Варіанти з утриманням вимагають затискання останнього дотику. Якщо вимкнено, вимкнути його можна лише через віддалений адміністратор або Home Assistant.",
   "lockdownGestureNone": "Вимкнено (лише дистанційно)",

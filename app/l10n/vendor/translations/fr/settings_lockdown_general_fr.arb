@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Rend l'écran noir tant qu'il est verrouillé.",
   "settingLockdownAllowScreensaverTitle": "Autoriser l'économiseur d'écran",
   "settingLockdownAllowScreensaverDescription": "Permet à l'économiseur d'écran de fonctionner pendant le verrouillage. L'option « Fermer sur mouvement » reste désactivée tant que le verrouillage n'est pas levé.",
+  "settingLockdownAllowVoiceTitle": "Autoriser Voice Satellite",
+  "settingLockdownAllowVoiceDescription": "Continue d'écouter le mot de réveil pendant le verrouillage. Les touchers restent bloqués.",
   "settingLockdownExitGestureTitle": "Geste de sortie du verrouillage",
   "settingLockdownExitGestureDescription": "Des appuis rapides n'importe où désactivent le mode verrouillage, après le code PIN du kiosque s'il en existe un. Les variantes avec maintien nécessitent de maintenir le dernier appui. Si le geste est désactivé, le verrouillage ne peut être levé que depuis l'administration à distance ou Home Assistant.",
   "lockdownGestureNone": "Désactivé (à distance uniquement)",

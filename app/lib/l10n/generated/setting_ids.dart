@@ -1612,6 +1612,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingLockdownAllowScreensaverTitle",
     "description": "settingLockdownAllowScreensaverDescription",
   },
+  "lockdown.allow_voice": {
+    "title": "settingLockdownAllowVoiceTitle",
+    "description": "settingLockdownAllowVoiceDescription",
+  },
   "lockdown.exit_gesture": {
     "title": "settingLockdownExitGestureTitle",
     "description": "settingLockdownExitGestureDescription",

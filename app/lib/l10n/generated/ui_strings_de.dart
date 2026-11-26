@@ -10350,6 +10350,13 @@ class UiStringsDe extends UiStrings {
       'Erlaubt die Nutzung des Bildschirmschoners bei gesperrtem Bildschirm. Das Beenden bei Bewegung bleibt deaktiviert, bis die Sperre aufgehoben wird.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Voice Satellite zulassen';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Hört bei gesperrtem Bildschirm weiter auf das Aktivierungswort. Berührungen bleiben gesperrt.';
+
+  @override
   String get settingLockdownExitGestureTitle => 'Exit-Geste für den Sperrmodus';
 
   @override

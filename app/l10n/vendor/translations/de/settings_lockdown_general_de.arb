@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Schaltet den Bildschirm während der Sperre auf Schwarz.",
   "settingLockdownAllowScreensaverTitle": "Bildschirmschoner zulassen",
   "settingLockdownAllowScreensaverDescription": "Erlaubt die Nutzung des Bildschirmschoners bei gesperrtem Bildschirm. Das Beenden bei Bewegung bleibt deaktiviert, bis die Sperre aufgehoben wird.",
+  "settingLockdownAllowVoiceTitle": "Voice Satellite zulassen",
+  "settingLockdownAllowVoiceDescription": "Hört bei gesperrtem Bildschirm weiter auf das Aktivierungswort. Berührungen bleiben gesperrt.",
   "settingLockdownExitGestureTitle": "Exit-Geste für den Sperrmodus",
   "settingLockdownExitGestureDescription": "Schnelle Tippfolgen an beliebiger Stelle deaktivieren den Sperrmodus, nachdem gegebenenfalls die Kiosk-PIN eingegeben wurde. Varianten mit Halt-Geste erfordern, dass der letzte Tipp gedrückt gehalten wird. Ist die Geste deaktiviert, kann die Sperre nur über die Fernverwaltung oder Home Assistant aufgehoben werden.",
   "lockdownGestureNone": "Deaktiviert (nur per Fernverwaltung)",

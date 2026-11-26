@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "Maakt het scherm zwart zolang het is vergrendeld.",
   "settingLockdownAllowScreensaverTitle": "Schermbeveiliging toestaan",
   "settingLockdownAllowScreensaverDescription": "Laat de schermbeveiliging actief zijn terwijl het scherm is vergrendeld. Sluiten bij beweging blijft uitgeschakeld totdat de vergrendeling wordt opgeheven.",
+  "settingLockdownAllowVoiceTitle": "Voice Satellite toestaan",
+  "settingLockdownAllowVoiceDescription": "Blijft luisteren naar het wekwoord terwijl het scherm is vergrendeld. Aanrakingen blijven geblokkeerd.",
   "settingLockdownExitGestureTitle": "Afsluitgebaar voor vergrendelingsmodus",
   "settingLockdownExitGestureDescription": "Tik snel ergens op het scherm om de vergrendelingsmodus uit te schakelen, zo nodig na het invoeren van de kiosk-pincode. Bij varianten met vasthouden moet de laatste tik ingedrukt blijven. Als dit is uitgeschakeld, kan de modus alleen via beheer op afstand of Home Assistant worden beëindigd.",
   "lockdownGestureNone": "Uitgeschakeld (alleen op afstand)",

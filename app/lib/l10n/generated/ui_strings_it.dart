@@ -10289,6 +10289,13 @@ class UiStringsIt extends UiStrings {
       'Consente al salvaschermo di funzionare durante il blocco. L\'impostazione Chiudi al rilevamento del movimento resta disattivata finché il blocco non viene rimosso.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Consenti Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Continua ad ascoltare la parola di attivazione durante il blocco. I tocchi restano bloccati.';
+
+  @override
   String get settingLockdownExitGestureTitle =>
       'Gesto di uscita dalla modalità blocco';
 

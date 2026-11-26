@@ -8,6 +8,8 @@
   "settingLockdownBlackoutDescription": "锁定时将屏幕变为黑色。",
   "settingLockdownAllowScreensaverTitle": "允许屏保",
   "settingLockdownAllowScreensaverDescription": "锁定期间允许运行屏保。“检测到运动时关闭屏保”会停用，直到解除锁定。",
+  "settingLockdownAllowVoiceTitle": "允许 Voice Satellite",
+  "settingLockdownAllowVoiceDescription": "锁定期间继续监听唤醒词。触摸仍被阻止。",
   "settingLockdownExitGestureTitle": "锁定模式退出手势",
   "settingLockdownExitGestureDescription": "在任意位置快速点击可退出锁定模式。设置了 Kiosk PIN 码时，还需输入 PIN 码。选择带长按的手势时，最后一次点击需保持按住。禁用退出手势后，只能通过远程管理或 Home Assistant 退出。",
   "lockdownGestureNone": "禁用（仅远程）",

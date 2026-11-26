@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Voice Satellite in Lockdown Mode.** A new **Allow Voice Satellite** switch on the Lockdown Mode page keeps listening for the wake word while the screen is locked. The answer shows under the shield, which still blocks every touch. With **Blackout screen** on, the answer is only heard. It is off by default, so a locked tablet still answers neither touch nor voice. See [Lockdown Mode](docs/kiosk.md#lockdown-mode).
+
 ### Changed
 - **Voice Match and Vision Match in the README.** The Ground Control section now has a Voice Match entry with the Isolation demo video and a Vision Match entry with a Face Recognition demo.
 

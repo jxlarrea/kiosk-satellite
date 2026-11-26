@@ -10312,6 +10312,13 @@ class UiStringsEs extends UiStrings {
       'Permite que el protector de pantalla funcione mientras la pantalla está bloqueada. La detección de movimiento no lo desactiva hasta que se quite el bloqueo.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Permitir Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Sigue escuchando la palabra de activación mientras la pantalla está bloqueada. Los toques siguen bloqueados.';
+
+  @override
   String get settingLockdownExitGestureTitle => 'Gesto de salida del bloqueo';
 
   @override

@@ -10231,6 +10231,13 @@ class UiStringsUk extends UiStrings {
       'Дозволяє заставці працювати під час блокування. Вимкнення за рухом залишається деактивованим, доки діє блокування.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Дозволити Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Слухає слово активації під час блокування. Дотики залишаються заблокованими.';
+
+  @override
   String get settingLockdownExitGestureTitle => 'Жест виходу з блокування';
 
   @override

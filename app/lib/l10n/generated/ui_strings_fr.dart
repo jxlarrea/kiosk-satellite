@@ -10310,6 +10310,13 @@ class UiStringsFr extends UiStrings {
       'Permet à l\'économiseur d\'écran de fonctionner pendant le verrouillage. L\'option « Fermer sur mouvement » reste désactivée tant que le verrouillage n\'est pas levé.';
 
   @override
+  String get settingLockdownAllowVoiceTitle => 'Autoriser Voice Satellite';
+
+  @override
+  String get settingLockdownAllowVoiceDescription =>
+      'Continue d\'écouter le mot de réveil pendant le verrouillage. Les touchers restent bloqués.';
+
+  @override
   String get settingLockdownExitGestureTitle =>
       'Geste de sortie du verrouillage';
 
