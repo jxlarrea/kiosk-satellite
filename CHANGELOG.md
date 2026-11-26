@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **Recognition cards change their line smoothly.** When an action comes while a card is up, or ends and the card goes back to **Recognized**, the old line rolls up and fades out while the new one rolls in from below and the card eases to its new width. Before, the line switched at once.
+
+### Fixed
+- **Two action cards showed when a face turned Lockdown Mode off.** With the camera preview on, the face that turned Lockdown Mode off and dismissed the screensaver showed the **Lockdown Mode off** card beside the preview and in the card corner at once. The action came a moment before the preview's first frame, and the corner card only stepped aside once a frame was there. It now steps aside as soon as a preview is on its way.
+
 ## v2026.11.33 - 2026-11-26
 
 ### Added

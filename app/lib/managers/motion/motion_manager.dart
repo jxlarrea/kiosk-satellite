@@ -345,6 +345,15 @@ class MotionManager extends Manager {
   /// (see [FacePreviewFrame]).
   final facePreview = ValueNotifier<FacePreviewFrame?>(null);
 
+  /// A camera preview is on its way or showing, from the moment a face
+  /// asks for one until it ends. The recognition cards step aside for it
+  /// before its first frame lands, so a card never shows in its corner
+  /// and beside the preview at once. It goes back to false when no frame
+  /// comes within [previewFirstFrame].
+  final previewComing = ValueNotifier<bool>(false);
+  Timer? _previewWait;
+  static const previewFirstFrame = Duration(seconds: 1);
+
   /// Whether a session should ask for the preview: the switch, on a
   /// session that looks for faces (the only thing that can open the
   /// window). The native side sizes its analysis stream up for it.
@@ -1623,8 +1632,14 @@ class MotionManager extends Manager {
     _previewHold?.cancel();
     _previewHold = Timer(span, () {
       _previewHold = null;
-      facePreview.value = null;
+      _previewOver();
       _sync();
+    });
+    previewComing.value = true;
+    _previewWait?.cancel();
+    _previewWait = Timer(previewFirstFrame, () {
+      _previewWait = null;
+      if (facePreview.value == null) previewComing.value = false;
     });
     unawaited(
       NativeMotion.showPreview(span).catchError((Object e) {
@@ -1637,7 +1652,14 @@ class MotionManager extends Manager {
     if (_previewHold == null) return;
     _previewHold!.cancel();
     _previewHold = null;
+    _previewOver();
+  }
+
+  void _previewOver() {
+    _previewWait?.cancel();
+    _previewWait = null;
     facePreview.value = null;
+    previewComing.value = false;
   }
 
   /// Open the hand gesture tester: see [handTest]. A session already up
@@ -1679,7 +1701,9 @@ class MotionManager extends Manager {
     } catch (_) {}
     _pauseTimer?.cancel();
     _stop();
+    _previewWait?.cancel();
     facePreview.dispose();
+    previewComing.dispose();
     handTest.dispose();
     _presence.dispose();
   }

@@ -273,5 +273,49 @@ void main() {
       // The small card has no name, only the picture.
       expect(find.text('Ana'), findsNothing);
     });
+
+    testWidgets('rolls the old line out as the new one comes in', (
+      tester,
+    ) async {
+      await pumpOverlay(tester);
+      cards.card.value = const RecognitionCard(
+        id: 'ana',
+        name: 'Ana',
+        arrival: true,
+      );
+      await tester.pumpAndSettle();
+      cards.card.value = const RecognitionCard(
+        id: 'ana',
+        name: 'Ana',
+        action: FaceAction.lockdownOff,
+        arrival: true,
+      );
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.text('Recognized'), findsOneWidget);
+      expect(find.text('Lockdown Mode off'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Recognized'), findsNothing);
+      expect(find.text('Lockdown Mode off'), findsOneWidget);
+    });
+
+    testWidgets('steps aside for a camera preview on its way', (tester) async {
+      await pumpOverlay(tester);
+      double opacity() =>
+          tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity;
+      // A face turns Lockdown Mode off, then dismisses the screensaver,
+      // which asks for the preview before its first frame lands.
+      cards.card.value = const RecognitionCard(
+        id: 'ana',
+        name: 'Ana',
+        action: FaceAction.lockdownOff,
+      );
+      motion.previewComing.value = true;
+      await tester.pumpAndSettle();
+      expect(opacity(), 0);
+      // No preview: the card shows in its corner.
+      motion.previewComing.value = false;
+      await tester.pumpAndSettle();
+      expect(opacity(), 1);
+    });
   });
 }

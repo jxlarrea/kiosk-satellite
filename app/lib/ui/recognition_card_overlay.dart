@@ -157,12 +157,52 @@ class _Ring extends CustomPainter {
 }
 
 /// Under the name on the arrival card: Recognized, or the Face Recognition
-/// icon and the action that came while the card is up.
+/// icon and the action that came while the card is up. A change rolls the
+/// old line up and out and the new one in from below, and the card eases
+/// to the new width. [end] lines the lines up on their right edge, for a
+/// card whose text sits on the left of the picture.
 Widget recognitionSubtitle(
   BuildContext context,
   FaceAction? action,
-  double fontSize,
-) {
+  double fontSize, {
+  bool end = false,
+}) {
+  final key = ValueKey<FaceAction?>(action);
+  return AnimatedSize(
+    duration: const Duration(milliseconds: 320),
+    curve: Curves.easeInOutCubic,
+    alignment: end ? Alignment.centerRight : Alignment.centerLeft,
+    child: AnimatedSwitcher(
+      duration: const Duration(milliseconds: 320),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: end ? Alignment.centerRight : Alignment.centerLeft,
+        children: [...previous, ?current],
+      ),
+      transitionBuilder: (child, animation) {
+        // The new line comes up from below and the old one leaves upward.
+        final coming = child.key == key;
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(0, coming ? 0.6 : -0.6),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: KeyedSubtree(
+        key: key,
+        child: _subtitle(context, action, fontSize),
+      ),
+    ),
+  );
+}
+
+Widget _subtitle(BuildContext context, FaceAction? action, double fontSize) {
   if (action == null) {
     return Text(
       l10n(context).facePreviewRecognized,
@@ -184,8 +224,9 @@ Widget recognitionSubtitle(
 
 /// Vision Match > Recognition cards on screen, over everything: the
 /// arrival card and the action card in their corner
-/// ([defs.visionMatchCardPosition]). While the camera preview shows, the
-/// preview draws the card beside itself instead and this one steps aside.
+/// ([defs.visionMatchCardPosition]). While the camera preview shows or is
+/// on its way, the preview draws the card beside itself instead and this
+/// one steps aside.
 /// It answers no touch.
 class RecognitionCardOverlay extends StatefulWidget {
   const RecognitionCardOverlay({
@@ -216,6 +257,7 @@ class _RecognitionCardOverlayState extends State<RecognitionCardOverlay> {
     super.initState();
     widget.cards.card.addListener(_changed);
     widget.motion.facePreview.addListener(_changed);
+    widget.motion.previewComing.addListener(_changed);
     _changed();
   }
 
@@ -223,6 +265,7 @@ class _RecognitionCardOverlayState extends State<RecognitionCardOverlay> {
   void dispose() {
     widget.cards.card.removeListener(_changed);
     widget.motion.facePreview.removeListener(_changed);
+    widget.motion.previewComing.removeListener(_changed);
     super.dispose();
   }
 
@@ -242,7 +285,8 @@ class _RecognitionCardOverlayState extends State<RecognitionCardOverlay> {
     if (card == null) return const SizedBox.shrink();
     final shown =
         widget.cards.card.value != null &&
-        widget.motion.facePreview.value == null;
+        widget.motion.facePreview.value == null &&
+        !widget.motion.previewComing.value;
     final corner = widget.settings.get(defs.visionMatchCardPosition);
     final top = corner.startsWith('top');
     final left = corner.endsWith('left');

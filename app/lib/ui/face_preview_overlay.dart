@@ -411,7 +411,7 @@ class _NameCard extends StatelessWidget {
             ),
           ),
         ),
-        recognitionSubtitle(context, action, 13.5 * scale),
+        recognitionSubtitle(context, action, 13.5 * scale, end: left),
       ],
     );
     final letter = Center(
