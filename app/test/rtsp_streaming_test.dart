@@ -403,14 +403,19 @@ void main() {
       await settle();
       expect(stream?['faces'], true);
       expect(stream?['fingers'], true);
+      // Lockdown Mode holds the hand looks live: the session keeps its
+      // setup, RTSP and detectors included, with no restart.
+      final before = stream;
       await settings.set(defs.lockdownEnabled, true);
       await settle();
+      expect(identical(stream, before), isTrue);
       expect(stream?['rtsp'], true);
       expect(stream?['motion'], true);
       expect(stream?['faces'], true);
-      expect(stream?['fingers'], false);
+      expect(stream?['fingers'], true);
       await settings.set(defs.lockdownEnabled, false);
       await settle();
+      expect(identical(stream, before), isTrue);
       expect(stream?['fingers'], true);
     },
   );

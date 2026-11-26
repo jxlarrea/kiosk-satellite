@@ -886,6 +886,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (!counted && _faceCounts && _faceUnnamed != null) _onFace();
     });
     bus.on<FaceDetected>().listen((_) => _onFace());
+    bus.on<FaceLockdownChanged>().listen((e) {
+      final id = e.id;
+      if (!e.locked && id != null) _lifted = (id: id, at: clock());
+    });
     bus.on<PersonDetected>().listen((e) {
       // The device's own person sensor (discussion #353), under
       // Proximity's rules: lockdown holds, the postpone switch extends
@@ -1025,12 +1029,14 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           _resetIdleTimer();
         }
         // Lockdown Mode went off right after a face, most often the face
-        // that turned it off: that face dismisses the screensaver now.
+        // that turned it off (Disable Lockdown Mode for): that face
+        // dismisses the screensaver now, without waiting for another look.
         final seen = _faceUnderLockdown;
         _faceUnderLockdown = null;
         if (e.value == false &&
-            seen != null &&
-            clock().difference(seen) <= _faceUnderLockdownFor) {
+            ((seen != null &&
+                    clock().difference(seen) <= _faceUnderLockdownFor) ||
+                _liftedFor != null)) {
           _onFace();
         }
       }
@@ -1640,6 +1646,31 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   DateTime? _faceUnderLockdown;
   static const _faceUnderLockdownFor = Duration(seconds: 2);
 
+  /// Who Disable Lockdown Mode for turned Lockdown Mode off for, and when
+  /// (FaceLockdownChanged). They count as in view for Detect faces for
+  /// [_faceUnderLockdownFor]: turning Lockdown Mode off can restart the
+  /// camera (it gates finger gestures), which clears the names in view,
+  /// and the screensaver then waited for the next look to name them.
+  ({String id, DateTime at})? _lifted;
+
+  /// [_lifted]'s person while it holds.
+  String? get _liftedFor {
+    final lifted = _lifted;
+    if (lifted == null) return null;
+    if (clock().difference(lifted.at) > _faceUnderLockdownFor) {
+      _lifted = null;
+      return null;
+    }
+    return lifted.id;
+  }
+
+  /// The people in view for Detect faces: Face Recognition's, and the
+  /// person Lockdown Mode just went off for.
+  Set<String> get _countedInView {
+    final lifted = _liftedFor;
+    return lifted == null ? _facesInView : {..._facesInView, lifted};
+  }
+
   /// Someone is looking at the kiosk: dismiss the screensaver or postpone
   /// the next one, under the Face Detection settings.
   void _onFace() {
@@ -1711,10 +1742,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // Recognized people, before the option went: the same as Chosen
       // people with nobody chosen.
       case 'recognized':
-        return _facesInView.isNotEmpty;
+        return _countedInView.isNotEmpty;
       case 'people':
         return defs.chosenInView(
-          _facesInView,
+          _countedInView,
           _settings.get(defs.screensaverFacePeople),
         );
       default:

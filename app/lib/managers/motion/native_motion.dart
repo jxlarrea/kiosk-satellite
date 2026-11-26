@@ -20,6 +20,14 @@ class NativeMotion {
   static Future<void> setPaused(bool paused) =>
       _control.invokeMethod<void>('setPaused', {'paused': paused});
 
+  /// Hold (or release) the hand looks of a running session without a
+  /// rebind: a session set up for finger gestures keeps its frame rate
+  /// and analysis size but looks for no hand. Lockdown Mode and kiosk
+  /// mode's Disable Gestures hold them. Throws where the plugin is
+  /// missing; callers treat that as best effort.
+  static Future<void> setHandsHeld(bool held) =>
+      _control.invokeMethod<void>('setHandsHeld', {'held': held});
+
   /// Open the camera preview window on a running session (discussion
   /// #371): for the next [duration] the native side also encodes the
   /// analyzed frames as small JPEGs and emits them as preview ticks
@@ -64,6 +72,7 @@ class NativeMotion {
     bool remoteHands = false,
     bool enroll = false,
     bool paused = false,
+    bool handsHeld = false,
     bool preview = false,
     bool rtsp = false,
     Map<String, Object>? intercom,
@@ -106,6 +115,9 @@ class NativeMotion {
           // rebound mid-turn, on a native side recreated with the
           // Activity, starts idle like the one it replaces.
           'paused': paused,
+          // Whether the hand looks are held as the session starts (see
+          // [setHandsHeld]).
+          'handsHeld': handsHeld,
           // The camera preview (discussion #371) may be asked for on this
           // session (see [showPreview]): the analysis stream is sized up
           // for it, since its frames are what the preview is made of.

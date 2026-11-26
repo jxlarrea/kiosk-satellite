@@ -162,6 +162,27 @@ void main() {
     });
   });
 
+  test('the person Lockdown Mode goes off for dismisses it even after the '
+      'camera restart cleared the names', () {
+    for (final (who, gone) in [('ana', true), ('leo', false)]) {
+      fakeAsync((async) {
+        up(async, lock: false, motion: false);
+        settings.set(defs.lockdownAllowScreensaver, true);
+        settings.set(defs.lockdownEnabled, true);
+        async.flushMicrotasks();
+        // As Disable Lockdown Mode for sends it, then the restart that
+        // drops the names, then the switch: no new look in between.
+        bus.publish(FaceLockdownChanged(locked: false, name: who, id: who));
+        bus.publish(const FaceInViewChanged());
+        async.flushMicrotasks();
+        settings.set(defs.lockdownEnabled, false);
+        async.flushMicrotasks();
+        // Only Ana was chosen under Detect faces.
+        expect(saver.isActive, !gone, reason: who);
+      });
+    }
+  });
+
   test('a face long before Lockdown Mode goes off does not count', () {
     fakeAsync((async) {
       up(async, lock: false, motion: false);

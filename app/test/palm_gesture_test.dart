@@ -24,6 +24,7 @@ void main() {
   Map<Object?, Object?>? lastArgs;
   MockStreamHandlerEventSink? sink;
   final pauses = <bool>[];
+  final holds = <bool>[];
 
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -32,6 +33,9 @@ void main() {
           (call) async {
             if (call.method == 'setPaused') {
               pauses.add((call.arguments as Map)['paused'] as bool);
+            }
+            if (call.method == 'setHandsHeld') {
+              holds.add((call.arguments as Map)['held'] as bool);
             }
             return null;
           },
@@ -67,6 +71,7 @@ void main() {
     lastArgs = null;
     sink = null;
     pauses.clear();
+    holds.clear();
     SharedPreferences.setMockInitialValues(initial);
     bus = EventBus();
     final log = Logger();
@@ -179,7 +184,8 @@ void main() {
     () async {
       await build({...handOnly, 'ks.lockdown.enabled': true});
       await pump();
-      expect(motion.palmEnabled, isFalse);
+      // The leg is held, not gone: a held hand leg alone keeps no camera.
+      expect(motion.palmEnabled, isTrue);
       expect(listens, 0);
 
       await settings.set(defs.lockdownEnabled, false);
@@ -192,6 +198,41 @@ void main() {
       expect(sink, isNull);
     },
   );
+
+  test('Lockdown Mode holds the hand looks of a running camera without '
+      'restarting it', () async {
+    await build({...handOnly, 'ks.motion.sensor': true});
+    await pump();
+    expect(listens, 1);
+    expect(lastArgs?['fingers'], isTrue);
+    expect(lastArgs?['handsHeld'], isFalse);
+    final palms = <PalmDetected>[];
+    bus.on<PalmDetected>().listen(palms.add);
+
+    await settings.set(defs.lockdownEnabled, true);
+    await pump();
+    await settings.set(defs.lockdownEnabled, false);
+    await pump();
+    // Held, then released, on the same session.
+    expect(listens, 1);
+    expect(sink, isNotNull);
+    expect(holds, [true, false]);
+    // The hand being tracked is reported gone when the looks are held.
+    expect(palms.single.hands, 0);
+  });
+
+  test('a session started under Lockdown Mode starts with the hand looks '
+      'held', () async {
+    await build({
+      ...handOnly,
+      'ks.motion.sensor': true,
+      'ks.lockdown.enabled': true,
+    });
+    await pump();
+    expect(listens, 1);
+    expect(lastArgs?['fingers'], isTrue);
+    expect(lastArgs?['handsHeld'], isTrue);
+  });
 
   test('the sensor leg holding the camera restarts it with hands when a '
       'mapping appears', () async {

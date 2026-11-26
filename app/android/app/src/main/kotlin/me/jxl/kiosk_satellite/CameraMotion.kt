@@ -339,6 +339,13 @@ class CameraMotion(
      *  [analysisExecutor]. */
     @Volatile private var paused = false
 
+    /** Lockdown Mode or kiosk mode's Disable Gestures holds the finger
+     *  gestures: a session set up for hands keeps its frame rate and
+     *  analysis size but looks for no hand, here or on Ground Control.
+     *  Lifting it is instant, with no rebind. Set from the main thread,
+     *  read on [analysisExecutor]. */
+    @Volatile private var handsHeld = false
+
     private val rtspChannel = MethodChannel(messenger, "kiosk_satellite/camera/rtsp")
     private var rtsp: CameraRtspServer? = null
     private var onvifDiscovery: CameraOnvifDiscovery? = null
@@ -851,6 +858,10 @@ class CameraMotion(
                 setPaused((call.arguments as? Map<*, *>)?.get("paused") == true)
                 result.success(null)
             }
+            "setHandsHeld" -> {
+                setHandsHeld((call.arguments as? Map<*, *>)?.get("held") == true)
+                result.success(null)
+            }
             // The barcode scanner takes the camera next, and its own
             // CameraX binding must not meet a release still on its way.
             "release" -> {
@@ -906,6 +917,15 @@ class CameraMotion(
         if (on) onAnalysis { clearPresence() }
     }
 
+    /** Hold or release the hand looks (see [handsHeld]). Holding forgets the
+     *  tracked hand, as a pause does. */
+    private fun setHandsHeld(on: Boolean) {
+        if (handsHeld == on) return
+        handsHeld = on
+        Log.i(TAG, if (on) "hands held" else "hands released")
+        if (on) onAnalysis { clearPresence() }
+    }
+
     /** Forget the tracked hand and the recent-activity gate. Analyzer thread. */
     private fun clearPresence() {
         palmCount = 0
@@ -955,6 +975,7 @@ class CameraMotion(
         // Controls remain on the UI thread so a later voice pause or preview
         // command cannot be overwritten by queued analyzer configuration.
         paused = args?.get("paused") == true
+        handsHeld = args?.get("handsHeld") == true
         previewUntilNs = 0L
         onAnalysis {
             if (listenGeneration != myListen) return@onAnalysis
@@ -1684,7 +1705,9 @@ class CameraMotion(
             // ... and not at all while a voice interaction runs (see
             // [paused]): the turn needs the cores, and nothing the
             // detectors could find matters until it ends.
-            if ((facesWanted || palmsWanted) && !paused) {
+            if ((facesWanted || (palmsWanted && !handsHeld)) && !paused) {
+                // The hand looks, unless held (see [handsHeld]).
+                val hands = fingersWanted && !handsHeld
                 val face = if (facesWanted && !remoteFaces) {
                     faceDetector ?: FaceDetector(context).also { faceDetector = it }
                 } else null
@@ -1702,7 +1725,7 @@ class CameraMotion(
                 // 20 or more in every measured raise; at a pinned frame rate
                 // the noise model settles so low that pixel jitter of 1 or 2
                 // trips 8 to 10 cells, so the magnitude has to be real too.
-                val bigChange = palmsWanted && !illumination && changed >= BURST_CELLS &&
+                val bigChange = hands && !illumination && changed >= BURST_CELLS &&
                     changedMagnitude / changed >= BURST_MAGNITUDE
                 if (bigChange) {
                     if (lastBigChangeNs == 0L || now - lastBigChangeNs > PALM_ENTRY_GAP_NS) {
@@ -1718,7 +1741,7 @@ class CameraMotion(
                 // by their latency, and the landmark stage keeps the
                 // looks from costing anything but time.
                 val duty = when {
-                    sprinting || (fingersWanted && (entering || palmCount > 0)) -> PALM_SPRINT_DUTY
+                    sprinting || (hands && (entering || palmCount > 0)) -> PALM_SPRINT_DUTY
                     palmCount > 0 || entering -> PALM_ACTIVE_DUTY
                     else -> VISION_DUTY
                 }
@@ -1740,7 +1763,7 @@ class CameraMotion(
                 // past that window before a look confirmed it, still gets
                 // its paced looks while anything at all changed recently:
                 // gating on the large change alone missed half the shows.
-                val worthIt = if (fingersWanted) {
+                val worthIt = if (hands) {
                     entering || palmCount > 0 || now - lastActivityNs <= window
                 } else {
                     now - lastActivityNs <= window ||
@@ -1751,7 +1774,7 @@ class CameraMotion(
                 // frame, after the same gate, at most one waiting at a time.
                 var remoteFace = false
                 var remoteHand = false
-                if (fingersWanted && worthIt) {
+                if (hands && worthIt) {
                     // The tracker's graph runs on several cores per frame
                     // (145% of one core when offered every frame), so
                     // frames are offered at a pace: four a second while a
@@ -1927,7 +1950,7 @@ class CameraMotion(
      */
     private fun hurriedFaceLook(image: ImageProxy, now: Long, sink: EventChannel.EventSink) {
         if (!remoteFaces || !facesWanted || paused) return
-        if (remoteHands && fingersWanted) return
+        if (remoteHands && fingersWanted && !handsHeld) return
         if (!groundControl.hurried(now)) return
         val every = max(GroundControlVision.UNNAMED_INTERVAL_NS, groundControl.faceIntervalNs)
         if (now - lastVisionRunNs < every || groundControl.busy(now)) return
@@ -2028,7 +2051,7 @@ class CameraMotion(
         val sink = activeSink ?: return
         // A result the tracker still had in flight at the pause would
         // resurrect the presence clearPresence just forgot.
-        if (paused) return
+        if (paused || handsHeld) return
         val now = System.nanoTime()
         var fingers = -1
         if (hands > 0 && read != null) {

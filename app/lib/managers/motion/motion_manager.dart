@@ -280,19 +280,45 @@ class MotionManager extends Manager {
       _settings.get(defs.screensaverEnabled) &&
       _settings.get(defs.cameraEnabled);
 
-  /// The hand leg: a gesture mapping wants a raised hand, the camera is
-  /// on, and gestures are not suppressed (Lockdown Mode, kiosk mode's
-  /// Disable Gestures). Screen-on is applied where the leg is consulted,
-  /// like the postpone legs: nobody raises a hand at a dark panel.
+  /// The hand leg: a gesture mapping wants a raised hand and the camera
+  /// is on. Screen-on is applied where the leg is consulted, like the
+  /// postpone legs: nobody raises a hand at a dark panel. Lockdown Mode
+  /// and kiosk mode's Disable Gestures only hold it ([_handsHeld]).
   bool get palmEnabled =>
       _support.hands &&
       hasFingersTrigger(
         decodeGestureMappings(_settings.get(defs.gestureMappings)),
       ) &&
-      _settings.get(defs.cameraEnabled) &&
-      !_settings.get(defs.lockdownEnabled) &&
-      !(_settings.get(defs.kioskEnabled) &&
+      _settings.get(defs.cameraEnabled);
+
+  /// Lockdown Mode or kiosk mode's Disable Gestures suppresses the finger
+  /// gestures. A session set up for hands keeps that setup and the native
+  /// side stops looking (NativeMotion.setHandsHeld), so turning either off
+  /// costs no camera restart. Turning Lockdown Mode off for a face used to
+  /// restart the camera, and the screensaver waited seconds for the next
+  /// look. A held hand leg alone keeps no camera running.
+  bool get _handsHeld =>
+      _settings.get(defs.lockdownEnabled) ||
+      (_settings.get(defs.kioskEnabled) &&
           _settings.get(defs.kioskDisableGestures));
+
+  /// What the running session was last told about [_handsHeld].
+  bool _streamHandsHeld = false;
+
+  void _syncHandsHeld() {
+    final held = _handsHeld;
+    if (_camera == null || held == _streamHandsHeld) return;
+    _streamHandsHeld = held;
+    log.info(name, held ? 'hand looks held' : 'hand looks released');
+    unawaited(
+      NativeMotion.setHandsHeld(held).catchError((Object e) {
+        log.debug(name, 'setHandsHeld($held) failed: $e');
+      }),
+    );
+    if (held && _streamPalms) {
+      bus.publish(const PalmDetected(hands: 0, fingers: null));
+    }
+  }
 
   /// What the running native stream was asked to emit, so a change in
   /// any (the screensaver starting under a face-only setup while the
@@ -868,10 +894,11 @@ class MotionManager extends Manager {
         unawaited(_ensurePermission());
       }
       // The hand leg's gates only change whether palms are wanted, which
-      // _sync's own check restarts the session for. Restarting anyway cost
-      // a camera rebind and the names in view each time Lockdown Mode
-      // went off for a face, so the screensaver under it waited about 3
-      // seconds for the next look.
+      // _sync's own check restarts the session for, or hold the hand looks,
+      // which a running session takes live ([_syncHandsHeld]). Restarting
+      // anyway cost a camera rebind and the names in view each time
+      // Lockdown Mode went off for a face, so the screensaver under it
+      // waited about 3 seconds for the next look.
       final handGate =
           e.key == defs.gestureMappings.key ||
           e.key == defs.lockdownEnabled.key ||
@@ -879,6 +906,7 @@ class MotionManager extends Manager {
           e.key == defs.kioskDisableGestures.key;
       if (!handGate) _stop();
       _sync();
+      _syncHandsHeld();
     });
 
     commands.register(
@@ -970,7 +998,7 @@ class MotionManager extends Manager {
           _plugin != null ||
           _enrolling ||
           _sensorEnabled ||
-          _wantPalms ||
+          (_wantPalms && !_handsHeld) ||
           _previewHolding ||
           (_recognize && _screenOn) ||
           _presenceSensors ||
@@ -1059,6 +1087,7 @@ class MotionManager extends Manager {
       _streamMotion = motion;
       _streamFaces = faces;
       _streamPalms = palms;
+      _streamHandsHeld = _handsHeld;
       _streamRemoteFaces = remoteFaces;
       _streamRemoteHands = remoteHands;
       _streamEnroll = _enrolling;
@@ -1072,7 +1101,7 @@ class MotionManager extends Manager {
         'camera on (fps=$fps sensitivity=$sensitivity cam=$camera'
         '${startDelay > 0 ? ' delay=${startDelay}s' : ''}'
         '${faces ? ' faces>=${(faceMinWidth * 100).round()}%' : ''}'
-        '${palms ? ' hands' : ''}'
+        '${palms ? (_streamHandsHeld ? ' hands held' : ' hands') : ''}'
         '${remoteFaces ? ' faces on Ground Control' : ''}'
         '${remoteHands ? ' hands on Ground Control' : ''}'
         '${preview ? ' preview' : ''}'
@@ -1098,6 +1127,7 @@ class MotionManager extends Manager {
             enroll: _streamEnroll,
             remoteHands: remoteHands,
             paused: _voiceTurn,
+            handsHeld: _streamHandsHeld,
             preview: preview,
             rtsp: _streamRtsp,
             intercom: _streamIntercom,
