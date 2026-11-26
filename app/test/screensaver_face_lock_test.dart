@@ -69,6 +69,9 @@ void main() {
     settings.init();
     async.flushMicrotasks();
     saver = ScreensaverManager(bus, commands, log, settings);
+    // The manager's clock follows the fake one.
+    final start = DateTime(2026, 11, 25);
+    saver.clock = () => start.add(async.elapsed);
     saver.init();
     async.flushMicrotasks();
     async.elapse(const Duration(seconds: 6));
@@ -137,6 +140,39 @@ void main() {
       saver.notifyActivity('touch');
       async.flushMicrotasks();
       expect(saver.isActive, isFalse);
+    });
+  });
+
+  test('the face that turns Lockdown Mode off dismisses the screensaver at '
+      'once', () {
+    fakeAsync((async) {
+      up(async, lock: false, motion: false);
+      settings.set(defs.lockdownAllowScreensaver, true);
+      settings.set(defs.lockdownEnabled, true);
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue);
+      // Lockdown Mode holds the face.
+      face(async, ana);
+      expect(saver.isActive, isTrue);
+      // Disable Lockdown Mode for turns it off on that face.
+      async.elapse(const Duration(milliseconds: 300));
+      settings.set(defs.lockdownEnabled, false);
+      async.flushMicrotasks();
+      expect(saver.isActive, isFalse);
+    });
+  });
+
+  test('a face long before Lockdown Mode goes off does not count', () {
+    fakeAsync((async) {
+      up(async, lock: false, motion: false);
+      settings.set(defs.lockdownAllowScreensaver, true);
+      settings.set(defs.lockdownEnabled, true);
+      async.flushMicrotasks();
+      face(async, ana);
+      async.elapse(const Duration(seconds: 3));
+      settings.set(defs.lockdownEnabled, false);
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue);
     });
   });
 

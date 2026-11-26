@@ -1024,6 +1024,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         } else {
           _resetIdleTimer();
         }
+        // Lockdown Mode went off right after a face, most often the face
+        // that turned it off: that face dismisses the screensaver now.
+        final seen = _faceUnderLockdown;
+        _faceUnderLockdown = null;
+        if (e.value == false &&
+            seen != null &&
+            clock().difference(seen) <= _faceUnderLockdownFor) {
+          _onFace();
+        }
       }
       // Flipping the opt-in while locked applies immediately, both ways.
       if (e.key == defs.lockdownAllowScreensaver.key &&
@@ -1625,11 +1634,20 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   Timer? _faceUnnamed;
   static const _faceUnnamedFor = Duration(milliseconds: 1500);
 
+  /// When a face last came while Lockdown Mode held. Disable Lockdown Mode
+  /// for turns it off on that same face a moment later, and the face then
+  /// counts at once instead of waiting for the next look.
+  DateTime? _faceUnderLockdown;
+  static const _faceUnderLockdownFor = Duration(seconds: 2);
+
   /// Someone is looking at the kiosk: dismiss the screensaver or postpone
   /// the next one, under the Face Detection settings.
   void _onFace() {
     // Same lockdown rule as motion.
-    if (_settings.get(defs.lockdownEnabled)) return;
+    if (_settings.get(defs.lockdownEnabled)) {
+      _faceUnderLockdown = clock();
+      return;
+    }
     // Ground Control Vision Match > Detect faces: only someone recognized,
     // or one of the chosen people. A face not named yet waits for its
     // name (see the FaceInViewChanged listener) or for the next sighting.

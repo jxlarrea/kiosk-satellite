@@ -107,6 +107,27 @@ void main() {
     expect(detected, 1);
   });
 
+  test('Lockdown Mode going on or off keeps the camera running when the '
+      'session stays the same', () async {
+    await build({
+      'ks.camera.enabled': true,
+      'ks.motion.sensor': true,
+      'ks.lockdown.enabled': true,
+    }, selfLightQuiet: Duration.zero);
+    await pump();
+    expect(listens, 1);
+    // No finger gestures are set up, so the session asks for the same
+    // things either way: a restart would cost a camera rebind and the
+    // names in view (a screensaver waiting for a face then waited about 3
+    // seconds for the next look).
+    await settings.set(defs.lockdownEnabled, false);
+    await pump();
+    await settings.set(defs.lockdownEnabled, true);
+    await pump();
+    expect(listens, 1);
+    expect(sink, isNotNull);
+  });
+
   test('a voice interaction drops motion ticks and face sightings still '
       'crossing, and nothing else', () async {
     await build({

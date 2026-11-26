@@ -867,7 +867,17 @@ class MotionManager extends Manager {
               palmEnabled)) {
         unawaited(_ensurePermission());
       }
-      _stop();
+      // The hand leg's gates only change whether palms are wanted, which
+      // _sync's own check restarts the session for. Restarting anyway cost
+      // a camera rebind and the names in view each time Lockdown Mode
+      // went off for a face, so the screensaver under it waited about 3
+      // seconds for the next look.
+      final handGate =
+          e.key == defs.gestureMappings.key ||
+          e.key == defs.lockdownEnabled.key ||
+          e.key == defs.kioskEnabled.key ||
+          e.key == defs.kioskDisableGestures.key;
+      if (!handGate) _stop();
       _sync();
     });
 

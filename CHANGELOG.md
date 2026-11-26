@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - **Voice Match and Vision Match in the README.** The Ground Control section now has a Voice Match entry with the Isolation demo video and a Vision Match entry with a Face Recognition demo.
 
+### Fixed
+- **The screensaver took about 3 seconds to go after Lockdown Mode went off for a face.** With **Disable Lockdown Mode for** on **Chosen people**, **Allow screensaver** on and **Detect faces** set to dismiss only for chosen people, Lockdown Mode went off as soon as the person was recognized but the screensaver stayed up. Lockdown Mode held the face that turned it off, and turning it off restarted the camera, which dropped the names in view until the next look. The face that turns Lockdown Mode off now dismisses the screensaver at once, and Lockdown Mode no longer restarts the camera when the camera needs nothing new.
+
 ## v2026.11.32 - 2026-11-25
 
 ### Added
