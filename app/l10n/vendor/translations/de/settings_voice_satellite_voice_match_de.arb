@@ -34,6 +34,12 @@
   "settingVoiceMatchEnabledDescriptionCommand": "Wer spricht, und nur diese Stimme im Befehl. Benötigt Ground Control.",
   "settingVoiceMatchTrimmingTitle": "Trimming aktivieren",
   "settingVoiceMatchTrimmingDescription": "Andere Stimmen, etwa ein Fernseher oder andere Personen, werden zwischen den Wörtern der Person, die das Aktivierungswort gesagt hat, herausgeschnitten, und der Befehl endet, wenn sie aufhört zu sprechen.",
+  "settingVoiceMatchWakeWordVerifierTitle": "Wake Word Verifier aktivieren",
+  "settingVoiceMatchWakeWordVerifierDescription": "Das Aktivierungswort wird kurz nach dem Aufwachen des Kiosks geprüft. Hat ihn etwas anderes geweckt, etwa ein Fernseher am anderen Ende des Raums, hört er ohne einen Ton auf zuzuhören. Benötigt Wake Word Verifier in Ground Control.",
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Eingelernten Stimmen vertrauen",
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Ein Aktivierungswort in der Stimme einer eingelernten Person besteht die Prüfung immer. Schalte das aus, wenn deine eigene Stimme den Kiosk versehentlich weckt, etwa während einer Telefonkonferenz.",
+  "settingVoiceMatchWakeWordAlignerTitle": "Wake Word Aligner aktivieren",
+  "settingVoiceMatchWakeWordAlignerDescription": "Das Ende des Aktivierungsworts, etwa das \"xa\" von \"Alexa\", wird aus dem Befehl weggelassen. Benötigt Wake Word Aligner in Ground Control.",
   "settingVoiceMatchIsolationTitle": "Isolation aktivieren",
   "settingVoiceMatchIsolationDescription": "Andere Stimmen, die über die Wörter der Person sprechen, die das Aktivierungswort gesagt hat, werden ebenfalls entfernt. Der Befehl wartet darauf, sobald sie aufhört zu sprechen. Benötigt Isolation in Ground Control."
 }

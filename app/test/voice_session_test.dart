@@ -1319,6 +1319,28 @@ void main() {
       },
     );
 
+    test('a wake word that was not said ends the turn without a sound, even '
+        'with the error chime on', () {
+      fakeAsync((async) {
+        final h = _Harness(
+          match: _Match(),
+          options: const VoiceSessionOptions(matchRejectChime: true),
+        );
+        listening(h, async);
+        // Ground Control's Wake Word Verifier.
+        h.match!.turns.single.onEvent({
+          'type': 'rejected',
+          'score': null,
+          'reason': 'wake_word',
+        });
+        async.flushMicrotasks();
+        expect(h.link.requests.last, (false, ''));
+        expect(h.session.busy, isFalse);
+        expect(h.player.chimes, ['wake']);
+        expect(h.match!.turns.single.ended, isTrue);
+      });
+    });
+
     test('events from a turn that is over are ignored', () {
       fakeAsync((async) {
         final h = _Harness(match: _Match());

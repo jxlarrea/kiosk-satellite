@@ -34,6 +34,12 @@
   "settingVoiceMatchEnabledDescriptionCommand": "Qui parle, et seulement sa voix dans la commande. Nécessite Ground Control.",
   "settingVoiceMatchTrimmingTitle": "Activer Trimming",
   "settingVoiceMatchTrimmingDescription": "Les autres voix, comme une télé ou d'autres personnes, sont coupées entre les mots de la personne qui a dit le mot d'activation, et la commande se termine quand elle s'arrête.",
+  "settingVoiceMatchWakeWordVerifierTitle": "Activer Wake Word Verifier",
+  "settingVoiceMatchWakeWordVerifierDescription": "Le mot de réveil est vérifié un instant après le réveil du kiosque. Si autre chose l'a réveillé, comme une télévision à l'autre bout de la pièce, il cesse d'écouter sans émettre de son. Nécessite Wake Word Verifier activé dans Ground Control.",
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Faire confiance aux voix enregistrées",
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Un mot de réveil prononcé avec la voix d'une personne enregistrée passe toujours la vérification. Désactivez cette option si votre propre voix réveille le kiosque par erreur, par exemple pendant une conférence téléphonique.",
+  "settingVoiceMatchWakeWordAlignerTitle": "Activer Wake Word Aligner",
+  "settingVoiceMatchWakeWordAlignerDescription": "La fin du mot de réveil, comme le \"xa\" de \"Alexa\", est retirée de la commande. Nécessite Wake Word Aligner activé dans Ground Control.",
   "settingVoiceMatchIsolationTitle": "Activer Isolation",
   "settingVoiceMatchIsolationDescription": "Les autres voix qui parlent par-dessus les mots de la personne qui a dit le mot d'activation sont aussi supprimées. La commande l'attend une fois que la personne s'arrête. Nécessite Isolation activé dans Ground Control."
 }

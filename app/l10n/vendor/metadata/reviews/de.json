@@ -31890,5 +31890,53 @@
     "translation": "d24871b5555c1d5ee3870e8df957223082d858a6df96727d9b7af3efb4704bff",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingVoiceMatchWakeWordAlignerDescription": {
+    "source": "c84891d5c344d5b7c9490074c498c022b8c8b1100e77e6c4e329960f37cf2382",
+    "translation": "e33b8c7ea6bad897d0559de197da07396c2bad3c5a8a83f74a3f15b7b86456f6",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceSectionWakeWordAligner": {
+    "source": "70ce888d2531e03fd25e1e4985ffbad14b04524797d661e860cf81c7f9ca63bc",
+    "translation": "8b2853ef3e9788a33a7d0f21e9c83ea4112aedbe5ee5da92dacc434773f62eda",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceSectionWakeWordVerifier": {
+    "source": "da4468970599c3b7b8a5e5faccc05252c0fee21f8d17c1a24f9f48d3a73037d5",
+    "translation": "6a98393676f8b055f304547005acaa1c4840e439cfa1be0f893dbf8627b0d966",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchVerifierTrustEnrolledDescription": {
+    "source": "a79c225de8e54dec6e4818942c9bbb03696458990f34d9affd4009bcf38343ad",
+    "translation": "4b521af21daac23b36bcbe6abba14c89e62f5fac9a6e8aaa19173e2aa60fccba",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchWakeWordAlignerTitle": {
+    "source": "e2fd6ed2f95faed0999504b879a3a4c80c8378628c8afad80c0d8b8c843e8e31",
+    "translation": "3472588d60169604924aeacc4b624650ecaf3de5b8fb982a4e1ccd540f0f44db",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchWakeWordVerifierTitle": {
+    "source": "060950fb67747f9f43bd66ea8a141a544292028dec69927c06f398530302d5a9",
+    "translation": "3b36766f6a81c508eedb13d7e6ce89cdd5478f8e4f003babd8ac74155f2b6ebb",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchVerifierTrustEnrolledTitle": {
+    "source": "546d5d6a894e775616262225c60544533ae15b241acfdfdf80a1f812b8014d49",
+    "translation": "47cc08eb1bcc04850ff0149ffb516b01e5cffe3479a13e61551f495aff40c464",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchWakeWordVerifierDescription": {
+    "source": "8553fda5882893fc1d3745eaad88843aeff95debe2c1a6e16866e794cf073a2b",
+    "translation": "114ede17d6e396dc4a308e3615e9ad90b02eed602509c7d6074505e1b242fa4e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

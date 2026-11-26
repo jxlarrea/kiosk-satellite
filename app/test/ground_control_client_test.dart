@@ -114,6 +114,9 @@ void main() {
       expect(ok, isTrue);
       expect((hello['features'] as Map)['trimming'], isTrue);
       expect((hello['features'] as Map)['isolation'], isTrue);
+      expect((hello['features'] as Map)['wake_word_verifier'], isTrue);
+      expect((hello['features'] as Map)['verifier_trusts_enrolled'], isTrue);
+      expect((hello['features'] as Map)['wake_word_aligner'], isTrue);
 
       toKiosk.add(jsonEncode({'type': 'pending'}));
       await until(() => gc.status == 'pending');

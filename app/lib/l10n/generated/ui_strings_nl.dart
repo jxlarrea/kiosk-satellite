@@ -15452,6 +15452,12 @@ class UiStringsNl extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
+  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
+
+  @override
+  String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
+
+  @override
   String get voiceSectionIsolation => 'Isolation';
 
   @override
@@ -16354,6 +16360,30 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Andere stemmen, zoals een tv of andere mensen, worden weggeknipt tussen de woorden van de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten.';
+
+  @override
+  String get settingVoiceMatchWakeWordVerifierTitle =>
+      'Wake Word Verifier inschakelen';
+
+  @override
+  String get settingVoiceMatchWakeWordVerifierDescription =>
+      'Het wekwoord wordt gecontroleerd kort nadat de kiosk wakker wordt. Als iets anders hem wekte, zoals een tv aan de andere kant van de kamer, stopt hij zonder geluid met luisteren. Vereist Wake Word Verifier in Ground Control.';
+
+  @override
+  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
+      'Ingeschreven stemmen vertrouwen';
+
+  @override
+  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
+      'Een wekwoord in de stem van iemand die is ingeschreven, komt altijd door de controle. Schakel dit uit als je eigen stem de kiosk per ongeluk wekt, bijvoorbeeld tijdens een telefonische vergadering.';
+
+  @override
+  String get settingVoiceMatchWakeWordAlignerTitle =>
+      'Wake Word Aligner inschakelen';
+
+  @override
+  String get settingVoiceMatchWakeWordAlignerDescription =>
+      'Het einde van het wekwoord, zoals de \"xa\" van \"Alexa\", wordt uit het commando weggelaten. Vereist Wake Word Aligner in Ground Control.';
 
   @override
   String get settingVoiceMatchIsolationTitle => 'Isolation inschakelen';

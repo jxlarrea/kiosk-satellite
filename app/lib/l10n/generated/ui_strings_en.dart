@@ -15277,6 +15277,12 @@ class UiStringsEn extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
+  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
+
+  @override
+  String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
+
+  @override
   String get voiceSectionIsolation => 'Isolation';
 
   @override
@@ -16169,6 +16175,30 @@ class UiStringsEn extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Other voices, like a TV or other people, are cut out between the words of the person who said the wake word, and the command ends when they stop.';
+
+  @override
+  String get settingVoiceMatchWakeWordVerifierTitle =>
+      'Enable Wake Word Verifier';
+
+  @override
+  String get settingVoiceMatchWakeWordVerifierDescription =>
+      'The wake word is checked a moment after the kiosk wakes up. If something else woke it up, like a TV across the room, it stops listening without a sound. Needs the Wake Word Verifier on in Ground Control.';
+
+  @override
+  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
+      'Trust enrolled voices';
+
+  @override
+  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
+      'A wake word in the voice of someone enrolled always passes the check. Turn this off if your own voice wakes the kiosk up by mistake, like during a conference call.';
+
+  @override
+  String get settingVoiceMatchWakeWordAlignerTitle =>
+      'Enable Wake Word Aligner';
+
+  @override
+  String get settingVoiceMatchWakeWordAlignerDescription =>
+      'The end of the wake word, like the \"xa\" of \"Alexa\", is left out of the command. Needs the Wake Word Aligner on in Ground Control.';
 
   @override
   String get settingVoiceMatchIsolationTitle => 'Enable Isolation';

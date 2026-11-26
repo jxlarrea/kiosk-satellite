@@ -74,5 +74,7 @@
   "voiceSectionSharedTimers": "Общие таймеры",
   "voiceSectionRecognition": "Recognition",
   "voiceSectionTrimming": "Trimming",
+  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
+  "voiceSectionWakeWordAligner": "Wake Word Aligner",
   "voiceSectionIsolation": "Isolation"
 }

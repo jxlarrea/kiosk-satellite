@@ -34,6 +34,12 @@
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Pozwala aplikacji Ground Control nagrać głos osoby mikrofonem tego kiosku. Kiosk wyświetla tekst do przeczytania albo pierścień świetlny pokazuje postęp.",
   "settingVoiceMatchTrimmingTitle": "Włącz Trimming",
   "settingVoiceMatchTrimmingDescription": "Inne dźwięki, takie jak telewizor lub głosy innych osób, są wyciszane w przerwach między słowami osoby, która wypowiedziała słowo wybudzające, a polecenie kończy się, gdy ta osoba przestanie mówić.",
+  "settingVoiceMatchWakeWordVerifierTitle": "Włącz Wake Word Verifier",
+  "settingVoiceMatchWakeWordVerifierDescription": "Słowo wybudzające jest sprawdzane chwilę po wybudzeniu kiosku. Jeśli wybudziło go coś innego, na przykład telewizor po drugiej stronie pokoju, kiosk przestaje słuchać bez żadnego dźwięku. Wymaga włączenia Wake Word Verifier w Ground Control.",
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Ufaj zarejestrowanym głosom",
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Słowo wybudzające wypowiedziane głosem zarejestrowanej osoby zawsze przechodzi sprawdzenie. Wyłącz, jeśli twój własny głos przez pomyłkę wybudza kiosk, na przykład podczas telekonferencji.",
+  "settingVoiceMatchWakeWordAlignerTitle": "Włącz Wake Word Aligner",
+  "settingVoiceMatchWakeWordAlignerDescription": "Końcówka słowa wybudzającego, na przykład \"xa\" w \"Alexa\", jest pomijana w poleceniu. Wymaga włączenia Wake Word Aligner w Ground Control.",
   "settingVoiceMatchIsolationTitle": "Włącz Isolation",
   "settingVoiceMatchIsolationDescription": "Inne głosy zagłuszające słowa osoby, która wypowiedziała słowo wybudzające, są również usuwane. Gdy ta osoba przestanie mówić, polecenie czeka na zakończenie tego procesu. Wymaga włączenia Isolation w Ground Control."
 }

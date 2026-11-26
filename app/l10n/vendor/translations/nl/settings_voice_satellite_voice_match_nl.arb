@@ -34,6 +34,12 @@
   "settingVoiceMatchEnabledDescriptionCommand": "Wie er praat, en alleen die stem in het commando. Vereist Ground Control.",
   "settingVoiceMatchTrimmingTitle": "Trimming inschakelen",
   "settingVoiceMatchTrimmingDescription": "Andere stemmen, zoals een tv of andere mensen, worden weggeknipt tussen de woorden van de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten.",
+  "settingVoiceMatchWakeWordVerifierTitle": "Wake Word Verifier inschakelen",
+  "settingVoiceMatchWakeWordVerifierDescription": "Het wekwoord wordt gecontroleerd kort nadat de kiosk wakker wordt. Als iets anders hem wekte, zoals een tv aan de andere kant van de kamer, stopt hij zonder geluid met luisteren. Vereist Wake Word Verifier in Ground Control.",
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Ingeschreven stemmen vertrouwen",
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Een wekwoord in de stem van iemand die is ingeschreven, komt altijd door de controle. Schakel dit uit als je eigen stem de kiosk per ongeluk wekt, bijvoorbeeld tijdens een telefonische vergadering.",
+  "settingVoiceMatchWakeWordAlignerTitle": "Wake Word Aligner inschakelen",
+  "settingVoiceMatchWakeWordAlignerDescription": "Het einde van het wekwoord, zoals de \"xa\" van \"Alexa\", wordt uit het commando weggelaten. Vereist Wake Word Aligner in Ground Control.",
   "settingVoiceMatchIsolationTitle": "Isolation inschakelen",
   "settingVoiceMatchIsolationDescription": "Andere stemmen die door de woorden heen praten van de persoon die het activatiewoord zei, worden ook verwijderd. Het commando wacht daarop zodra die stopt met praten. Vereist Isolation in Ground Control."
 }

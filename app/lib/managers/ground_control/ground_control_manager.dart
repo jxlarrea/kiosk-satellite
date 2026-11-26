@@ -203,6 +203,9 @@ class GroundControlManager extends Manager {
     defs.voiceMatchPeople.key,
     defs.voiceMatchEndOnOtherVoice.key,
     defs.voiceMatchIsolation.key,
+    defs.voiceMatchWakeWordVerifier.key,
+    defs.voiceMatchVerifierTrustEnrolled.key,
+    defs.voiceMatchWakeWordAligner.key,
     defs.voiceMatchSpeakerSensor.key,
     defs.voiceMatchShowSpeaker.key,
     defs.voiceMatchAllowEnroll.key,
@@ -240,6 +243,9 @@ class GroundControlManager extends Manager {
       if (chosen && people.isNotEmpty) 'people': people,
       'trimming': s.get(defs.voiceMatchEndOnOtherVoice),
       'isolation': s.get(defs.voiceMatchIsolation),
+      'wake_word_verifier': s.get(defs.voiceMatchWakeWordVerifier),
+      'verifier_trusts_enrolled': s.get(defs.voiceMatchVerifierTrustEnrolled),
+      'wake_word_aligner': s.get(defs.voiceMatchWakeWordAligner),
       'speaker_sensor': s.get(defs.voiceMatchSpeakerSensor),
       'show_speaker': s.get(defs.voiceMatchShowSpeaker),
       'vision_match': s.get(defs.visionMatchEnabled),
@@ -718,6 +724,10 @@ class GroundControlManager extends Manager {
             'arch': '${msg['arch'] ?? ''}',
             'cuda': '${msg['cuda'] ?? ''}',
             'onGpu': msg['on_gpu'] == true,
+            // Whether Ground Control's Wake Word Verifier is on. Left out
+            // by a Ground Control from before it.
+            if (msg['wake_word_verifier'] is bool)
+              'wakeWordVerifier': msg['wake_word_verifier'],
           };
         } else {
           // An older Ground Control: nothing left from the one before it.

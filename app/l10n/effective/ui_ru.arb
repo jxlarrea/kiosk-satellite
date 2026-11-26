@@ -57088,6 +57088,16 @@
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
   },
+  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
+  "@voiceSectionWakeWordVerifier": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionWakeWordAligner": "Wake Word Aligner",
+  "@voiceSectionWakeWordAligner": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
   "voiceSectionIsolation": "Isolation",
   "@voiceSectionIsolation": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
@@ -59134,6 +59144,84 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordVerifierTitle": "Включить Wake Word Verifier",
+  "@settingVoiceMatchWakeWordVerifierTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordVerifierDescription": "Слово пробуждения проверяется сразу после того, как киоск просыпается. Если его разбудило что-то другое, например телевизор в другом конце комнаты, он перестаёт слушать без единого звука. Нужно включить Wake Word Verifier в Ground Control.",
+  "@settingVoiceMatchWakeWordVerifierDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Доверять записанным голосам",
+  "@settingVoiceMatchVerifierTrustEnrolledTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Слово пробуждения, сказанное голосом человека, чей голос записан, всегда проходит проверку. Выключите, если ваш собственный голос по ошибке будит киоск, например во время конференц-звонка.",
+  "@settingVoiceMatchVerifierTrustEnrolledDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordAlignerTitle": "Включить Wake Word Aligner",
+  "@settingVoiceMatchWakeWordAlignerTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordAlignerDescription": "Конец слова пробуждения, например \"xa\" в \"Alexa\", не попадает в команду. Нужно включить Wake Word Aligner в Ground Control.",
+  "@settingVoiceMatchWakeWordAlignerDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
       ]
     }
   },

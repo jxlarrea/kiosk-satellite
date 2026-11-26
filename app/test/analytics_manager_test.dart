@@ -1048,11 +1048,59 @@ void main() {
       expect(u['gc_people'], 2);
       expect(u['voice_match_enabled'], isTrue);
       expect(u['voice_match_policy'], 'people');
+      // A Ground Control from before the Wake Word Verifier doesn't say.
+      expect(u.containsKey('voice_match_wake_word_verifier'), isFalse);
       final text = jsonEncode(u);
       expect(text, isNot(contains('Alice')));
       expect(text, isNot(contains('Bob')));
       expect(text, isNot(contains('p1')));
       expect(text, isNot(contains('192.168.1.10')));
+    });
+
+    group('the Wake Word Verifier', () {
+      const voiceMatch = <String, Object>{
+        'ks.ground_control.enabled': true,
+        'ks.voice.enabled': true,
+        'ks.voice_match.enabled': true,
+      };
+
+      test('is reported when Ground Control has it on and the kiosk has '
+          'Trimming on', () async {
+        (gcState!['install'] as Map)['wakeWordVerifier'] = true;
+        final u = await usage(voiceMatch);
+        expect(u['voice_match_wake_word_verifier'], isTrue);
+      });
+
+      test('is off without Trimming, when the wake word never goes to '
+          'Ground Control', () async {
+        (gcState!['install'] as Map)['wakeWordVerifier'] = true;
+        final u = await usage({
+          ...voiceMatch,
+          'ks.voice_match.end_on_other_voice': false,
+        });
+        expect(u['voice_match_wake_word_verifier'], isFalse);
+      });
+
+      test('is off when it is turned off on the kiosk', () async {
+        (gcState!['install'] as Map)['wakeWordVerifier'] = true;
+        final u = await usage({
+          ...voiceMatch,
+          'ks.voice_match.wake_word_verifier': false,
+        });
+        expect(u['voice_match_wake_word_verifier'], isFalse);
+      });
+
+      test('is off when it is turned off in Ground Control', () async {
+        (gcState!['install'] as Map)['wakeWordVerifier'] = false;
+        final u = await usage(voiceMatch);
+        expect(u['voice_match_wake_word_verifier'], isFalse);
+      });
+
+      test('is left out without Voice Match', () async {
+        (gcState!['install'] as Map)['wakeWordVerifier'] = true;
+        final u = await usage({'ks.ground_control.enabled': true});
+        expect(u.containsKey('voice_match_wake_word_verifier'), isFalse);
+      });
     });
 
     test('Vision Match reports the features it runs and how faces are '

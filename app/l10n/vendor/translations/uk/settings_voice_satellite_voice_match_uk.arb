@@ -34,6 +34,12 @@
   "settingVoiceMatchEnabledDescriptionCommand": "Хто говорить, і в команді лише його голос. Потрібен Ground Control.",
   "settingVoiceMatchTrimmingTitle": "Увімкнути Trimming",
   "settingVoiceMatchTrimmingDescription": "Інші голоси, наприклад телевізор або інші люди, вирізаються між словами людини, яка сказала слово активації, і команда завершується, коли вона замовкає.",
+  "settingVoiceMatchWakeWordVerifierTitle": "Увімкнути Wake Word Verifier",
+  "settingVoiceMatchWakeWordVerifierDescription": "Слово активації перевіряється за мить після того, як кіоск прокидається. Якщо його розбудило щось інше, наприклад телевізор в іншому кінці кімнати, він перестає слухати без жодного звуку. Потрібно увімкнути Wake Word Verifier у Ground Control.",
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Довіряти зареєстрованим голосам",
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Слово активації, сказане голосом когось із зареєстрованих, завжди проходить перевірку. Вимкніть це, якщо ваш власний голос помилково будить кіоск, наприклад під час конференц-дзвінка.",
+  "settingVoiceMatchWakeWordAlignerTitle": "Увімкнути Wake Word Aligner",
+  "settingVoiceMatchWakeWordAlignerDescription": "Кінець слова активації, наприклад \"xa\" в \"Alexa\", не потрапляє в команду. Потрібно увімкнути Wake Word Aligner у Ground Control.",
   "settingVoiceMatchIsolationTitle": "Увімкнути Isolation",
   "settingVoiceMatchIsolationDescription": "Інші голоси, що звучать поверх слів людини, яка сказала слово активації, теж вилучаються. Коли вона замовкає, команда чекає на цю обробку. Потрібно увімкнути Isolation у Ground Control."
 }

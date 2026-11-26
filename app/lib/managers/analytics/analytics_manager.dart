@@ -725,6 +725,8 @@ class AnalyticsManager extends Manager {
     if (s.get(defs.groundControlEnabled)) {
       groundControl['gc_address'] =
           s.get(defs.groundControlAddress).trim().isEmpty ? 'mdns' : 'manual';
+      // Ground Control's Wake Word Verifier switch, when it says.
+      bool? verifier;
       try {
         final r = await commands.execute('groundControlStatus', const {});
         final data = r.data;
@@ -749,6 +751,8 @@ class AnalyticsManager extends Manager {
             groundControl['gc_arch'] = clip(install['arch']);
             groundControl['gc_cuda'] = clip(install['cuda']);
             groundControl['gc_on_gpu'] = install['onGpu'] == true;
+            final v = install['wakeWordVerifier'];
+            if (v is bool) verifier = v;
           }
           final people = data['people'];
           groundControl['gc_people'] = people is List ? people.length : 0;
@@ -770,6 +774,16 @@ class AnalyticsManager extends Manager {
         groundControl['voice_match_policy'] = !chosen
             ? 'anyone'
             : (picked ? 'people' : 'enrolled');
+        // The Wake Word Verifier checks this kiosk's wake words when it
+        // is on in Ground Control and on here, with Trimming on, which is
+        // when the wake word goes there. Left out for a Ground Control
+        // that doesn't say.
+        if (verifier != null) {
+          groundControl['voice_match_wake_word_verifier'] =
+              verifier &&
+              s.get(defs.voiceMatchEndOnOtherVoice) &&
+              s.get(defs.voiceMatchWakeWordVerifier);
+        }
       }
       // Vision Match: the switch, each feature it runs on Ground Control
       // and, with Face Recognition on, the settings that act on faces. A

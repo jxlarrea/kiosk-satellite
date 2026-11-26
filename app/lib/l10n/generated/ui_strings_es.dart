@@ -15569,6 +15569,12 @@ class UiStringsEs extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
+  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
+
+  @override
+  String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
+
+  @override
   String get voiceSectionIsolation => 'Isolation';
 
   @override
@@ -16481,6 +16487,30 @@ class UiStringsEs extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Otras voces, como una tele u otras personas, se recortan entre las palabras de quien dijo la palabra de activación, y el comando termina cuando deja de hablar.';
+
+  @override
+  String get settingVoiceMatchWakeWordVerifierTitle =>
+      'Activar Wake Word Verifier';
+
+  @override
+  String get settingVoiceMatchWakeWordVerifierDescription =>
+      'La palabra de activación se comprueba un momento después de que el kiosco se despierta. Si lo despertó otra cosa, como un televisor al otro lado de la habitación, deja de escuchar sin hacer ningún sonido. Necesita Wake Word Verifier activado en Ground Control.';
+
+  @override
+  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
+      'Confiar en las voces registradas';
+
+  @override
+  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
+      'Una palabra de activación dicha con la voz de una persona registrada siempre pasa la comprobación. Desactívalo si tu propia voz despierta el kiosco por error, por ejemplo durante una llamada en conferencia.';
+
+  @override
+  String get settingVoiceMatchWakeWordAlignerTitle =>
+      'Activar Wake Word Aligner';
+
+  @override
+  String get settingVoiceMatchWakeWordAlignerDescription =>
+      'El final de la palabra de activación, como el \"xa\" de \"Alexa\", se deja fuera del comando. Necesita Wake Word Aligner activado en Ground Control.';
 
   @override
   String get settingVoiceMatchIsolationTitle => 'Activar Isolation';

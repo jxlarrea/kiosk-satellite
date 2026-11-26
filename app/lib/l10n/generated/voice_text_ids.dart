@@ -175,6 +175,8 @@ const voiceTextMessageIds = <String, String>{
   "Speaker": "voiceSectionSpeaker",
   "Recognition": "voiceSectionRecognition",
   "Trimming": "voiceSectionTrimming",
+  "Wake Word Verifier": "voiceSectionWakeWordVerifier",
+  "Wake Word Aligner": "voiceSectionWakeWordAligner",
   "Isolation": "voiceSectionIsolation",
   "Wake word and command": "voiceSectionWakeCommand",
   "Wake Word Arbitration": "voiceSectionWakeArbitration",

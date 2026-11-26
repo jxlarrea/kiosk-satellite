@@ -2852,6 +2852,18 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVoiceMatchTrimmingTitle",
     "description": "settingVoiceMatchTrimmingDescription",
   },
+  "voice_match.wake_word_verifier": {
+    "title": "settingVoiceMatchWakeWordVerifierTitle",
+    "description": "settingVoiceMatchWakeWordVerifierDescription",
+  },
+  "voice_match.verifier_trust_enrolled": {
+    "title": "settingVoiceMatchVerifierTrustEnrolledTitle",
+    "description": "settingVoiceMatchVerifierTrustEnrolledDescription",
+  },
+  "voice_match.wake_word_aligner": {
+    "title": "settingVoiceMatchWakeWordAlignerTitle",
+    "description": "settingVoiceMatchWakeWordAlignerDescription",
+  },
   "voice_match.isolation": {
     "title": "settingVoiceMatchIsolationTitle",
     "description": "settingVoiceMatchIsolationDescription",

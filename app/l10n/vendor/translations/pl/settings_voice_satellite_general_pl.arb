@@ -44,6 +44,8 @@
   "voiceSectionSpeaker": "Głośnik",
   "voiceSectionRecognition": "Recognition",
   "voiceSectionTrimming": "Trimming",
+  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
+  "voiceSectionWakeWordAligner": "Wake Word Aligner",
   "voiceSectionIsolation": "Isolation",
   "voiceSectionWakeCommand": "Słowo wybudzające i polecenie",
   "voiceSectionTimerEnds": "Gdy upłynie czas",

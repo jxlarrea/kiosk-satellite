@@ -38,6 +38,9 @@ void main() {
         'voice_match.show_speaker',
         'voice_match.allow_enroll',
         'voice_match.end_on_other_voice',
+        'voice_match.wake_word_verifier',
+        'voice_match.verifier_trust_enrolled',
+        'voice_match.wake_word_aligner',
         'voice_match.isolation',
       ]);
       for (final d in vm) {
@@ -55,9 +58,37 @@ void main() {
           'voice_match.show_speaker': 'Recognition',
           'voice_match.allow_enroll': 'Recognition',
           'voice_match.end_on_other_voice': 'Trimming',
+          'voice_match.wake_word_verifier': 'Wake Word Verifier',
+          'voice_match.verifier_trust_enrolled': 'Wake Word Verifier',
+          'voice_match.wake_word_aligner': 'Wake Word Aligner',
           'voice_match.isolation': 'Isolation',
         },
       );
+      // The Wake Word Verifier and the Wake Word Aligner work on the wake
+      // word a Trimming session sends, so both follow Trimming. Each has its
+      // own group after it and is on by default.
+      expect(
+        defs.voiceMatchWakeWordVerifier.dependsOn,
+        'voice_match.end_on_other_voice',
+      );
+      expect(defs.voiceMatchWakeWordVerifier.defaultValue, isTrue);
+      // Trust enrolled voices is a choice within the Wake Word Verifier.
+      expect(
+        defs.voiceMatchVerifierTrustEnrolled.dependsOn,
+        'voice_match.wake_word_verifier',
+      );
+      expect(defs.voiceMatchVerifierTrustEnrolled.defaultValue, isTrue);
+      // The Wake Word Aligner only has something to do with Talk right
+      // after the wake word on.
+      expect(
+        defs.voiceMatchWakeWordAligner.dependsOn,
+        'voice_match.end_on_other_voice',
+      );
+      expect(
+        defs.voiceMatchWakeWordAligner.alsoDependsOn,
+        'voice.seamless_wake',
+      );
+      expect(defs.voiceMatchWakeWordAligner.defaultValue, isTrue);
       // Isolation runs on what Trimming sends back, so it follows Trimming.
       expect(
         defs.voiceMatchIsolation.dependsOn,
@@ -80,6 +111,9 @@ void main() {
         (d) =>
             d != defs.voiceMatchEnabled &&
             d != defs.voiceMatchIsolation &&
+            d != defs.voiceMatchWakeWordVerifier &&
+            d != defs.voiceMatchVerifierTrustEnrolled &&
+            d != defs.voiceMatchWakeWordAligner &&
             !byPolicy.contains(d),
       )) {
         expect(d.dependsOn, 'voice_match.enabled', reason: d.key);

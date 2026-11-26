@@ -57088,6 +57088,16 @@
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
   },
+  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
+  "@voiceSectionWakeWordVerifier": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionWakeWordAligner": "Wake Word Aligner",
+  "@voiceSectionWakeWordAligner": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
   "voiceSectionIsolation": "Isolation",
   "@voiceSectionIsolation": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
@@ -59134,6 +59144,84 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordVerifierTitle": "Włącz Wake Word Verifier",
+  "@settingVoiceMatchWakeWordVerifierTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordVerifierDescription": "Słowo wybudzające jest sprawdzane chwilę po wybudzeniu kiosku. Jeśli wybudziło go coś innego, na przykład telewizor po drugiej stronie pokoju, kiosk przestaje słuchać bez żadnego dźwięku. Wymaga włączenia Wake Word Verifier w Ground Control.",
+  "@settingVoiceMatchWakeWordVerifierDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Ufaj zarejestrowanym głosom",
+  "@settingVoiceMatchVerifierTrustEnrolledTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Słowo wybudzające wypowiedziane głosem zarejestrowanej osoby zawsze przechodzi sprawdzenie. Wyłącz, jeśli twój własny głos przez pomyłkę wybudza kiosk, na przykład podczas telekonferencji.",
+  "@settingVoiceMatchVerifierTrustEnrolledDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordAlignerTitle": "Włącz Wake Word Aligner",
+  "@settingVoiceMatchWakeWordAlignerTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordAlignerDescription": "Końcówka słowa wybudzającego, na przykład \"xa\" w \"Alexa\", jest pomijana w poleceniu. Wymaga włączenia Wake Word Aligner w Ground Control.",
+  "@settingVoiceMatchWakeWordAlignerDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
       ]
     }
   },

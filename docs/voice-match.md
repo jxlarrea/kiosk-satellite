@@ -29,6 +29,7 @@ With **Enable Trimming** on, everything the microphone hears goes to Ground Cont
 - **The command ends when the user stops.** The kiosk ends it once the user has been quiet for 0.7 seconds, whatever the TV does, instead of waiting for Home Assistant's or the provider's own silence detection, which a TV keeps open.
 - **Who is talking** is known about a second into the command, while the person is still talking.
 - **A short reply to a question is taken.** When Home Assistant asks something (`assist_satellite.ask_question`, `assist_satellite.start_conversation`), there is no wake word and a reply like "yes" is too short to recognize anyone. On a kiosk that answers chosen people, Ground Control 2026.11.13 or newer takes it when it sounds like one of them. See [Short Answers](https://github.com/jxlarrea/kiosk-satellite-ground-control/blob/main/docs/voice-match.md#short-answers).
+- **A wake word that wasn't said is stopped.** See [Wake Word Verifier](#wake-word-verifier).
 - **The end of the wake word is left out.** With **Talk right after the wake word** on, the command's audio starts the moment the wake word is recognized, which is before the word is over. The "xa" of "Alexa" then reaches the assistant in front of the command: "So what time is it". With Ground Control 2026.11.12 or newer, the command starts where the wake word ends, with any wake word and any wake word engine. See [Wake Word Aligner](https://github.com/jxlarrea/kiosk-satellite-ground-control/blob/main/docs/voice-match.md#wake-word-aligner).
 
 The assistant hears the user about a second late while they talk, the time Ground Control needs to tell voices apart. The end of the command is not delayed by it.
@@ -36,6 +37,20 @@ The assistant hears the user about a second late while they talk, the time Groun
 Without Isolation, two voices at the same moment both reach the assistant: Trimming cuts out a voice between the user's words, not under them. A guest who is not enrolled and sounds much like the TV voice is harder to tell apart than an enrolled person.
 
 If Ground Control is not reachable, or stops answering mid-command, commands work as they do without it.
+
+## Wake Word Verifier
+
+A wake word engine now and then wakes the kiosk up to speech that is nothing like its wake word. Most often it is a TV across the room. With **Enable Wake Word Verifier** on, Ground Control checks the wake word 0.3 seconds after the kiosk wakes up. If it wasn't said, the kiosk stops listening without a sound and nothing reaches the assistant. Ground Control shows the session as a **False positive**.
+
+- **It needs Trimming on here** and the Wake Word Verifier on in Ground Control's own settings. It also needs Ground Control 2026.11.16 or newer.
+- **It works with every wake word and every wake word engine.**
+- **It doesn't stop a TV that says the wake word itself.** Set **Answer** to **Chosen people** for that.
+
+**Trust enrolled voices** is on by default. With it on, a wake word in the voice of someone enrolled always passes the check, however unclear it was. Turn it off if your own voice wakes the kiosk up by mistake, like during a conference call. A wake word you didn't say clearly can then be stopped too.
+
+## Wake Word Aligner
+
+With **Talk right after the wake word** on, the command's audio starts the moment the wake word is recognized, which is before the word is over. With **Enable Wake Word Aligner** on, Ground Control leaves that end out of the command, like the "xa" of "Alexa". It needs Trimming on here and the Wake Word Aligner on in Ground Control's own settings. The group shows only while **Talk right after the wake word** is on.
 
 ## Isolation
 
@@ -67,6 +82,11 @@ If Ground Control goes away mid-conversation, the provider's own speech detectio
 | Allow enrollment here | on | Lets the Ground Control app record a person's voice with this kiosk's microphone. |
 | **Trimming** | | |
 | Enable Trimming | on | Other voices are cut out between the words of the person who said the wake word, and the command ends when they stop. Off, Voice Match only says who is talking. |
+| **Wake Word Verifier** | | |
+| Enable Wake Word Verifier | on | The wake word is checked a moment after the kiosk wakes up. If something else woke it up, like a TV across the room, it stops listening without a sound. Needs Trimming on and the Wake Word Verifier on in Ground Control. |
+| Trust enrolled voices | on | A wake word in the voice of someone enrolled always passes the check. Turn it off if your own voice wakes the kiosk up by mistake, like during a conference call. |
+| **Wake Word Aligner** | | |
+| Enable Wake Word Aligner | on | The end of the wake word is left out of the command. Shows with **Talk right after the wake word** on. Needs Trimming on and the Wake Word Aligner on in Ground Control. |
 | **Isolation** | | |
 | Enable Isolation | on | Other voices talking over the user's words are removed too. Needs Trimming on and Isolation on in Ground Control. |
 

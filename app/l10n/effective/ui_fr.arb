@@ -57088,6 +57088,16 @@
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
   },
+  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
+  "@voiceSectionWakeWordVerifier": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionWakeWordAligner": "Wake Word Aligner",
+  "@voiceSectionWakeWordAligner": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
   "voiceSectionIsolation": "Isolation",
   "@voiceSectionIsolation": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
@@ -59134,6 +59144,84 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordVerifierTitle": "Activer Wake Word Verifier",
+  "@settingVoiceMatchWakeWordVerifierTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordVerifierDescription": "Le mot de réveil est vérifié un instant après le réveil du kiosque. Si autre chose l'a réveillé, comme une télévision à l'autre bout de la pièce, il cesse d'écouter sans émettre de son. Nécessite Wake Word Verifier activé dans Ground Control.",
+  "@settingVoiceMatchWakeWordVerifierDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierTrustEnrolledTitle": "Faire confiance aux voix enregistrées",
+  "@settingVoiceMatchVerifierTrustEnrolledTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierTrustEnrolledDescription": "Un mot de réveil prononcé avec la voix d'une personne enregistrée passe toujours la vérification. Désactivez cette option si votre propre voix réveille le kiosque par erreur, par exemple pendant une conférence téléphonique.",
+  "@settingVoiceMatchVerifierTrustEnrolledDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordAlignerTitle": "Activer Wake Word Aligner",
+  "@settingVoiceMatchWakeWordAlignerTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ]
+    }
+  },
+  "settingVoiceMatchWakeWordAlignerDescription": "La fin du mot de réveil, comme le \"xa\" de \"Alexa\", est retirée de la commande. Nécessite Wake Word Aligner activé dans Ground Control.",
+  "@settingVoiceMatchWakeWordAlignerDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
       ]
     }
   },
