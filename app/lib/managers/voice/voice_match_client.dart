@@ -67,10 +67,7 @@ class VoiceMatchTurn {
     required String policy,
     List<String> people = const [],
     bool isolation = true,
-    bool wakeWordVerifier = true,
-    bool verifierTrustsEnrolled = true,
     bool wakeWordAligner = true,
-    String? wakeVerified,
     required void Function(Map<String, Object?> event) onEvent,
     void Function(String line)? log,
     bool follow = false,
@@ -115,16 +112,8 @@ class VoiceMatchTurn {
         // Isolation, this kiosk's own switch: Ground Control runs it when
         // it is on in its own settings too.
         if (follow) 'isolation': isolation,
-        // The same for the Wake Word Verifier and the Wake Word Aligner.
-        // Trust enrolled voices: whether a wake word in the voice of
-        // someone enrolled passes whatever the Wake Word Verifier finds.
-        if (follow) 'wake_word_verifier': wakeWordVerifier,
-        if (follow) 'verifier_trusts_enrolled': verifierTrustsEnrolled,
+        // The same for the Wake Word Aligner.
         if (follow) 'wake_word_aligner': wakeWordAligner,
-        // Wait for wake word verification: the check Ground Control already
-        // passed this wake word with, so it isn't checked again.
-        if (follow && woken && wakeVerified != null)
-          'wake_verified': wakeVerified,
         // How the turn started, for the session's page in Ground Control:
         // the wake word as it is said, what heard it and who answers.
         if (woken) 'wake_word': wakeWord,

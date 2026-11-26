@@ -5004,7 +5004,6 @@ final _messages = <String, String Function(UiStrings)>{
   'voiceSectionSpeaker': (s) => s.voiceSectionSpeaker,
   'voiceSectionRecognition': (s) => s.voiceSectionRecognition,
   'voiceSectionTrimming': (s) => s.voiceSectionTrimming,
-  'voiceSectionWakeWordVerifier': (s) => s.voiceSectionWakeWordVerifier,
   'voiceSectionWakeWordAligner': (s) => s.voiceSectionWakeWordAligner,
   'voiceSectionIsolation': (s) => s.voiceSectionIsolation,
   'voiceSectionWakeCommand': (s) => s.voiceSectionWakeCommand,
@@ -5325,18 +5324,6 @@ final _messages = <String, String Function(UiStrings)>{
   'settingVoiceMatchTrimmingTitle': (s) => s.settingVoiceMatchTrimmingTitle,
   'settingVoiceMatchTrimmingDescription': (s) =>
       s.settingVoiceMatchTrimmingDescription,
-  'settingVoiceMatchWakeWordVerifierTitle': (s) =>
-      s.settingVoiceMatchWakeWordVerifierTitle,
-  'settingVoiceMatchWakeWordVerifierDescription': (s) =>
-      s.settingVoiceMatchWakeWordVerifierDescription,
-  'settingVoiceMatchVerifierTrustEnrolledTitle': (s) =>
-      s.settingVoiceMatchVerifierTrustEnrolledTitle,
-  'settingVoiceMatchVerifierTrustEnrolledDescription': (s) =>
-      s.settingVoiceMatchVerifierTrustEnrolledDescription,
-  'settingVoiceMatchVerifierWaitTitle': (s) =>
-      s.settingVoiceMatchVerifierWaitTitle,
-  'settingVoiceMatchVerifierWaitDescription': (s) =>
-      s.settingVoiceMatchVerifierWaitDescription,
   'settingVoiceMatchWakeWordAlignerTitle': (s) =>
       s.settingVoiceMatchWakeWordAlignerTitle,
   'settingVoiceMatchWakeWordAlignerDescription': (s) =>

@@ -30430,63 +30430,21 @@
     "author": "Xavier Larrea",
     "ownerAuthored": true
   },
-  "settingVoiceMatchWakeWordVerifierDescription": {
-    "source": "8553fda5882893fc1d3745eaad88843aeff95debe2c1a6e16866e794cf073a2b",
-    "translation": "61f462dce08c4502cf06399d35cdb97825adaea6dd14d49d1fa87f531ca65ac7",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
   "settingVoiceMatchWakeWordAlignerTitle": {
-    "source": "e2fd6ed2f95faed0999504b879a3a4c80c8378628c8afad80c0d8b8c843e8e31",
+    "source": "0d43502ccbaa106c0e9fa6c23f5aac5c077a11867ac10a4b1e8530daf8f94344",
     "translation": "e1e3087135cb495747bce646f76338210a49c413c146fca062c035bef230ca6c",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   },
   "settingVoiceMatchWakeWordAlignerDescription": {
-    "source": "c84891d5c344d5b7c9490074c498c022b8c8b1100e77e6c4e329960f37cf2382",
+    "source": "2e7612ea4d5eb69030fa442cf1f90e3096b4039302efea06b868380181380ee2",
     "translation": "2b3beb22d065ede8fc0ecfc7cbcfd29018d0c8a358b3d39687f36d474b178579",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingVoiceMatchWakeWordVerifierTitle": {
-    "source": "060950fb67747f9f43bd66ea8a141a544292028dec69927c06f398530302d5a9",
-    "translation": "9a4f3a3324210522e9d80a0b6905c6d1d477994f2b06bce0453428f3b18c9e48",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   },
   "voiceSectionWakeWordAligner": {
     "source": "70ce888d2531e03fd25e1e4985ffbad14b04524797d661e860cf81c7f9ca63bc",
     "translation": "8b2853ef3e9788a33a7d0f21e9c83ea4112aedbe5ee5da92dacc434773f62eda",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingVoiceMatchVerifierTrustEnrolledTitle": {
-    "source": "546d5d6a894e775616262225c60544533ae15b241acfdfdf80a1f812b8014d49",
-    "translation": "0f32978be4b85dcf203a2cc12617c483b2f4cdbfa529553459c16f985d9ccf14",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingVoiceMatchVerifierTrustEnrolledDescription": {
-    "source": "a79c225de8e54dec6e4818942c9bbb03696458990f34d9affd4009bcf38343ad",
-    "translation": "678ea206dcac4c67dfe2ee50ee187825ed89480856e2b3ae043304fab5075648",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "voiceSectionWakeWordVerifier": {
-    "source": "da4468970599c3b7b8a5e5faccc05252c0fee21f8d17c1a24f9f48d3a73037d5",
-    "translation": "6a98393676f8b055f304547005acaa1c4840e439cfa1be0f893dbf8627b0d966",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingVoiceMatchVerifierWaitDescription": {
-    "source": "7103f8a2ab1d68a3499cedd5dab0e9bd363e2e9ae37ebf8ac6710f712633d0c7",
-    "translation": "82158efa03c54c712b0cb630452c16e007df72318d2e05973ed1c5feee5f2149",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingVoiceMatchVerifierWaitTitle": {
-    "source": "333ce35ab84296eb27b24c185c06ae931139c590a71c34c8271a99705df29c78",
-    "translation": "8cd9f61c6827934ab2e694bdb46e4562cf83f8f7a102ab587fccd4f574f844aa",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   }

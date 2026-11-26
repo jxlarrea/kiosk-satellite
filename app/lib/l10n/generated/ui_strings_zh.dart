@@ -14501,9 +14501,6 @@ class UiStringsZh extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -15344,27 +15341,6 @@ class UiStringsZh extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       '在说出唤醒词的人的话语之间，会剪掉其他声音，例如电视或其他人，并在此人停止说话时结束命令。';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle => '启用 Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      '信息亭被唤醒后会立即检查唤醒词。如果唤醒它的是其他声音，例如房间另一头的电视，它会无声地停止聆听。需要在 Ground Control 中开启 Wake Word Verifier。';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle => '信任已录入的声音';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      '由已录入的人的声音说出的唤醒词始终通过检查。如果你自己的声音会误唤醒信息亭，例如在电话会议期间，请关闭此项。';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle => '等待唤醒词验证';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      '先验证唤醒词，再播放提示音并在屏幕上显示语音会话。这会减少唤醒词误触发，但语音会话开始前可能会有短暂延迟。';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle => '启用 Wake Word Aligner';
@@ -31148,9 +31124,6 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -31991,27 +31964,6 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       '在说出唤醒词的人的话语之间，会剪掉其他声音，例如电视或其他人，并在此人停止说话时结束命令。';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle => '启用 Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      '信息亭被唤醒后会立即检查唤醒词。如果唤醒它的是其他声音，例如房间另一头的电视，它会无声地停止聆听。需要在 Ground Control 中开启 Wake Word Verifier。';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle => '信任已录入的声音';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      '由已录入的人的声音说出的唤醒词始终通过检查。如果你自己的声音会误唤醒信息亭，例如在电话会议期间，请关闭此项。';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle => '等待唤醒词验证';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      '先验证唤醒词，再播放提示音并在屏幕上显示语音会话。这会减少唤醒词误触发，但语音会话开始前可能会有短暂延迟。';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle => '启用 Wake Word Aligner';

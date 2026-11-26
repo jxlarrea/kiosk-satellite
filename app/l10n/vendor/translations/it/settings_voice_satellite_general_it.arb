@@ -44,7 +44,6 @@
   "voiceSectionSpeaker": "Altoparlante",
   "voiceSectionRecognition": "Recognition",
   "voiceSectionTrimming": "Trimming",
-  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
   "voiceSectionWakeWordAligner": "Wake Word Aligner",
   "voiceSectionIsolation": "Isolation",
   "voiceSectionWakeCommand": "Parola di attivazione e comando",

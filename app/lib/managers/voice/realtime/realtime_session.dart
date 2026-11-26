@@ -1356,19 +1356,8 @@ class RealtimeSession {
       case 'other_voice':
         onTrace?.call('voice match: another voice left out');
       case 'rejected':
-        // Ground Control's Wake Word Verifier: the kiosk woke up to
-        // something that wasn't its wake word. Nobody called it, so it
-        // stops without a sound whatever Voice not chosen is set to.
-        final noWakeWord = e['reason'] == 'wake_word';
-        onTrace?.call(
-          noWakeWord
-              ? 'voice match: the wake word was not said'
-              : 'voice match: not an enrolled voice',
-        );
-        await _end(
-          gen,
-          sound: !noWakeWord && options().rejectChime ? 'error' : null,
-        );
+        onTrace?.call('voice match: not an enrolled voice');
+        await _end(gen, sound: options().rejectChime ? 'error' : null);
     }
   }
 

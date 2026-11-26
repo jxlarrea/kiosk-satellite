@@ -1193,22 +1193,11 @@ class VoiceSession {
         onTrace?.call('voice match: speech ended ($reason)');
         await endAudio();
       case 'rejected':
-        // Ground Control's Wake Word Verifier: the kiosk woke up to
-        // something that wasn't its wake word. Nobody called it, so it
-        // stops without a sound whatever Voice not chosen is set to.
-        final noWakeWord = e['reason'] == 'wake_word';
-        onTrace?.call(
-          noWakeWord
-              ? 'voice match: the wake word was not said'
-              : 'voice match: not an enrolled voice',
-        );
+        onTrace?.call('voice match: not an enrolled voice');
         _kept = false;
         final g = ++_gen;
         await _abandon();
-        await _finish(
-          g,
-          sound: !noWakeWord && options().matchRejectChime ? 'error' : null,
-        );
+        await _finish(g, sound: options().matchRejectChime ? 'error' : null);
     }
   }
 

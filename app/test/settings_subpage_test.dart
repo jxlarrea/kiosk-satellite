@@ -38,9 +38,6 @@ void main() {
         'voice_match.show_speaker',
         'voice_match.allow_enroll',
         'voice_match.end_on_other_voice',
-        'voice_match.wake_word_verifier',
-        'voice_match.verifier_trust_enrolled',
-        'voice_match.verifier_wait',
         'voice_match.wake_word_aligner',
         'voice_match.isolation',
       ]);
@@ -59,40 +56,19 @@ void main() {
           'voice_match.show_speaker': 'Recognition',
           'voice_match.allow_enroll': 'Recognition',
           'voice_match.end_on_other_voice': 'Trimming',
-          'voice_match.wake_word_verifier': 'Wake Word Verifier',
-          'voice_match.verifier_trust_enrolled': 'Wake Word Verifier',
-          'voice_match.verifier_wait': 'Wake Word Verifier',
           'voice_match.wake_word_aligner': 'Wake Word Aligner',
           'voice_match.isolation': 'Isolation',
         },
       );
-      // The Wake Word Verifier and the Wake Word Aligner work on the wake
-      // word a Trimming session sends, so both follow Trimming. Each has its
-      // own group after it and is on by default.
+      // Isolation runs on what Trimming sends back, so it follows Trimming.
       expect(
-        defs.voiceMatchWakeWordVerifier.dependsOn,
+        defs.voiceMatchIsolation.dependsOn,
         'voice_match.end_on_other_voice',
       );
-      expect(defs.voiceMatchWakeWordVerifier.defaultValue, isTrue);
-      // Trust enrolled voices is a choice within the Wake Word Verifier.
-      expect(
-        defs.voiceMatchVerifierTrustEnrolled.dependsOn,
-        'voice_match.wake_word_verifier',
-      );
-      expect(defs.voiceMatchVerifierTrustEnrolled.defaultValue, isTrue);
-      // So is Wait for wake word verification, which the kiosk's owner
-      // turns on: it can add a small delay before the voice session.
-      expect(
-        defs.voiceMatchVerifierWait.dependsOn,
-        'voice_match.wake_word_verifier',
-      );
-      expect(defs.voiceMatchVerifierWait.defaultValue, isFalse);
-      expect(
-        defs.voiceMatchVerifierWait.title,
-        'Wait for wake word verification',
-      );
-      // The Wake Word Aligner only has something to do with Talk right
-      // after the wake word on.
+      expect(defs.voiceMatchIsolation.defaultValue, isTrue);
+      // The Wake Word Aligner works on the wake word a Trimming session
+      // sends, so it follows Trimming, in its own group after it. It only
+      // has something to do with Talk right after the wake word on.
       expect(
         defs.voiceMatchWakeWordAligner.dependsOn,
         'voice_match.end_on_other_voice',
@@ -102,12 +78,6 @@ void main() {
         'voice.seamless_wake',
       );
       expect(defs.voiceMatchWakeWordAligner.defaultValue, isTrue);
-      // Isolation runs on what Trimming sends back, so it follows Trimming.
-      expect(
-        defs.voiceMatchIsolation.dependsOn,
-        'voice_match.end_on_other_voice',
-      );
-      expect(defs.voiceMatchIsolation.defaultValue, isTrue);
       // The switch follows Voice Satellite and Ground Control, the rest
       // follow the switch (or the policy, for the chosen people and what
       // happens to a voice that is not chosen).
@@ -124,9 +94,6 @@ void main() {
         (d) =>
             d != defs.voiceMatchEnabled &&
             d != defs.voiceMatchIsolation &&
-            d != defs.voiceMatchWakeWordVerifier &&
-            d != defs.voiceMatchVerifierTrustEnrolled &&
-            d != defs.voiceMatchVerifierWait &&
             d != defs.voiceMatchWakeWordAligner &&
             !byPolicy.contains(d),
       )) {

@@ -15377,9 +15377,6 @@ class UiStringsRu extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16279,30 +16276,6 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Другие голоса, например телевизор или другие люди, вырезаются между словами того, кто сказал слово активации, и команда заканчивается, когда он замолкает.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Включить Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'Слово пробуждения проверяется сразу после того, как киоск просыпается. Если его разбудило что-то другое, например телевизор в другом конце комнаты, он перестаёт слушать без единого звука. Нужно включить Wake Word Verifier в Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Доверять записанным голосам';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Слово пробуждения, сказанное голосом человека, чей голос записан, всегда проходит проверку. Выключите, если ваш собственный голос по ошибке будит киоск, например во время конференц-звонка.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Ждать проверки слова пробуждения';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'Слово пробуждения проверяется до того, как прозвучит сигнал и голосовой сеанс появится на экране. Это уменьшает число ложных срабатываний слова пробуждения, но может добавить небольшую задержку перед началом голосового сеанса.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle =>

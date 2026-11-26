@@ -5,11 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
-- **Wake Word Verifier with Ground Control.** A wake word engine now and then wakes a kiosk up to speech that is nothing like its wake word, most often a TV across the room. Ground Control 2026.11.16 or newer checks that the wake word was really said, 0.3 seconds after the kiosk woke up, and stops the session when it wasn't. A session stopped this way ends without a sound, whatever **Voice not chosen** is set to. A new **Wake Word Verifier** group under **Settings > Ground Control > Voice Match** has **Enable Wake Word Verifier**, on by default. It shows with Trimming on and also needs the Wake Word Verifier on in Ground Control. See [Wake Word Verifier](docs/voice-match.md#wake-word-verifier).
-- **Trust enrolled voices.** With this switch on, the default, a wake word in the voice of someone enrolled always passes the Wake Word Verifier. Turn it off under **Settings > Ground Control > Voice Match > Wake Word Verifier** if your own voice wakes the kiosk up by mistake, like during a conference call.
-- **Wait for wake word verification.** A new switch in the **Wake Word Verifier** group, off by default. With it on, the wake word is verified before the chime plays and the voice session shows on the screen, so a false positive plays no sound and shows nothing. This reduces false wake word positives but can add a small delay before the voice session starts. It needs Ground Control 2026.11.16 or newer.
 - **Wake Word Aligner group.** The Voice Match page has a **Wake Word Aligner** group with **Enable Wake Word Aligner**, on by default, so a kiosk can turn it off for itself. It shows with Trimming and **Talk right after the wake word** on.
-- **Wake Word Verifier in Kiosk Satellite Analytics.** With Usage on, the daily report says whether Ground Control's Wake Word Verifier checks this kiosk's wake words.
 - **Voice Satellite in Lockdown Mode.** A new **Allow Voice Satellite** switch on the Lockdown Mode page keeps listening for the wake word while the screen is locked. The answer shows under the shield, which still blocks every touch. With **Blackout screen** on, the answer is only heard. It is off by default, so a locked tablet still answers neither touch nor voice. See [Lockdown Mode](docs/kiosk.md#lockdown-mode).
 
 ### Changed

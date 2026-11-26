@@ -26682,12 +26682,6 @@ abstract class UiStrings {
   /// A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English.
   ///
   /// In en, this message translates to:
-  /// **'Wake Word Verifier'**
-  String get voiceSectionWakeWordVerifier;
-
-  /// A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English.
-  ///
-  /// In en, this message translates to:
   /// **'Wake Word Aligner'**
   String get voiceSectionWakeWordAligner;
 
@@ -28245,49 +28239,13 @@ abstract class UiStrings {
   /// **'Other voices, like a TV or other people, are cut out between the words of the person who said the wake word, and the command ends when they stop.'**
   String get settingVoiceMatchTrimmingDescription;
 
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable Wake Word Verifier'**
-  String get settingVoiceMatchWakeWordVerifierTitle;
-
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'The wake word is checked a moment after the kiosk wakes up. If something else woke it up, like a TV across the room, it stops listening without a sound. Needs the Wake Word Verifier on in Ground Control.'**
-  String get settingVoiceMatchWakeWordVerifierDescription;
-
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Trust enrolled voices'**
-  String get settingVoiceMatchVerifierTrustEnrolledTitle;
-
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'A wake word in the voice of someone enrolled always passes the check. Turn this off if your own voice wakes the kiosk up by mistake, like during a conference call.'**
-  String get settingVoiceMatchVerifierTrustEnrolledDescription;
-
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Wait for wake word verification'**
-  String get settingVoiceMatchVerifierWaitTitle;
-
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'The wake word is verified before the chime plays and the voice session shows on the screen. This reduces false wake word positives but can add a small delay before the voice session starts.'**
-  String get settingVoiceMatchVerifierWaitDescription;
-
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
   /// **'Enable Wake Word Aligner'**
   String get settingVoiceMatchWakeWordAlignerTitle;
 
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
   /// **'The end of the wake word, like the \"xa\" of \"Alexa\", is left out of the command. Needs the Wake Word Aligner on in Ground Control.'**

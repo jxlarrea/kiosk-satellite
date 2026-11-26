@@ -208,68 +208,26 @@ void main() {
     final live = open(follow: false, isolation: true);
     expect(await got.moveNext(), isTrue);
     expect(got.current.containsKey('isolation'), isFalse);
-    // Nor a wake word for Ground Control to verify or align.
-    for (final key in [
-      'wake_word_verifier',
-      'verifier_trusts_enrolled',
-      'wake_word_aligner',
-    ]) {
-      expect(got.current.containsKey(key), isFalse, reason: key);
-    }
+    // Nor a wake word for Ground Control to align.
+    expect(got.current.containsKey('wake_word_aligner'), isFalse);
     live.end();
 
-    // The kiosk's own Wake Word Verifier and Wake Word Aligner switches go
-    // with each Trimming session: on unless the kiosk turned them off.
-    final defaults = VoiceMatchTurn.open(
-      baseUrl: 'http://127.0.0.1:${server.port}',
-      token: 't',
-      deviceId: 'k1',
-      deviceName: 'Kitchen',
-      policy: 'anyone',
-      onEvent: (_) {},
-      follow: true,
-    );
-    expect(await got.moveNext(), isTrue);
-    expect(got.current['wake_word_verifier'], isTrue);
-    expect(got.current['verifier_trusts_enrolled'], isTrue);
-    expect(got.current['wake_word_aligner'], isTrue);
-    defaults.end();
-    final off = VoiceMatchTurn.open(
-      baseUrl: 'http://127.0.0.1:${server.port}',
-      token: 't',
-      deviceId: 'k1',
-      deviceName: 'Kitchen',
-      policy: 'anyone',
-      wakeWordVerifier: false,
-      verifierTrustsEnrolled: false,
-      wakeWordAligner: false,
-      onEvent: (_) {},
-      follow: true,
-    );
-    expect(await got.moveNext(), isTrue);
-    expect(got.current['wake_word_verifier'], isFalse);
-    expect(got.current['verifier_trusts_enrolled'], isFalse);
-    expect(got.current['wake_word_aligner'], isFalse);
-    expect(got.current.containsKey('wake_verified'), isFalse);
-    off.end();
-
-    // Wait for wake word verification: a session whose wake word Ground
-    // Control already passed names that check. Only a wake word has one.
-    for (final (wakeWord, expected) in [('Okay Nabu', 'c1'), (null, null)]) {
-      final verified = VoiceMatchTurn.open(
+    // The kiosk's own Wake Word Aligner switch goes with each Trimming
+    // session: on unless the kiosk turned it off.
+    for (final (aligner, expected) in [(null, true), (false, false)]) {
+      final turn = VoiceMatchTurn.open(
         baseUrl: 'http://127.0.0.1:${server.port}',
         token: 't',
         deviceId: 'k1',
         deviceName: 'Kitchen',
         policy: 'anyone',
-        wakeVerified: 'c1',
-        wakeWord: wakeWord,
+        wakeWordAligner: aligner ?? true,
         onEvent: (_) {},
         follow: true,
       );
       expect(await got.moveNext(), isTrue);
-      expect(got.current['wake_verified'], expected);
-      verified.end();
+      expect(got.current['wake_word_aligner'], expected);
+      turn.end();
     }
     await server.close(force: true);
   });

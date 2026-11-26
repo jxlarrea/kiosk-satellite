@@ -15444,9 +15444,6 @@ class UiStringsPl extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16355,30 +16352,6 @@ class UiStringsPl extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Inne dźwięki, takie jak telewizor lub głosy innych osób, są wyciszane w przerwach między słowami osoby, która wypowiedziała słowo wybudzające, a polecenie kończy się, gdy ta osoba przestanie mówić.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Włącz Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'Słowo wybudzające jest sprawdzane chwilę po wybudzeniu kiosku. Jeśli wybudziło go coś innego, na przykład telewizor po drugiej stronie pokoju, kiosk przestaje słuchać bez żadnego dźwięku. Wymaga włączenia Wake Word Verifier w Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Ufaj zarejestrowanym głosom';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Słowo wybudzające wypowiedziane głosem zarejestrowanej osoby zawsze przechodzi sprawdzenie. Wyłącz, jeśli twój własny głos przez pomyłkę wybudza kiosk, na przykład podczas telekonferencji.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Czekaj na weryfikację słowa wybudzającego';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'Słowo wybudzające jest weryfikowane, zanim zabrzmi sygnał i sesja głosowa pojawi się na ekranie. Zmniejsza to liczbę fałszywych wybudzeń, ale może dodać niewielkie opóźnienie przed rozpoczęciem sesji głosowej.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle => 'Włącz Wake Word Aligner';

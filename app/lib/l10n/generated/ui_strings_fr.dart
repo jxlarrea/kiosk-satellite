@@ -15568,9 +15568,6 @@ class UiStringsFr extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16481,30 +16478,6 @@ class UiStringsFr extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Les autres voix, comme une télé ou d\'autres personnes, sont coupées entre les mots de la personne qui a dit le mot d\'activation, et la commande se termine quand elle s\'arrête.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Activer Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'Le mot de réveil est vérifié un instant après le réveil du kiosque. Si autre chose l\'a réveillé, comme une télévision à l\'autre bout de la pièce, il cesse d\'écouter sans émettre de son. Nécessite Wake Word Verifier activé dans Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Faire confiance aux voix enregistrées';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Un mot de réveil prononcé avec la voix d\'une personne enregistrée passe toujours la vérification. Désactivez cette option si votre propre voix réveille le kiosque par erreur, par exemple pendant une conférence téléphonique.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Attendre la vérification du mot de réveil';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'Le mot de réveil est vérifié avant que le carillon retentisse et que la session vocale s\'affiche à l\'écran. Cela réduit les faux déclenchements du mot de réveil, mais peut ajouter un léger délai avant le début de la session vocale.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle =>

@@ -15,7 +15,6 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'background_listening.dart';
 import 'engine.dart';
-import 'isolate_engine.dart';
 import 'model_cache.dart';
 import 'playback_watch.dart';
 import 'system_permissions.dart';
@@ -328,10 +327,7 @@ class WakeWordManager extends Manager
   void _applyRecording() {
     _engine
       ..recordAudio = _testers > 0 || _diagnosticsOn || _arbitrationOn
-      // Each can hold a wake back before the turn opens the stream.
-      ..preRollExtra =
-          (_arbitrationOn ? _arbitrationWindow : Duration.zero) +
-          (_verifyWaitOn ? verifyAfter + verifyAnswerWithin : Duration.zero)
+      ..preRollExtra = _arbitrationOn ? _arbitrationWindow : Duration.zero
       ..onNearMiss = _diagnosticsOn ? _onNearMiss : null;
   }
 
@@ -360,92 +356,6 @@ class WakeWordManager extends Manager
     } else {
       await arbiter?.stop();
     }
-  }
-
-  /// Wait for wake word verification: Ground Control's Wake Word Verifier
-  /// is asked about a wake word before anything about the turn shows, chimes
-  /// or reaches the assistant. Only for the turns it would check anyway: the
-  /// native satellite's, with Voice Match, Trimming and the Wake Word
-  /// Verifier on.
-  bool get _verifyWaitOn =>
-      enabled &&
-      _settings.get(defs.voiceRuntime) == 'native' &&
-      _settings.get(defs.voiceEnabled) &&
-      _settings.get(defs.groundControlEnabled) &&
-      _settings.get(defs.voiceMatchEnabled) &&
-      _settings.get(defs.voiceMatchEndOnOtherVoice) &&
-      _settings.get(defs.voiceMatchWakeWordVerifier) &&
-      _settings.get(defs.voiceMatchVerifierWait);
-
-  /// How much the Wake Word Verifier hears after the wake word: the wake is
-  /// held until the microphone has it.
-  static const verifyAfter = Duration(milliseconds: 300);
-
-  /// How long Ground Control has to answer. Past it the turn starts as it
-  /// would have, and Ground Control checks the wake word in the session.
-  static const verifyAnswerWithin = Duration(milliseconds: 300);
-
-  /// The check Ground Control passed the last wake word with, for the
-  /// session that follows it: the wake word isn't checked again there. Null
-  /// when it wasn't asked or didn't answer.
-  String? wakeVerified;
-
-  int _verifications = 0;
-
-  /// Asks Ground Control whether the wake word was said. False only when
-  /// it says no: the wake was a false positive and nothing starts.
-  Future<bool> _verifyWake(WakeWordModelRef model) async {
-    if (!_verifyWaitOn ||
-        model.wakeWord.isEmpty ||
-        _settings.get(defs.voiceMute)) {
-      return true;
-    }
-    final engine = _engine;
-    if (engine.sinceWake == null) return true;
-    final held = Stopwatch()..start();
-    // The microphone hands its audio over in chunks: wait for the one that
-    // completes what the check hears.
-    while ((engine.sinceWake ?? verifyAfter) < verifyAfter &&
-        held.elapsed < verifyAfter * 2) {
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-    }
-    final since = engine.sinceWake;
-    final clip = engine.wakeClip(const Duration(milliseconds: 2000));
-    if (since == null || clip == null || clip.isEmpty) return true;
-    final tail = since < IsolateWakeEngine.wakeTail
-        ? since
-        : IsolateWakeEngine.wakeTail;
-    final id =
-        '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
-        '${(_verifications++).toRadixString(36)}';
-    final r = await commands.execute('groundControlVerifyWakeWord', {
-      'id': id,
-      'clip': clip,
-      'tailMs': tail.inMilliseconds,
-      'wakeWord': model.wakeWord,
-      'model': model.id,
-      'engine': _config?.engine.name ?? '',
-      'timeoutMs': verifyAnswerWithin.inMilliseconds,
-    });
-    final said = r.ok && r.data is Map ? (r.data as Map)['said'] : null;
-    final ms = held.elapsedMilliseconds;
-    if (said == false) {
-      log.info(
-        name,
-        'wake word verification: "${model.wakeWord}" was not said, back to '
-        'listening (${ms}ms)',
-      );
-      return false;
-    }
-    if (said == true) wakeVerified = id;
-    log.info(
-      name,
-      said == true
-          ? 'wake word verification: "${model.wakeWord}" was said (${ms}ms)'
-          : 'wake word verification: no answer from Ground Control, going '
-                'on (${ms}ms)',
-    );
-    return true;
   }
 
   /// Settle with the other kiosks that heard this wake word. True when
@@ -1061,14 +971,6 @@ class WakeWordManager extends Manager
           e.key == defs.voiceEnabled.key ||
           e.key == defs.voiceRuntime.key) {
         unawaited(_applyArbitration());
-      } else if (e.key == defs.groundControlEnabled.key ||
-          e.key == defs.voiceMatchEnabled.key ||
-          e.key == defs.voiceMatchEndOnOtherVoice.key ||
-          e.key == defs.voiceMatchWakeWordVerifier.key ||
-          e.key == defs.voiceMatchVerifierWait.key) {
-        // Wait for wake word verification holds a wake back: the pre-roll
-        // keeps what is said meanwhile.
-        _applyRecording();
       } else if (e.key == defs.wakeWordPreferFp32.key) {
         // Models are fetched at engine start; a precision flip needs the
         // same stop/start to re-download as a mic change does.
@@ -1951,16 +1853,9 @@ class WakeWordManager extends Manager
     // the mic has got to once the screen is on.
     _recordActivation(model, simulated: simulated);
     _lateClaim = null;
-    wakeVerified = null;
     // Another kiosk heard it louder: back to listening before anything
     // about the turn shows, chimes or reaches Home Assistant.
     if (!simulated && !await _arbitrate(model)) {
-      setActive(true);
-      return;
-    }
-    // Wait for wake word verification: the same for a wake word that
-    // Ground Control says wasn't said.
-    if (!simulated && !await _verifyWake(model)) {
       setActive(true);
       return;
     }

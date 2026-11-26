@@ -15432,9 +15432,6 @@ class UiStringsUk extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16339,30 +16336,6 @@ class UiStringsUk extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Інші голоси, наприклад телевізор або інші люди, вирізаються між словами людини, яка сказала слово активації, і команда завершується, коли вона замовкає.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Увімкнути Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'Слово активації перевіряється за мить після того, як кіоск прокидається. Якщо його розбудило щось інше, наприклад телевізор в іншому кінці кімнати, він перестає слухати без жодного звуку. Потрібно увімкнути Wake Word Verifier у Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Довіряти зареєстрованим голосам';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Слово активації, сказане голосом когось із зареєстрованих, завжди проходить перевірку. Вимкніть це, якщо ваш власний голос помилково будить кіоск, наприклад під час конференц-дзвінка.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Чекати на перевірку слова активації';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'Слово активації перевіряється до того, як пролунає звуковий сигнал і голосовий сеанс з\'явиться на екрані. Це зменшує кількість хибних спрацювань слова активації, але може додати невелику затримку перед початком голосового сеансу.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle =>

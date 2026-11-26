@@ -15595,9 +15595,6 @@ class UiStringsDe extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16502,30 +16499,6 @@ class UiStringsDe extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Andere Stimmen, etwa ein Fernseher oder andere Personen, werden zwischen den Wörtern der Person, die das Aktivierungswort gesagt hat, herausgeschnitten, und der Befehl endet, wenn sie aufhört zu sprechen.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Wake Word Verifier aktivieren';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'Das Aktivierungswort wird kurz nach dem Aufwachen des Kiosks geprüft. Hat ihn etwas anderes geweckt, etwa ein Fernseher am anderen Ende des Raums, hört er ohne einen Ton auf zuzuhören. Benötigt Wake Word Verifier in Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Eingelernten Stimmen vertrauen';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Ein Aktivierungswort in der Stimme einer eingelernten Person besteht die Prüfung immer. Schalte das aus, wenn deine eigene Stimme den Kiosk versehentlich weckt, etwa während einer Telefonkonferenz.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Auf die Prüfung des Aktivierungsworts warten';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'Das Aktivierungswort wird geprüft, bevor der Signalton ertönt und die Sprachinteraktion auf dem Bildschirm erscheint. Das verringert Fehlauslösungen des Aktivierungsworts, kann den Beginn der Sprachinteraktion aber leicht verzögern.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle =>

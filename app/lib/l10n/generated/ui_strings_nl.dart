@@ -15452,9 +15452,6 @@ class UiStringsNl extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16360,30 +16357,6 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Andere stemmen, zoals een tv of andere mensen, worden weggeknipt tussen de woorden van de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Wake Word Verifier inschakelen';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'Het wekwoord wordt gecontroleerd kort nadat de kiosk wakker wordt. Als iets anders hem wekte, zoals een tv aan de andere kant van de kamer, stopt hij zonder geluid met luisteren. Vereist Wake Word Verifier in Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Ingeschreven stemmen vertrouwen';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Een wekwoord in de stem van iemand die is ingeschreven, komt altijd door de controle. Schakel dit uit als je eigen stem de kiosk per ongeluk wekt, bijvoorbeeld tijdens een telefonische vergadering.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Wachten op controle van het wekwoord';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'Het wekwoord wordt gecontroleerd voordat het geluidssignaal klinkt en de spraaksessie op het scherm verschijnt. Dit vermindert valse activeringen van het wekwoord, maar kan een kleine vertraging geven voordat de spraaksessie begint.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle =>

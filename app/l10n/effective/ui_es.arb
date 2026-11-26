@@ -57088,11 +57088,6 @@
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
   },
-  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
-  "@voiceSectionWakeWordVerifier": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
-  },
   "voiceSectionWakeWordAligner": "Wake Word Aligner",
   "@voiceSectionWakeWordAligner": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
@@ -59147,88 +59142,10 @@
       ]
     }
   },
-  "settingVoiceMatchWakeWordVerifierTitle": "Activar Wake Word Verifier",
-  "@settingVoiceMatchWakeWordVerifierTitle": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
-      ]
-    }
-  },
-  "settingVoiceMatchWakeWordVerifierDescription": "La palabra de activación se comprueba un momento después de que el kiosco se despierta. Si lo despertó otra cosa, como un televisor al otro lado de la habitación, deja de escuchar sin hacer ningún sonido. Necesita Wake Word Verifier activado en Ground Control.",
-  "@settingVoiceMatchWakeWordVerifierDescription": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Enable Wake Word Verifier"
-      ]
-    }
-  },
-  "settingVoiceMatchVerifierTrustEnrolledTitle": "Confiar en las voces registradas",
-  "@settingVoiceMatchVerifierTrustEnrolledTitle": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
-      ]
-    }
-  },
-  "settingVoiceMatchVerifierTrustEnrolledDescription": "Una palabra de activación dicha con la voz de una persona registrada siempre pasa la comprobación. Desactívalo si tu propia voz despierta el kiosco por error, por ejemplo durante una llamada en conferencia.",
-  "@settingVoiceMatchVerifierTrustEnrolledDescription": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Trust enrolled voices"
-      ]
-    }
-  },
-  "settingVoiceMatchVerifierWaitTitle": "Esperar la verificación de la palabra de activación",
-  "@settingVoiceMatchVerifierWaitTitle": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
-      ]
-    }
-  },
-  "settingVoiceMatchVerifierWaitDescription": "La palabra de activación se verifica antes de que suene el tono y de que la interacción de voz aparezca en la pantalla. Esto reduce las activaciones falsas de la palabra de activación, pero puede añadir un pequeño retraso antes de que empiece la interacción de voz.",
-  "@settingVoiceMatchVerifierWaitDescription": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
-      ]
-    }
-  },
   "settingVoiceMatchWakeWordAlignerTitle": "Activar Wake Word Aligner",
   "@settingVoiceMatchWakeWordAlignerTitle": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
         "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"
@@ -59241,7 +59158,7 @@
   "settingVoiceMatchWakeWordAlignerDescription": "El final de la palabra de activación, como el \"xa\" de \"Alexa\", se deja fuera del comando. Necesita Wake Word Aligner activado en Ground Control.",
   "@settingVoiceMatchWakeWordAlignerDescription": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
         "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Aligner > Enable Wake Word Aligner"

@@ -476,11 +476,6 @@
     "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
   },
-  "voiceSectionWakeWordVerifier": "Wake Word Verifier",
-  "@voiceSectionWakeWordVerifier": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
-  },
   "voiceSectionWakeWordAligner": "Wake Word Aligner",
   "@voiceSectionWakeWordAligner": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",

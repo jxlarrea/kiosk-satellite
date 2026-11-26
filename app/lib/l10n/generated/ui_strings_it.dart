@@ -15539,9 +15539,6 @@ class UiStringsIt extends UiStrings {
   String get voiceSectionTrimming => 'Trimming';
 
   @override
-  String get voiceSectionWakeWordVerifier => 'Wake Word Verifier';
-
-  @override
   String get voiceSectionWakeWordAligner => 'Wake Word Aligner';
 
   @override
@@ -16450,30 +16447,6 @@ class UiStringsIt extends UiStrings {
   @override
   String get settingVoiceMatchTrimmingDescription =>
       'Le altre voci, come una TV o altre persone, vengono tagliate tra le parole di chi ha pronunciato la parola di attivazione, e il comando termina quando smette di parlare.';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierTitle =>
-      'Abilita Wake Word Verifier';
-
-  @override
-  String get settingVoiceMatchWakeWordVerifierDescription =>
-      'La parola di attivazione viene verificata un istante dopo il risveglio del kiosk. Se a svegliarlo è stato altro, come una TV dall\'altra parte della stanza, smette di ascoltare senza emettere alcun suono. Richiede Wake Word Verifier attivo in Ground Control.';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledTitle =>
-      'Fidati delle voci registrate';
-
-  @override
-  String get settingVoiceMatchVerifierTrustEnrolledDescription =>
-      'Una parola di attivazione pronunciata con la voce di una persona registrata supera sempre la verifica. Disattivalo se la tua voce sveglia il kiosk per errore, ad esempio durante una chiamata in conferenza.';
-
-  @override
-  String get settingVoiceMatchVerifierWaitTitle =>
-      'Attendi la verifica della parola di attivazione';
-
-  @override
-  String get settingVoiceMatchVerifierWaitDescription =>
-      'La parola di attivazione viene verificata prima che venga riprodotto il segnale acustico e che la sessione vocale compaia sullo schermo. Questo riduce le false attivazioni della parola di attivazione, ma può aggiungere un breve ritardo prima dell\'inizio della sessione vocale.';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
