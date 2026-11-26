@@ -12624,6 +12624,13 @@ class UiStringsEn extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle => 'Only chosen people dismiss it';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      'Touch, buttons, motion, sensors and gestures from anyone else no longer dismiss the screensaver. Kiosk Satellite and Home Assistant still can.';
+
+  @override
   String get settingFacePreviewTitle => 'Show camera preview';
 
   @override

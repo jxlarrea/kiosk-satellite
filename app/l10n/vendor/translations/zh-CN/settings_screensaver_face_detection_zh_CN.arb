@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "人员",
   "settingScreensaverFacePeopleDescription": "选择谁可以通过看向 Kiosk 来关闭或推迟屏保。如果没有选择任何人，任何已识别的人都可以。",
   "screensaverFacePeopleNone": "任何已识别的人",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "仅指定人员可关闭",
+  "settingScreensaverFaceLockDescription": "其他人的触摸、按键、移动、传感器和手势不再关闭屏保。Kiosk Satellite 和 Home Assistant 仍可关闭。"
 }

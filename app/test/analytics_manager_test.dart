@@ -1085,6 +1085,8 @@ void main() {
       expect(u['vision_match_lockdown_relock'], isTrue);
       expect(u['vision_match_finger_gestures'], 'anyone');
       expect(u['vision_match_calendar_focus'], isTrue);
+      // Off by default, and only on Chosen people.
+      expect(u['vision_match_screensaver_lock'], isFalse);
       expect(jsonEncode(u), isNot(contains('Alice')));
     });
 

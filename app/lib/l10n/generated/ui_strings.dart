@@ -22077,6 +22077,18 @@ abstract class UiStrings {
   /// **'Ground Control Vision Match'**
   String get screensaverGroundControlVisionMatch;
 
+  /// Setting label, a switch shown on Chosen people: nothing but the face of one of the chosen people dismisses the screensaver at the kiosk. "It" is the screensaver.
+  ///
+  /// In en, this message translates to:
+  /// **'Only chosen people dismiss it'**
+  String get settingScreensaverFaceLockTitle;
+
+  /// Setting help. Buttons are the device's own keys. Keep Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Touch, buttons, motion, sensors and gestures from anyone else no longer dismiss the screensaver. Kiosk Satellite and Home Assistant still can.'**
+  String get settingScreensaverFaceLockDescription;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

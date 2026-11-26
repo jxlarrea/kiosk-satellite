@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "Люди",
   "settingScreensaverFacePeopleDescription": "Выберите, кто может закрыть или отложить заставку, посмотрев на киоск. Если никто не выбран, это может любой распознанный человек.",
   "screensaverFacePeopleNone": "Любой распознанный человек",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "Закрывают только выбранные люди",
+  "settingScreensaverFaceLockDescription": "Касания, кнопки, движение, датчики и жесты других людей больше не закрывают заставку. Kiosk Satellite и Home Assistant по-прежнему могут."
 }

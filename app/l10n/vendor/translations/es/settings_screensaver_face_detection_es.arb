@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "Personas",
   "settingScreensaverFacePeopleDescription": "Elige quién puede cerrar o aplazar el protector de pantalla mirando el kiosko. Si no eliges a nadie, puede cualquier persona reconocida.",
   "screensaverFacePeopleNone": "Cualquier persona reconocida",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "Solo las personas elegidas lo cierran",
+  "settingScreensaverFaceLockDescription": "El toque, los botones, el movimiento, los sensores y los gestos de cualquier otra persona ya no cierran el protector de pantalla. Kiosk Satellite y Home Assistant sí pueden."
 }

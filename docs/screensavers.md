@@ -445,8 +445,21 @@ With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the
 | --- | --- |
 | Detect faces | **Anyone**, the default, counts any face looking at the kiosk. With **Chosen people**, only the people picked under **People** dismiss or postpone the screensaver. A guest or a passing child looking at the kiosk doesn't. |
 | People | Shown on Chosen people. Pick people from Ground Control in the same list as Voice Match's **People**. If nobody is picked, anyone recognized counts. |
+| Only chosen people dismiss it | Shown on Chosen people. Off by default. Nothing at the kiosk but a chosen person's face dismisses the screensaver. See [Only chosen people dismiss it](#only-chosen-people-dismiss-it). |
 
 A face counts once Ground Control recognizes it. That takes a look or two, so the screensaver is dismissed a little later than with Anyone. The kiosk looks up to 5 times a second while a face in view has no name yet and the screensaver is dismissed by the look that brings the name. A chosen person still counts when someone else is in view too. The group appears only while Face Recognition is on.
+
+#### Only chosen people dismiss it
+
+With **Only chosen people dismiss it** on, the screensaver ends at the kiosk only when one of the chosen people looks at it.
+
+- **Ignored:** touch, the device's buttons including Back and Home, motion, proximity, the person sensor and anyone else's face. The screensaver takes no touches, so its widgets, links and buttons do nothing and Now Playing has no close or library button. A touch on a black screen still brings the screensaver back.
+- **Gestures:** only Show fingers gestures with **Finger gestures for** set to **Chosen people** run while the screensaver is up. Claps, touch gestures and finger gestures open to anyone do nothing.
+- **Still dismisses it:** Kiosk Satellite's own features, such as a ringing alarm or timer, an intercom call or a camera view that opens for a doorbell, plus Home Assistant, the remote admin and the APIs.
+- **Motion:** faces are looked for even with **Dismiss on motion** on, since motion doesn't dismiss the screensaver.
+- **Without Face Recognition:** if Ground Control can't be reached or the camera is off, the screensaver stays locked and only Kiosk Satellite and Home Assistant can end it.
+
+A photo of a chosen person can be recognized as them. It keeps children and guests from using the kiosk, not a determined person. See [Face Recognition Is Not Security](vision-match.md#face-recognition-is-not-security).
 
 ### Camera Preview
 

@@ -259,7 +259,11 @@ class MotionManager extends Manager {
   /// the face leg is idle, which the settings pages say under the switch.
   bool get faceEnabled =>
       _support.faces &&
-      !_dismissOnMotion &&
+      // Only chosen people dismiss it: motion does nothing then, so the
+      // faces are looked for beside it.
+      (!_dismissOnMotion ||
+          (_settings.visible(defs.screensaverFaceLock) &&
+              _settings.get(defs.screensaverFaceLock))) &&
       (_faceSchedulePolicy ?? _settings.get(defs.screensaverDismissOnFace)) &&
       _settings.get(defs.cameraEnabled);
 
@@ -807,6 +811,8 @@ class MotionManager extends Manager {
           e.key == defs.screensaverPostponeOnMotion.key ||
           e.key == defs.screensaverDismissOnFace.key ||
           e.key == defs.screensaverPostponeOnFace.key ||
+          e.key == defs.screensaverFaceWho.key ||
+          e.key == defs.screensaverFaceLock.key ||
           e.key == defs.motionSensor.key ||
           e.key == defs.motionUseEntity.key ||
           e.key == defs.screensaverEnabled.key ||

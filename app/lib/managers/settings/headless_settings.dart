@@ -62,6 +62,7 @@ class HeadlessSettings {
     defs.visionMatchFaceRecognition.key,
     defs.visionMatchFaceConfirmsVoice.key,
     defs.visionMatchLinkFaceWho.key,
+    defs.visionMatchLinkScreensaverLock.key,
     defs.visionMatchShowArrivals.key,
     defs.visionMatchShowActions.key,
     defs.visionMatchCardPosition.key,

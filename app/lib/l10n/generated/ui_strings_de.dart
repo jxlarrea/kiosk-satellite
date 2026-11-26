@@ -12886,6 +12886,14 @@ class UiStringsDe extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle =>
+      'Nur ausgewählte Personen schließen ihn';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      'Berührungen, Tasten, Bewegung, Sensoren und Gesten anderer Personen schließen den Bildschirmschoner nicht mehr. Kiosk Satellite und Home Assistant können es weiterhin.';
+
+  @override
   String get settingFacePreviewTitle => 'Kameravorschau anzeigen';
 
   @override

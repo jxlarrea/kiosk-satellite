@@ -817,6 +817,9 @@ class AnalyticsManager extends Manager {
             groundControl['vision_match_calendar_focus'] = s.get(
               defs.calendarFaceFocus,
             );
+            groundControl['vision_match_screensaver_lock'] =
+                s.visible(defs.screensaverFaceLock) &&
+                s.get(defs.screensaverFaceLock);
           }
         }
       }

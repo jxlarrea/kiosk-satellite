@@ -32097,5 +32097,17 @@
     "translation": "7b57a7223330f6b52cbbc0748f08b276658b6f79e649cd92ffe817fbd90d9425",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingScreensaverFaceLockTitle": {
+    "source": "c276cefc351589888c046ad86327a127899868fb1faf159a302a2b6d8b08d6c3",
+    "translation": "755da37152dfd84ce4bfa55a5f9e111cd01b93943b2bbe9adacfa2ae93791ba2",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverFaceLockDescription": {
+    "source": "a98558ca76f5a0203504f8643c1df633b0b8b2abc3aca344473a42cc535a593e",
+    "translation": "a82af9f5e49e00b888a18ffbbf5c685b9132c0dace79087fb2984cbbb292cd83",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

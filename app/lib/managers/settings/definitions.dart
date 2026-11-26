@@ -6446,6 +6446,28 @@ const screensaverFacePeople = SettingDef<String>(
   groundControl: 'vision',
 );
 
+/// On Chosen people, nothing at the kiosk but a chosen person's face
+/// dismisses the screensaver: touch, keys, motion, the other sensors and
+/// gestures from anyone else are ignored and the screensaver takes no
+/// touches. Kiosk Satellite's own features and Home Assistant still
+/// dismiss it. It stays locked while Face Recognition can't run.
+const screensaverFaceLock = SettingDef<bool>(
+  key: 'screensaver.face_lock',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Only chosen people dismiss it',
+  description:
+      'Touch, buttons, motion, sensors and gestures from anyone else no '
+      'longer dismiss the screensaver. Kiosk Satellite and Home Assistant '
+      'still can.',
+  category: 'Screensaver',
+  section: 'Ground Control Vision Match',
+  subpage: 'Face Detection',
+  dependsOn: 'screensaver.face_who',
+  dependsOnValue: 'people',
+  groundControl: 'vision',
+);
+
 const facePreviewSeconds = SettingDef<num>(
   key: 'face.preview_seconds',
   type: SettingType.number,
@@ -8716,6 +8738,19 @@ const visionMatchLinkFaceWho = SettingDef<String>(
   section: 'Used in other settings',
   dependsOn: 'vision_match.face_recognition',
   linksTo: 'screensaver.face_who',
+);
+
+const visionMatchLinkScreensaverLock = SettingDef<String>(
+  key: 'vision_match.link_screensaver_lock',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Only chosen people dismiss it',
+  description: 'Screensaver > Face Detection > Ground Control Vision Match',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'screensaver.face_lock',
 );
 
 const visionMatchLinkKioskPin = SettingDef<String>(
@@ -15784,6 +15819,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverPostponeOnFace,
   screensaverFaceWho,
   screensaverFacePeople,
+  screensaverFaceLock,
   faceSensitivity,
   facePreview,
   facePreviewSeconds,
@@ -15915,6 +15951,7 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchHandGestures,
   // Used in other settings stays the last group on the page.
   visionMatchLinkFaceWho,
+  visionMatchLinkScreensaverLock,
   visionMatchLinkKioskPin,
   visionMatchLinkLockdownDisable,
   visionMatchLinkLockdownRelock,

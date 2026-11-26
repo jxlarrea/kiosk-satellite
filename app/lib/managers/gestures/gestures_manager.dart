@@ -101,6 +101,10 @@ class GesturesManager extends Manager {
   StreamSubscription<WakeWordStateChanged>? _wakeStateSub;
   StreamSubscription<ScreenStateChanged>? _screenSub;
   StreamSubscription<FaceInViewChanged>? _facesSub;
+  StreamSubscription<ScreensaverStateChanged>? _screensaverSub;
+
+  /// A screensaver is up, for Only chosen people dismiss it.
+  bool _screensaverUp = false;
 
   /// Everyone Face Recognition names in view, for Finger gestures for.
   Set<String> _inView = const {};
@@ -148,6 +152,9 @@ class GesturesManager extends Manager {
     _sub = bus.on<GestureDetected>().listen(_onGesture);
     _palmSub = bus.on<PalmDetected>().listen(_onPalms);
     _pluginSub = bus.on<PluginTriggerFired>().listen(_onPluginTrigger);
+    _screensaverSub = bus.on<ScreensaverStateChanged>().listen(
+      (e) => _screensaverUp = e.active,
+    );
 
     commands.register(
       Command(
@@ -209,6 +216,7 @@ class GesturesManager extends Manager {
     _micRetry?.cancel();
     await _settingsSub?.cancel();
     await _wakeStateSub?.cancel();
+    await _screensaverSub?.cancel();
     await _screenSub?.cancel();
     await _facesSub?.cancel();
     _resetHand();
@@ -266,6 +274,21 @@ class GesturesManager extends Manager {
         }
       }
     }
+  }
+
+  /// Screensaver > Face Detection > Only chosen people dismiss it: while
+  /// that screensaver is up, a gesture could end it or open something over
+  /// it, so only finger gestures limited to the chosen people under Finger
+  /// gestures for run. Claps, touch gestures and anyone's fingers do not.
+  bool _gestureGetsPastLock(GestureMapping mapping) {
+    if (!_screensaverUp ||
+        !_settings.visible(defs.screensaverFaceLock) ||
+        !_settings.get(defs.screensaverFaceLock)) {
+      return true;
+    }
+    return mapping.triggerType == 'fingers' &&
+        _settings.visible(defs.gesturesFaceWho) &&
+        _settings.get(defs.gesturesFaceWho) == 'people';
   }
 
   /// Gestures > Ground Control Vision Match > Finger gestures for: on
@@ -393,6 +416,14 @@ class GesturesManager extends Manager {
       // A stale trigger: the mapping changed under an armed Activity and
       // the fresh apply has not landed yet.
       log.warn(name, 'gesture ${e.id} has no mapping');
+      return;
+    }
+    if (!_gestureGetsPastLock(mapping)) {
+      log.info(
+        name,
+        'gesture ${describeGestureTrigger(mapping.trigger)} skipped: only '
+        'the chosen people dismiss the screensaver',
+      );
       return;
     }
     log.info(

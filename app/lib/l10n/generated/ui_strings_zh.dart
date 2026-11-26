@@ -12045,6 +12045,13 @@ class UiStringsZh extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle => '仅指定人员可关闭';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      '其他人的触摸、按键、移动、传感器和手势不再关闭屏保。Kiosk Satellite 和 Home Assistant 仍可关闭。';
+
+  @override
   String get settingFacePreviewTitle => '显示摄像头预览';
 
   @override
@@ -28643,6 +28650,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get screensaverGroundControlVisionMatch =>
       'Ground Control Vision Match';
+
+  @override
+  String get settingScreensaverFaceLockTitle => '仅指定人员可关闭';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      '其他人的触摸、按键、移动、传感器和手势不再关闭屏保。Kiosk Satellite 和 Home Assistant 仍可关闭。';
 
   @override
   String get settingFacePreviewTitle => '显示摄像头预览';

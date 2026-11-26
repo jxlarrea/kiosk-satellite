@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "Personen",
   "settingScreensaverFacePeopleDescription": "Kies wie de schermbeveiliging kan sluiten of uitstellen door naar de kiosk te kijken. Is er niemand gekozen, dan kan iedereen die herkend wordt dat.",
   "screensaverFacePeopleNone": "Iedereen die herkend wordt",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "Alleen gekozen personen sluiten hem",
+  "settingScreensaverFaceLockDescription": "Aanraken, knoppen, beweging, sensoren en gebaren van iemand anders sluiten de schermbeveiliging niet meer. Kiosk Satellite en Home Assistant kunnen dat nog wel."
 }

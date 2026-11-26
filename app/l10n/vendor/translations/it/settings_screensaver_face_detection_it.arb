@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "Persone",
   "settingScreensaverFacePeopleDescription": "Scegli chi può chiudere o posticipare il salvaschermo guardando il kiosk. Se non scegli nessuno, può farlo chiunque venga riconosciuto.",
   "screensaverFacePeopleNone": "Chiunque venga riconosciuto",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "Solo le persone scelte lo chiudono",
+  "settingScreensaverFaceLockDescription": "Il tocco, i pulsanti, il movimento, i sensori e i gesti di chiunque altro non chiudono più il salvaschermo. Kiosk Satellite e Home Assistant possono ancora farlo."
 }

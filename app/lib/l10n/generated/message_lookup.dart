@@ -3936,6 +3936,9 @@ final _messages = <String, String Function(UiStrings)>{
   'screensaverFacePeopleNone': (s) => s.screensaverFacePeopleNone,
   'screensaverGroundControlVisionMatch': (s) =>
       s.screensaverGroundControlVisionMatch,
+  'settingScreensaverFaceLockTitle': (s) => s.settingScreensaverFaceLockTitle,
+  'settingScreensaverFaceLockDescription': (s) =>
+      s.settingScreensaverFaceLockDescription,
   'settingFacePreviewTitle': (s) => s.settingFacePreviewTitle,
   'settingFacePreviewDescription': (s) => s.settingFacePreviewDescription,
   'settingFacePreviewSecondsTitle': (s) => s.settingFacePreviewSecondsTitle,

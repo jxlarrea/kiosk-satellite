@@ -47474,6 +47474,32 @@
       ]
     }
   },
+  "settingScreensaverFaceLockTitle": "仅指定人员可关闭",
+  "@settingScreensaverFaceLockTitle": {
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
+    "description": "Setting label, a switch shown on Chosen people: nothing but the face of one of the chosen people dismisses the screensaver at the kiosk. \"It\" is the screensaver.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingScreensaverFaceLockDescription": "其他人的触摸、按键、移动、传感器和手势不再关闭屏保。Kiosk Satellite 和 Home Assistant 仍可关闭。",
+  "@settingScreensaverFaceLockDescription": {
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
+    "description": "Setting help. Buttons are the device's own keys. Keep Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Face Detection > Ground Control Vision Match"
+      ]
+    }
+  },
   "settingFacePreviewTitle": "显示摄像头预览",
   "@settingFacePreviewTitle": {
     "context": "Settings > Screensaver > Face Detection > Camera Preview",

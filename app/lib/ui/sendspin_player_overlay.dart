@@ -360,7 +360,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         controls &&
         (!doubleTap || c.settings.get(defs.sendspinFullscreenCloseButton)) &&
         !widget.alongsideScreensaver &&
-        c.compassCenter.value != 'now_playing';
+        c.compassCenter.value != 'now_playing' &&
+        // A screensaver only the chosen people dismiss takes no touches.
+        !c.screensaver.faceLocked.value;
     final showPlayerChip =
         c.settings.get(defs.sendspinSpeakerPill) &&
         c.sendspin.playerChipName.isNotEmpty;
@@ -370,7 +372,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         !widget.alongsideScreensaver &&
         c.settings.get(defs.libraryNowPlayingButton) &&
         c.settings.get(defs.kioskAllowMusicLibrary) &&
-        c.musicLibrary.available.isNotEmpty;
+        c.musicLibrary.available.isNotEmpty &&
+        !c.screensaver.faceLocked.value;
     // The queue panel (controls only: its button lives there) and the
     // lyrics share one slot, the queue winning while it is open. Either
     // takes whatever spare axis the panel has: a second column on a

@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "Personnes",
   "settingScreensaverFacePeopleDescription": "Choisissez qui peut fermer ou repousser l'économiseur d'écran en regardant le kiosque. Si personne n'est choisi, toute personne reconnue le peut.",
   "screensaverFacePeopleNone": "Toute personne reconnue",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "Seules les personnes choisies le ferment",
+  "settingScreensaverFaceLockDescription": "Le toucher, les boutons, le mouvement, les capteurs et les gestes de toute autre personne ne ferment plus l'économiseur d'écran. Kiosk Satellite et Home Assistant le peuvent toujours."
 }

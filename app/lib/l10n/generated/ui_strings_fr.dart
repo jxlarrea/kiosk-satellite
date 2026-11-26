@@ -12851,6 +12851,14 @@ class UiStringsFr extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle =>
+      'Seules les personnes choisies le ferment';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      'Le toucher, les boutons, le mouvement, les capteurs et les gestes de toute autre personne ne ferment plus l\'économiseur d\'écran. Kiosk Satellite et Home Assistant le peuvent toujours.';
+
+  @override
   String get settingFacePreviewTitle => 'Afficher l\'aperçu caméra';
 
   @override

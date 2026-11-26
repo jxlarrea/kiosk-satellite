@@ -814,6 +814,41 @@ void main() {
       expect(executed.single.$1, 'stopScreensaver');
     });
 
+    test('over a screensaver only chosen people dismiss, only fingers for '
+        'the chosen people run', () async {
+      await build(
+        '[{"id":"clap","trigger":{"type":"claps","claps":2},'
+        '"action":{"type":"screensaver_stop"}},'
+        '{"id":"five","trigger":{"type":"fingers","fingers":5},'
+        '"action":{"type":"screensaver_stop"}}]',
+      );
+      for (final entry in {
+        defs.groundControlEnabled: true,
+        defs.cameraEnabled: true,
+        defs.visionMatchEnabled: true,
+        defs.screensaverDismissOnFace: true,
+        defs.screensaverFaceLock: true,
+      }.entries) {
+        await settings.set(entry.key, entry.value);
+      }
+      await settings.set(defs.screensaverFaceWho, 'people');
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(Duration.zero);
+      await fire('clap');
+      // Fingers open to anyone are skipped too.
+      await fire('five');
+      expect(executed, isEmpty);
+      await settings.set(defs.gesturesFaceWho, 'people');
+      await fire('five');
+      await fire('clap');
+      expect([for (final e in executed) e.$1], ['stopScreensaver']);
+      // With the screensaver gone, every gesture runs again.
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await Future<void>.delayed(Duration.zero);
+      await fire('clap');
+      expect(executed, hasLength(2));
+    });
+
     test('app_launcher opens the launcher overlay (issue #318)', () async {
       await build(
         '[{"id":"g1","trigger":{"type":"corner_taps","corner":"br",'

@@ -2920,6 +2920,14 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverFaceWhoTitle",
     "description": "settingVisionMatchLinkFaceWhoDescription",
   },
+  "screensaver.face_lock": {
+    "title": "settingScreensaverFaceLockTitle",
+    "description": "settingScreensaverFaceLockDescription",
+  },
+  "vision_match.link_screensaver_lock": {
+    "title": "settingScreensaverFaceLockTitle",
+    "description": "settingVisionMatchLinkFaceWhoDescription",
+  },
   "kiosk.face_skip_pin": {
     "title": "settingKioskFaceSkipPinTitle",
     "description": "settingKioskFaceSkipPinDescription",

@@ -12727,6 +12727,14 @@ class UiStringsRu extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle =>
+      'Закрывают только выбранные люди';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      'Касания, кнопки, движение, датчики и жесты других людей больше не закрывают заставку. Kiosk Satellite и Home Assistant по-прежнему могут.';
+
+  @override
   String get settingFacePreviewTitle => 'Показывать превью камеры';
 
   @override

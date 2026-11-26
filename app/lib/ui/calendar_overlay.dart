@@ -759,6 +759,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 cal.pictures,
                 cal.features,
                 cal.highlight,
+                c.screensaver.faceLocked,
               ]),
               builder: (context, _) {
                 final narrow = layout == CalendarLayout.narrow;
@@ -808,8 +809,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     // its button ends the screensaver. Beside Now Playing
                     // as the Compass center that would only open both
                     // again, so it has none there.
+                    // A screensaver only the chosen people dismiss has
+                    // no close button.
                     if (!(widget.screensaver &&
-                        c.screensaver.nowPlayingIsCenter))
+                        (c.screensaver.nowPlayingIsCenter ||
+                            c.screensaver.faceLocked.value)))
                       Positioned(
                         top: narrow ? 0 : 4,
                         right: narrow ? 4 : 8,

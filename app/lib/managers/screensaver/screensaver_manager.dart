@@ -217,6 +217,40 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   Timer? _scheduleTimer;
   bool _active = false;
   bool _paused = false;
+
+  /// Screensaver > Face Detection > Ground Control Vision Match > Only
+  /// chosen people dismiss it, while a screensaver shows: it takes no
+  /// touches and only a chosen face, Kiosk Satellite's own features and
+  /// Home Assistant end it. The kiosk screen absorbs the screensaver's
+  /// touches while this holds.
+  final faceLocked = ValueNotifier<bool>(false);
+
+  /// The setting is on and shows: Chosen people under Detect faces, with
+  /// Face Recognition on. Not whether Ground Control answers: the lock
+  /// holds while it can't, so only Kiosk Satellite and Home Assistant can
+  /// end the screensaver then.
+  bool get _faceLockOn =>
+      _settings.visible(defs.screensaverFaceLock) &&
+      _settings.get(defs.screensaverFaceLock);
+
+  void _syncFaceLock() => faceLocked.value = _active && _faceLockOn;
+
+  /// What the lock ignores: someone at the kiosk by hand or by sensor.
+  /// A chosen face comes in as 'face' ([_onFace] lets only them through),
+  /// and the postpone command ('remote') and a cast ('dlna') are the
+  /// kiosk's own.
+  static const _faceLockIgnores = {
+    'touch',
+    'pane_touch',
+    'touch_page',
+    'tap',
+    'screensaver_touch',
+    'key',
+    'close',
+    'motion',
+    'person',
+    'proximity',
+  };
   final _interactions = ActiveInteractions();
 
   /// "Turn screen off after": armed when a session starts (and re-armed on
@@ -928,6 +962,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (_wakeToScreensaver('proximity')) return;
       notifyActivity('proximity');
     });
+    // The lock follows its setting and every setting it hangs on.
+    bus.on<SettingChanged>().listen((_) => _syncFaceLock());
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.screensaverClockNight.key ||
           e.key == defs.screensaverClockNightLux.key ||
@@ -1398,6 +1434,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         const {'motion', 'face', 'person', 'proximity'}.contains(source)) {
       return;
     }
+    // Only chosen people dismiss it: waking a black screen back to the
+    // screensaver (above) is all a touch does.
+    if (_active && _faceLockOn && _faceLockIgnores.contains(source)) {
+      log.debug(name, 'only the chosen people dismiss it: $source ignored');
+      return;
+    }
     // Overlay controls consume their touch without dismissing the view.
     // Off the screensaver the touch is still activity.
     if (_touchOnControl &&
@@ -1617,8 +1659,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     }
     // Dismiss on motion (or its schedule override) takes precedence:
     // the native side does not look for faces while motion is on, and
-    // this double-gate keeps a stale tick from acting either way.
-    if (_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion)) {
+    // this double-gate keeps a stale tick from acting either way. Not when
+    // only the chosen people dismiss it: motion does nothing then, and the
+    // faces are looked for.
+    if (!_faceLockOn &&
+        (_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion))) {
       return;
     }
     if (!(_facePolicy ?? _settings.get(defs.screensaverDismissOnFace))) {
@@ -2082,6 +2127,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       return;
     }
     _active = true;
+    _syncFaceLock();
     _startedForNowPlaying = forNowPlaying;
     _openedByHand = byHand;
     _panelDark = false;
@@ -2702,6 +2748,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     final fadeView = activeView.value;
     final fades = !_screenDark && fadesView(fadeView);
     _active = false;
+    _syncFaceLock();
     _endDimHold();
     _dropShots();
     // Read while the screensaver is still all there is on screen.
@@ -2849,6 +2896,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _nightTimer?.cancel();
     _endTouchLift();
     activeView.dispose();
+    faceLocked.dispose();
     pageReserve.dispose();
     clockNight.dispose();
     pluginTint.dispose();

@@ -21,5 +21,7 @@
   "settingScreensaverFacePeopleTitle": "Osoby",
   "settingScreensaverFacePeopleDescription": "Wybierz, kto może zamknąć lub odłożyć wygaszacz ekranu, patrząc na kiosk. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba.",
   "screensaverFacePeopleNone": "Każda rozpoznana osoba",
-  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingScreensaverFaceLockTitle": "Zamykają tylko wybrane osoby",
+  "settingScreensaverFaceLockDescription": "Dotyk, przyciski, ruch, czujniki i gesty innych osób nie zamykają już wygaszacza ekranu. Kiosk Satellite i Home Assistant nadal mogą."
 }

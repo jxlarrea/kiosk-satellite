@@ -12767,6 +12767,13 @@ class UiStringsPl extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle => 'Zamykają tylko wybrane osoby';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      'Dotyk, przyciski, ruch, czujniki i gesty innych osób nie zamykają już wygaszacza ekranu. Kiosk Satellite i Home Assistant nadal mogą.';
+
+  @override
   String get settingFacePreviewTitle => 'Pokazuj podgląd z kamery';
 
   @override

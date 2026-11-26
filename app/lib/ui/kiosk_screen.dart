@@ -355,6 +355,9 @@ class _KioskScreenState extends State<KioskScreen>
       // again, so back opens the Menu as it does on any other center.
       case BackAction.stopScreensaver when c.screensaver.nowPlayingIsCenter:
         unawaited(_compass.goMenu());
+      // Only the chosen people dismiss it: back does nothing over it.
+      case BackAction.stopScreensaver when c.screensaver.faceLocked.value:
+        c.log.info('kiosk', 'back: only the chosen people dismiss it');
       case BackAction.stopScreensaver:
         unawaited(c.commands.execute('stopScreensaver', const {}));
       case BackAction.closeDrawer:
@@ -1010,7 +1013,10 @@ class _KioskScreenState extends State<KioskScreen>
       if (c.camera.activeViewId.value != null) {
         c.camera.hideView(returnToPreviousApp: false);
       }
-      unawaited(c.commands.execute('stopScreensaver', const {}));
+      // Only the chosen people dismiss it, not HOME.
+      if (!c.screensaver.faceLocked.value) {
+        unawaited(c.commands.execute('stopScreensaver', const {}));
+      }
     });
     // The volume key routing follows the player and the screensaver
     // slot (issue #544); the setting rides _onSettingChanged.
@@ -2155,9 +2161,16 @@ class _KioskScreenState extends State<KioskScreen>
                     // draws over it instead of dismissing it.
                     ScreensaverFade(
                       screensaver: c.screensaver,
-                      child: PausedUnder(
-                        paused: c.screensaver.renderPaused,
-                        child: ScreensaverOverlay(container: c),
+                      // Only the chosen people dismiss it: none of its
+                      // buttons, links or widgets take a touch, Now
+                      // Playing's included. Outside PausedUnder, whose
+                      // Stack the screensaver's Positioned root needs.
+                      child: _FaceLockAbsorb(
+                        locked: c.screensaver.faceLocked,
+                        child: PausedUnder(
+                          paused: c.screensaver.renderPaused,
+                          child: ScreensaverOverlay(container: c),
+                        ),
                       ),
                     ),
                     CameraViewOverlay(container: c),
@@ -3724,6 +3737,24 @@ class _PausedUnderState extends State<PausedUnder> {
 /// session is over by the time its view drops, so it fades the last frame
 /// instead, held at full opacity until the dashboard under it has drawn
 /// again.
+/// A screensaver only the chosen people dismiss takes no touches: none of
+/// its buttons, links or widgets, which could open something over it. The
+/// kiosk screen's own report of the touch still reaches the screensaver
+/// manager, which ignores it but for waking a black screen.
+class _FaceLockAbsorb extends StatelessWidget {
+  const _FaceLockAbsorb({required this.locked, required this.child});
+
+  final ValueListenable<bool> locked;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: locked,
+    builder: (context, on, child) => AbsorbPointer(absorbing: on, child: child),
+    child: child,
+  );
+}
+
 class ScreensaverFade extends StatefulWidget {
   const ScreensaverFade({
     super.key,

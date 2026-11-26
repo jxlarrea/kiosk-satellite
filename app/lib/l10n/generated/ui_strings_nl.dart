@@ -12772,6 +12772,14 @@ class UiStringsNl extends UiStrings {
       'Ground Control Vision Match';
 
   @override
+  String get settingScreensaverFaceLockTitle =>
+      'Alleen gekozen personen sluiten hem';
+
+  @override
+  String get settingScreensaverFaceLockDescription =>
+      'Aanraken, knoppen, beweging, sensoren en gebaren van iemand anders sluiten de schermbeveiliging niet meer. Kiosk Satellite en Home Assistant kunnen dat nog wel.';
+
+  @override
   String get settingFacePreviewTitle => 'Cameravoorbeeld tonen';
 
   @override
