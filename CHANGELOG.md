@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.32 - 2026-11-25
 
 ### Added
 - **Vercel AI Gateway for realtime conversations.** A new **Vercel AI Gateway** provider under **Settings > Voice Satellite > Realtime** answers wake words with any realtime model the gateway serves, billed to your Vercel credits with one key. **Model** lists the gateway's realtime models by provider, such as `openai/gpt-realtime-2`, `spacexai/grok-voice-3.0`, `google/gemini-3.8-live` and `elevenlabs/eleven-realtime-v1-mini`, and **Voice** lists the voices of the model's provider. The OpenAI and Grok models work as they do with those providers directly. The Gemini models work without Google Search, a thinking level or **Ignore talk not meant for it**, and with ElevenLabs the provider decides when you finished talking. **Reasoning effort** applies to the `openai/gpt-realtime-2` models. The gateway's GPT-Live models are not listed. See [Vercel AI Gateway](docs/voice-satellite.md#realtime-conversations).
