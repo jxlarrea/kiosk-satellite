@@ -16378,6 +16378,14 @@ class UiStringsNl extends UiStrings {
       'Een wekwoord in de stem van iemand die is ingeschreven, komt altijd door de controle. Schakel dit uit als je eigen stem de kiosk per ongeluk wekt, bijvoorbeeld tijdens een telefonische vergadering.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Wachten op controle van het wekwoord';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'Het wekwoord wordt gecontroleerd voordat het geluidssignaal klinkt en de spraaksessie op het scherm verschijnt. Dit vermindert valse activeringen van het wekwoord, maar kan een kleine vertraging geven voordat de spraaksessie begint.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Wake Word Aligner inschakelen';
 

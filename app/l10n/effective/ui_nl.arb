@@ -59199,6 +59199,32 @@
       ]
     }
   },
+  "settingVoiceMatchVerifierWaitTitle": "Wachten op controle van het wekwoord",
+  "@settingVoiceMatchVerifierWaitTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierWaitDescription": "Het wekwoord wordt gecontroleerd voordat het geluidssignaal klinkt en de spraaksessie op het scherm verschijnt. Dit vermindert valse activeringen van het wekwoord, maar kan een kleine vertraging geven voordat de spraaksessie begint.",
+  "@settingVoiceMatchVerifierWaitDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ]
+    }
+  },
   "settingVoiceMatchWakeWordAlignerTitle": "Wake Word Aligner inschakelen",
   "@settingVoiceMatchWakeWordAlignerTitle": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",

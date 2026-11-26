@@ -16297,6 +16297,14 @@ class UiStringsRu extends UiStrings {
       'Слово пробуждения, сказанное голосом человека, чей голос записан, всегда проходит проверку. Выключите, если ваш собственный голос по ошибке будит киоск, например во время конференц-звонка.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Ждать проверки слова пробуждения';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'Слово пробуждения проверяется до того, как прозвучит сигнал и голосовой сеанс появится на экране. Это уменьшает число ложных срабатываний слова пробуждения, но может добавить небольшую задержку перед началом голосового сеанса.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Включить Wake Word Aligner';
 

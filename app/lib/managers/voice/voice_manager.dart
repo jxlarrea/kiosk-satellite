@@ -4513,6 +4513,7 @@ class _VoiceMatch implements VoiceMatchPort {
       wakeWordVerifier: s.get(defs.voiceMatchWakeWordVerifier),
       verifierTrustsEnrolled: s.get(defs.voiceMatchVerifierTrustEnrolled),
       wakeWordAligner: s.get(defs.voiceMatchWakeWordAligner),
+      wakeVerified: clip == null ? null : _voice._wakeWord.wakeVerified,
       onEvent: (e) {
         if (e['type'] == 'speaker' && e['id'] is String) {
           _speaker = e['id'] as String;

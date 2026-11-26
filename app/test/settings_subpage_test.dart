@@ -40,6 +40,7 @@ void main() {
         'voice_match.end_on_other_voice',
         'voice_match.wake_word_verifier',
         'voice_match.verifier_trust_enrolled',
+        'voice_match.verifier_wait',
         'voice_match.wake_word_aligner',
         'voice_match.isolation',
       ]);
@@ -60,6 +61,7 @@ void main() {
           'voice_match.end_on_other_voice': 'Trimming',
           'voice_match.wake_word_verifier': 'Wake Word Verifier',
           'voice_match.verifier_trust_enrolled': 'Wake Word Verifier',
+          'voice_match.verifier_wait': 'Wake Word Verifier',
           'voice_match.wake_word_aligner': 'Wake Word Aligner',
           'voice_match.isolation': 'Isolation',
         },
@@ -78,6 +80,17 @@ void main() {
         'voice_match.wake_word_verifier',
       );
       expect(defs.voiceMatchVerifierTrustEnrolled.defaultValue, isTrue);
+      // So is Wait for wake word verification, which the kiosk's owner
+      // turns on: it can add a small delay before the voice session.
+      expect(
+        defs.voiceMatchVerifierWait.dependsOn,
+        'voice_match.wake_word_verifier',
+      );
+      expect(defs.voiceMatchVerifierWait.defaultValue, isFalse);
+      expect(
+        defs.voiceMatchVerifierWait.title,
+        'Wait for wake word verification',
+      );
       // The Wake Word Aligner only has something to do with Talk right
       // after the wake word on.
       expect(
@@ -113,6 +126,7 @@ void main() {
             d != defs.voiceMatchIsolation &&
             d != defs.voiceMatchWakeWordVerifier &&
             d != defs.voiceMatchVerifierTrustEnrolled &&
+            d != defs.voiceMatchVerifierWait &&
             d != defs.voiceMatchWakeWordAligner &&
             !byPolicy.contains(d),
       )) {

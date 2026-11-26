@@ -16468,6 +16468,14 @@ class UiStringsIt extends UiStrings {
       'Una parola di attivazione pronunciata con la voce di una persona registrata supera sempre la verifica. Disattivalo se la tua voce sveglia il kiosk per errore, ad esempio durante una chiamata in conferenza.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Attendi la verifica della parola di attivazione';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'La parola di attivazione viene verificata prima che venga riprodotto il segnale acustico e che la sessione vocale compaia sullo schermo. Questo riduce le false attivazioni della parola di attivazione, ma può aggiungere un breve ritardo prima dell\'inizio della sessione vocale.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Abilita Wake Word Aligner';
 

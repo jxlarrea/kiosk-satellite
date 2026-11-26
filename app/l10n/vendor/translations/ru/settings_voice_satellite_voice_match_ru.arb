@@ -38,6 +38,8 @@
   "settingVoiceMatchWakeWordVerifierDescription": "Слово пробуждения проверяется сразу после того, как киоск просыпается. Если его разбудило что-то другое, например телевизор в другом конце комнаты, он перестаёт слушать без единого звука. Нужно включить Wake Word Verifier в Ground Control.",
   "settingVoiceMatchVerifierTrustEnrolledTitle": "Доверять записанным голосам",
   "settingVoiceMatchVerifierTrustEnrolledDescription": "Слово пробуждения, сказанное голосом человека, чей голос записан, всегда проходит проверку. Выключите, если ваш собственный голос по ошибке будит киоск, например во время конференц-звонка.",
+  "settingVoiceMatchVerifierWaitTitle": "Ждать проверки слова пробуждения",
+  "settingVoiceMatchVerifierWaitDescription": "Слово пробуждения проверяется до того, как прозвучит сигнал и голосовой сеанс появится на экране. Это уменьшает число ложных срабатываний слова пробуждения, но может добавить небольшую задержку перед началом голосового сеанса.",
   "settingVoiceMatchWakeWordAlignerTitle": "Включить Wake Word Aligner",
   "settingVoiceMatchWakeWordAlignerDescription": "Конец слова пробуждения, например \"xa\" в \"Alexa\", не попадает в команду. Нужно включить Wake Word Aligner в Ground Control.",
   "settingVoiceMatchIsolationTitle": "Включить Isolation",

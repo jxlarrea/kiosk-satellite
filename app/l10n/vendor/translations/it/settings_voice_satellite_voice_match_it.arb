@@ -38,6 +38,8 @@
   "settingVoiceMatchWakeWordVerifierDescription": "La parola di attivazione viene verificata un istante dopo il risveglio del kiosk. Se a svegliarlo è stato altro, come una TV dall'altra parte della stanza, smette di ascoltare senza emettere alcun suono. Richiede Wake Word Verifier attivo in Ground Control.",
   "settingVoiceMatchVerifierTrustEnrolledTitle": "Fidati delle voci registrate",
   "settingVoiceMatchVerifierTrustEnrolledDescription": "Una parola di attivazione pronunciata con la voce di una persona registrata supera sempre la verifica. Disattivalo se la tua voce sveglia il kiosk per errore, ad esempio durante una chiamata in conferenza.",
+  "settingVoiceMatchVerifierWaitTitle": "Attendi la verifica della parola di attivazione",
+  "settingVoiceMatchVerifierWaitDescription": "La parola di attivazione viene verificata prima che venga riprodotto il segnale acustico e che la sessione vocale compaia sullo schermo. Questo riduce le false attivazioni della parola di attivazione, ma può aggiungere un breve ritardo prima dell'inizio della sessione vocale.",
   "settingVoiceMatchWakeWordAlignerTitle": "Abilita Wake Word Aligner",
   "settingVoiceMatchWakeWordAlignerDescription": "La fine della parola di attivazione, come \"xa\" di \"Alexa\", viene esclusa dal comando. Richiede Wake Word Aligner attivo in Ground Control.",
   "settingVoiceMatchIsolationTitle": "Abilita Isolation",

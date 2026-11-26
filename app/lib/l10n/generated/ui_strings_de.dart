@@ -16520,6 +16520,14 @@ class UiStringsDe extends UiStrings {
       'Ein Aktivierungswort in der Stimme einer eingelernten Person besteht die Prüfung immer. Schalte das aus, wenn deine eigene Stimme den Kiosk versehentlich weckt, etwa während einer Telefonkonferenz.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Auf die Prüfung des Aktivierungsworts warten';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'Das Aktivierungswort wird geprüft, bevor der Signalton ertönt und die Sprachinteraktion auf dem Bildschirm erscheint. Das verringert Fehlauslösungen des Aktivierungsworts, kann den Beginn der Sprachinteraktion aber leicht verzögern.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Wake Word Aligner aktivieren';
 

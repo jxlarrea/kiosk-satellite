@@ -500,6 +500,32 @@
       ]
     }
   },
+  "settingVoiceMatchVerifierWaitTitle": "Wait for wake word verification",
+  "@settingVoiceMatchVerifierWaitTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ]
+    }
+  },
+  "settingVoiceMatchVerifierWaitDescription": "The wake word is verified before the chime plays and the voice session shows on the screen. This reduces false wake word positives but can add a small delay before the voice session starts.",
+  "@settingVoiceMatchVerifierWaitDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Wake Word Verifier > Wait for wake word verification"
+      ]
+    }
+  },
   "settingVoiceMatchWakeWordAlignerTitle": "Enable Wake Word Aligner",
   "@settingVoiceMatchWakeWordAlignerTitle": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",

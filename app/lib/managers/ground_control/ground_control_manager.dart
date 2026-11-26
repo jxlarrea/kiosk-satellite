@@ -205,6 +205,7 @@ class GroundControlManager extends Manager {
     defs.voiceMatchIsolation.key,
     defs.voiceMatchWakeWordVerifier.key,
     defs.voiceMatchVerifierTrustEnrolled.key,
+    defs.voiceMatchVerifierWait.key,
     defs.voiceMatchWakeWordAligner.key,
     defs.voiceMatchSpeakerSensor.key,
     defs.voiceMatchShowSpeaker.key,
@@ -245,6 +246,7 @@ class GroundControlManager extends Manager {
       'isolation': s.get(defs.voiceMatchIsolation),
       'wake_word_verifier': s.get(defs.voiceMatchWakeWordVerifier),
       'verifier_trusts_enrolled': s.get(defs.voiceMatchVerifierTrustEnrolled),
+      'verifier_waits': s.get(defs.voiceMatchVerifierWait),
       'wake_word_aligner': s.get(defs.voiceMatchWakeWordAligner),
       'speaker_sensor': s.get(defs.voiceMatchSpeakerSensor),
       'show_speaker': s.get(defs.voiceMatchShowSpeaker),
@@ -328,6 +330,25 @@ class GroundControlManager extends Manager {
             'its address and version, and who is enrolled',
         quiet: true,
         handler: (_) async => CommandResult.ok(describe()),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'groundControlVerifyWakeWord',
+        description:
+            'Asks the Wake Word Verifier of Kiosk Satellite Ground Control '
+            'whether the wake word in a clip was said, before the voice '
+            'session starts (Wait for wake word verification)',
+        params: const {
+          'id': 'A name for the check, which its voice session then gives',
+          'clip': 'The wake clip, 16 kHz mono PCM16',
+          'tailMs': 'How much of the clip came after the wake word',
+          'wakeWord': 'The wake word as it is said',
+          'timeoutMs': 'How long to wait for the answer',
+        },
+        // One for every wake word, with the audio in its params.
+        quiet: true,
+        handler: (p) async => CommandResult.ok({'said': await _verifyWake(p)}),
       ),
     );
     commands.register(
@@ -664,6 +685,57 @@ class GroundControlManager extends Manager {
     _send({...hello, 'proof': ?proof});
   }
 
+  /// The wake word checks Ground Control hasn't answered yet, by their id.
+  final _verifying = <String, Completer<bool?>>{};
+
+  /// Whether the wake word in a clip was said, as Ground Control's Wake
+  /// Word Verifier finds. Null when it can't say: not connected, an older
+  /// Ground Control, the Wake Word Verifier off there or no answer in time.
+  /// The kiosk then starts the turn as it would have.
+  Future<bool?> _verifyWake(Map<String, Object?> p) async {
+    final clip = p['clip'];
+    final id = '${p['id'] ?? ''}';
+    final timeout = p['timeoutMs'];
+    if (status != 'connected' ||
+        _socket == null ||
+        install['wakeWordVerify'] != true ||
+        clip is! Uint8List ||
+        id.isEmpty) {
+      return null;
+    }
+    final s = _settings;
+    final people = [
+      for (final p in defs.decodeVoiceMatchPeople(s.get(defs.voiceMatchPeople)))
+        p.id,
+    ];
+    final chosen = s.get(defs.voiceMatchPolicy) == 'people';
+    final answer = _verifying[id] = Completer<bool?>();
+    _send({
+      'type': 'verify',
+      'id': id,
+      'clip': base64Encode(clip),
+      'tail_ms': p['tailMs'] is int ? p['tailMs'] : 0,
+      'wake_word': '${p['wakeWord'] ?? ''}',
+      'wake_word_engine': '${p['engine'] ?? ''}',
+      'wake_word_model': '${p['model'] ?? ''}',
+      'language': s.get(defs.uiLanguage),
+      'seamless': s.get(defs.voiceSeamlessWake),
+      'trusts_enrolled': s.get(defs.voiceMatchVerifierTrustEnrolled),
+      // Who this kiosk answers, for the record of a false positive.
+      'policy': !chosen ? 'anyone' : (people.isEmpty ? 'enrolled' : 'people'),
+      if (chosen && people.isNotEmpty) 'people': people,
+    });
+    try {
+      return await answer.future.timeout(
+        Duration(milliseconds: timeout is int ? timeout : 300),
+      );
+    } on TimeoutException {
+      return null;
+    } finally {
+      _verifying.remove(id);
+    }
+  }
+
   void _send(Map<String, Object?> message) {
     try {
       _socket?.sink.add(jsonEncode(message));
@@ -728,6 +800,10 @@ class GroundControlManager extends Manager {
             // by a Ground Control from before it.
             if (msg['wake_word_verifier'] is bool)
               'wakeWordVerifier': msg['wake_word_verifier'],
+            // Whether it answers a kiosk that asks about a wake word before
+            // its session (Wait for wake word verification).
+            if (msg['wake_word_verify'] is bool)
+              'wakeWordVerify': msg['wake_word_verify'],
           };
         } else {
           // An older Ground Control: nothing left from the one before it.
@@ -735,6 +811,11 @@ class GroundControlManager extends Manager {
         }
         _attempt = 0;
         _setStatus('connected', baseUrl);
+      case 'verified':
+        final said = msg['said'];
+        _verifying
+            .remove('${msg['id'] ?? ''}')
+            ?.complete(said is bool ? said : null);
       case 'error':
         log.warn(name, 'Ground Control turned this kiosk away: ${msg['code']}');
         if (msg['code'] == 'unauthorized') _setStatus('refused', null);

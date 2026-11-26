@@ -38,6 +38,8 @@
   "settingVoiceMatchWakeWordVerifierDescription": "Słowo wybudzające jest sprawdzane chwilę po wybudzeniu kiosku. Jeśli wybudziło go coś innego, na przykład telewizor po drugiej stronie pokoju, kiosk przestaje słuchać bez żadnego dźwięku. Wymaga włączenia Wake Word Verifier w Ground Control.",
   "settingVoiceMatchVerifierTrustEnrolledTitle": "Ufaj zarejestrowanym głosom",
   "settingVoiceMatchVerifierTrustEnrolledDescription": "Słowo wybudzające wypowiedziane głosem zarejestrowanej osoby zawsze przechodzi sprawdzenie. Wyłącz, jeśli twój własny głos przez pomyłkę wybudza kiosk, na przykład podczas telekonferencji.",
+  "settingVoiceMatchVerifierWaitTitle": "Czekaj na weryfikację słowa wybudzającego",
+  "settingVoiceMatchVerifierWaitDescription": "Słowo wybudzające jest weryfikowane, zanim zabrzmi sygnał i sesja głosowa pojawi się na ekranie. Zmniejsza to liczbę fałszywych wybudzeń, ale może dodać niewielkie opóźnienie przed rozpoczęciem sesji głosowej.",
   "settingVoiceMatchWakeWordAlignerTitle": "Włącz Wake Word Aligner",
   "settingVoiceMatchWakeWordAlignerDescription": "Końcówka słowa wybudzającego, na przykład \"xa\" w \"Alexa\", jest pomijana w poleceniu. Wymaga włączenia Wake Word Aligner w Ground Control.",
   "settingVoiceMatchIsolationTitle": "Włącz Isolation",

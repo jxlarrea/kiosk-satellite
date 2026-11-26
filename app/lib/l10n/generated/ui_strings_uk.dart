@@ -16357,6 +16357,14 @@ class UiStringsUk extends UiStrings {
       'Слово активації, сказане голосом когось із зареєстрованих, завжди проходить перевірку. Вимкніть це, якщо ваш власний голос помилково будить кіоск, наприклад під час конференц-дзвінка.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Чекати на перевірку слова активації';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'Слово активації перевіряється до того, як пролунає звуковий сигнал і голосовий сеанс з\'явиться на екрані. Це зменшує кількість хибних спрацювань слова активації, але може додати невелику затримку перед початком голосового сеансу.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Увімкнути Wake Word Aligner';
 

@@ -16505,6 +16505,14 @@ class UiStringsEs extends UiStrings {
       'Una palabra de activación dicha con la voz de una persona registrada siempre pasa la comprobación. Desactívalo si tu propia voz despierta el kiosco por error, por ejemplo durante una llamada en conferencia.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Esperar la verificación de la palabra de activación';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'La palabra de activación se verifica antes de que suene el tono y de que la interacción de voz aparezca en la pantalla. Esto reduce las activaciones falsas de la palabra de activación, pero puede añadir un pequeño retraso antes de que empiece la interacción de voz.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Activar Wake Word Aligner';
 

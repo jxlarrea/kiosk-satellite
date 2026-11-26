@@ -38,6 +38,8 @@
   "settingVoiceMatchWakeWordVerifierDescription": "Het wekwoord wordt gecontroleerd kort nadat de kiosk wakker wordt. Als iets anders hem wekte, zoals een tv aan de andere kant van de kamer, stopt hij zonder geluid met luisteren. Vereist Wake Word Verifier in Ground Control.",
   "settingVoiceMatchVerifierTrustEnrolledTitle": "Ingeschreven stemmen vertrouwen",
   "settingVoiceMatchVerifierTrustEnrolledDescription": "Een wekwoord in de stem van iemand die is ingeschreven, komt altijd door de controle. Schakel dit uit als je eigen stem de kiosk per ongeluk wekt, bijvoorbeeld tijdens een telefonische vergadering.",
+  "settingVoiceMatchVerifierWaitTitle": "Wachten op controle van het wekwoord",
+  "settingVoiceMatchVerifierWaitDescription": "Het wekwoord wordt gecontroleerd voordat het geluidssignaal klinkt en de spraaksessie op het scherm verschijnt. Dit vermindert valse activeringen van het wekwoord, maar kan een kleine vertraging geven voordat de spraaksessie begint.",
   "settingVoiceMatchWakeWordAlignerTitle": "Wake Word Aligner inschakelen",
   "settingVoiceMatchWakeWordAlignerDescription": "Het einde van het wekwoord, zoals de \"xa\" van \"Alexa\", wordt uit het commando weggelaten. Vereist Wake Word Aligner in Ground Control.",
   "settingVoiceMatchIsolationTitle": "Isolation inschakelen",

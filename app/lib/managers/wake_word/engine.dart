@@ -377,6 +377,10 @@ abstract class WakeWordEngine {
   /// detection last resumed.
   Uint8List? wakeClip(Duration length) => null;
 
+  /// How long ago the last wake word ended, by the audio heard since. Null
+  /// without a detection since detection last resumed.
+  Duration? get sinceWake => null;
+
   /// Near misses as the detector spots them: a wake word, or the armed stop
   /// word (`stop: true` in [detail]), that scored within reach of its
   /// threshold and fell back without firing, with its peak score and

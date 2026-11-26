@@ -16193,6 +16193,14 @@ class UiStringsEn extends UiStrings {
       'A wake word in the voice of someone enrolled always passes the check. Turn this off if your own voice wakes the kiosk up by mistake, like during a conference call.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Wait for wake word verification';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'The wake word is verified before the chime plays and the voice session shows on the screen. This reduces false wake word positives but can add a small delay before the voice session starts.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Enable Wake Word Aligner';
 

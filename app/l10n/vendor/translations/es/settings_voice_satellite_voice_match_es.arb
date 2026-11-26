@@ -38,6 +38,8 @@
   "settingVoiceMatchWakeWordVerifierDescription": "La palabra de activación se comprueba un momento después de que el kiosco se despierta. Si lo despertó otra cosa, como un televisor al otro lado de la habitación, deja de escuchar sin hacer ningún sonido. Necesita Wake Word Verifier activado en Ground Control.",
   "settingVoiceMatchVerifierTrustEnrolledTitle": "Confiar en las voces registradas",
   "settingVoiceMatchVerifierTrustEnrolledDescription": "Una palabra de activación dicha con la voz de una persona registrada siempre pasa la comprobación. Desactívalo si tu propia voz despierta el kiosco por error, por ejemplo durante una llamada en conferencia.",
+  "settingVoiceMatchVerifierWaitTitle": "Esperar la verificación de la palabra de activación",
+  "settingVoiceMatchVerifierWaitDescription": "La palabra de activación se verifica antes de que suene el tono y de que la interacción de voz aparezca en la pantalla. Esto reduce las activaciones falsas de la palabra de activación, pero puede añadir un pequeño retraso antes de que empiece la interacción de voz.",
   "settingVoiceMatchWakeWordAlignerTitle": "Activar Wake Word Aligner",
   "settingVoiceMatchWakeWordAlignerDescription": "El final de la palabra de activación, como el \"xa\" de \"Alexa\", se deja fuera del comando. Necesita Wake Word Aligner activado en Ground Control.",
   "settingVoiceMatchIsolationTitle": "Activar Isolation",

@@ -293,6 +293,14 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     return Uint8List.sublistView(pcm, 0, pcm.length - (after - tail) * 2);
   }
 
+  @override
+  Duration? get sinceWake {
+    final end = _wakeEndSample;
+    if (end == null) return null;
+    final after = _preRoll.absSamples - end;
+    return after < 0 ? null : Duration(microseconds: after * 125 ~/ 2);
+  }
+
   Map<String, Object?>? _lastDetection;
 
   void Function(WakeWordModelRef, Map<String, Object?>)? _onNearMiss;

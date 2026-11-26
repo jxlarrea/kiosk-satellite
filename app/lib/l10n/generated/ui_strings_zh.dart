@@ -15360,6 +15360,13 @@ class UiStringsZh extends UiStrings {
       '由已录入的人的声音说出的唤醒词始终通过检查。如果你自己的声音会误唤醒信息亭，例如在电话会议期间，请关闭此项。';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle => '等待唤醒词验证';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      '先验证唤醒词，再播放提示音并在屏幕上显示语音会话。这会减少唤醒词误触发，但语音会话开始前可能会有短暂延迟。';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle => '启用 Wake Word Aligner';
 
   @override
@@ -31998,6 +32005,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVoiceMatchVerifierTrustEnrolledDescription =>
       '由已录入的人的声音说出的唤醒词始终通过检查。如果你自己的声音会误唤醒信息亭，例如在电话会议期间，请关闭此项。';
+
+  @override
+  String get settingVoiceMatchVerifierWaitTitle => '等待唤醒词验证';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      '先验证唤醒词，再播放提示音并在屏幕上显示语音会话。这会减少唤醒词误触发，但语音会话开始前可能会有短暂延迟。';
 
   @override
   String get settingVoiceMatchWakeWordAlignerTitle => '启用 Wake Word Aligner';

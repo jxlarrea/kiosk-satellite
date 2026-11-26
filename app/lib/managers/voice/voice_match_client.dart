@@ -70,6 +70,7 @@ class VoiceMatchTurn {
     bool wakeWordVerifier = true,
     bool verifierTrustsEnrolled = true,
     bool wakeWordAligner = true,
+    String? wakeVerified,
     required void Function(Map<String, Object?> event) onEvent,
     void Function(String line)? log,
     bool follow = false,
@@ -120,6 +121,10 @@ class VoiceMatchTurn {
         if (follow) 'wake_word_verifier': wakeWordVerifier,
         if (follow) 'verifier_trusts_enrolled': verifierTrustsEnrolled,
         if (follow) 'wake_word_aligner': wakeWordAligner,
+        // Wait for wake word verification: the check Ground Control already
+        // passed this wake word with, so it isn't checked again.
+        if (follow && woken && wakeVerified != null)
+          'wake_verified': wakeVerified,
         // How the turn started, for the session's page in Ground Control:
         // the wake word as it is said, what heard it and who answers.
         if (woken) 'wake_word': wakeWord,

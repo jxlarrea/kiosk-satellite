@@ -9060,6 +9060,26 @@ const voiceMatchVerifierTrustEnrolled = SettingDef<bool>(
   dependsOn: 'voice_match.wake_word_verifier',
 );
 
+/// Wait for wake word verification: the kiosk asks Ground Control about the
+/// wake word before anything about the turn shows, chimes or reaches the
+/// assistant, and goes back to listening when it wasn't said. Off, the
+/// session starts at once and Ground Control stops it a moment in. Told to
+/// Ground Control as `verifier_waits`.
+const voiceMatchVerifierWait = SettingDef<bool>(
+  key: 'voice_match.verifier_wait',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Wait for wake word verification',
+  description:
+      'The wake word is verified before the chime plays and the voice '
+      'session shows on the screen. This reduces false wake word positives '
+      'but can add a small delay before the voice session starts.',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
+  section: 'Wake Word Verifier',
+  dependsOn: 'voice_match.wake_word_verifier',
+);
+
 /// The Wake Word Aligner: with Talk right after the wake word on, Ground
 /// Control leaves the end of the wake word out of the command, when the
 /// Wake Word Aligner is on in its own settings too. Sent with each Trimming
@@ -16014,6 +16034,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceMatchEndOnOtherVoice,
   voiceMatchWakeWordVerifier,
   voiceMatchVerifierTrustEnrolled,
+  voiceMatchVerifierWait,
   voiceMatchWakeWordAligner,
   voiceMatchIsolation,
   visionMatchEnabled,

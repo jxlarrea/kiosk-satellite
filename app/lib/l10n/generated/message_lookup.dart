@@ -5333,6 +5333,10 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingVoiceMatchVerifierTrustEnrolledTitle,
   'settingVoiceMatchVerifierTrustEnrolledDescription': (s) =>
       s.settingVoiceMatchVerifierTrustEnrolledDescription,
+  'settingVoiceMatchVerifierWaitTitle': (s) =>
+      s.settingVoiceMatchVerifierWaitTitle,
+  'settingVoiceMatchVerifierWaitDescription': (s) =>
+      s.settingVoiceMatchVerifierWaitDescription,
   'settingVoiceMatchWakeWordAlignerTitle': (s) =>
       s.settingVoiceMatchWakeWordAlignerTitle,
   'settingVoiceMatchWakeWordAlignerDescription': (s) =>

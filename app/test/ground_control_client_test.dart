@@ -116,6 +116,7 @@ void main() {
       expect((hello['features'] as Map)['isolation'], isTrue);
       expect((hello['features'] as Map)['wake_word_verifier'], isTrue);
       expect((hello['features'] as Map)['verifier_trusts_enrolled'], isTrue);
+      expect((hello['features'] as Map)['verifier_waits'], isFalse);
       expect((hello['features'] as Map)['wake_word_aligner'], isTrue);
 
       toKiosk.add(jsonEncode({'type': 'pending'}));
@@ -154,6 +155,67 @@ void main() {
       expect(gc.ticket, isNull);
     },
   );
+
+  test('asks Ground Control about a wake word before its session', () async {
+    // Wait for wake word verification.
+    final (gc, _) = await start(key: ClientKey('test', seed));
+    await until(() => received.isNotEmpty);
+    Future<Object?> ask(String id, {int timeoutMs = 300}) async {
+      final r = await gc.commands.execute('groundControlVerifyWakeWord', {
+        'id': id,
+        'clip': Uint8List(64000),
+        'tailMs': 300,
+        'wakeWord': 'Okay Nabu',
+        'engine': 'microWakeWord',
+        'model': 'okay_nabu',
+        'timeoutMs': timeoutMs,
+      });
+      expect(r.ok, isTrue);
+      return (r.data as Map)['said'];
+    }
+
+    // Not connected yet: nothing to ask.
+    expect(await ask('c0'), isNull);
+    toKiosk.add(jsonEncode({'type': 'ticket', 'ticket': 't1'}));
+    Map<String, Object?> people({bool? verify}) => {
+      'type': 'people',
+      'people': <Object>[],
+      'install': 'docker',
+      'wake_word_verifier': true,
+      'wake_word_verify': ?verify,
+    };
+    // A Ground Control from before it doesn't say it answers.
+    toKiosk.add(jsonEncode(people()));
+    await until(() => gc.status == 'connected');
+    expect(await ask('c1'), isNull);
+    expect(received.where((m) => m['type'] == 'verify'), isEmpty);
+
+    toKiosk.add(jsonEncode(people(verify: true)));
+    await until(
+      () => (gc.describe()['install'] as Map)['wakeWordVerify'] == true,
+    );
+    for (final said in [false, true]) {
+      final id = 'c2$said';
+      final answer = ask(id);
+      await until(() => received.any((m) => m['id'] == id));
+      final sent = received.firstWhere((m) => m['id'] == id);
+      expect(sent['type'], 'verify');
+      expect(base64Decode('${sent['clip']}'), hasLength(64000));
+      expect(sent['tail_ms'], 300);
+      expect(sent['wake_word'], 'Okay Nabu');
+      expect(sent['wake_word_engine'], 'microWakeWord');
+      expect(sent['trusts_enrolled'], isTrue);
+      expect(sent['policy'], 'anyone');
+      toKiosk.add(jsonEncode({'type': 'verified', 'id': id, 'said': said}));
+      expect(await answer, said);
+    }
+    // Nothing to judge it by, or no answer in time: the turn goes on.
+    final unsure = ask('c3');
+    await until(() => received.any((m) => m['id'] == 'c3'));
+    toKiosk.add(jsonEncode({'type': 'verified', 'id': 'c3', 'said': null}));
+    expect(await unsure, isNull);
+    expect(await ask('c4', timeoutMs: 50), isNull);
+  });
 
   test('goes by a name made from the device id without a name (#15)', () async {
     // Ground Control turns away a hello without a device id.

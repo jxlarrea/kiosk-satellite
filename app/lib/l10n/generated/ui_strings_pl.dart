@@ -16373,6 +16373,14 @@ class UiStringsPl extends UiStrings {
       'Słowo wybudzające wypowiedziane głosem zarejestrowanej osoby zawsze przechodzi sprawdzenie. Wyłącz, jeśli twój własny głos przez pomyłkę wybudza kiosk, na przykład podczas telekonferencji.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Czekaj na weryfikację słowa wybudzającego';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'Słowo wybudzające jest weryfikowane, zanim zabrzmi sygnał i sesja głosowa pojawi się na ekranie. Zmniejsza to liczbę fałszywych wybudzeń, ale może dodać niewielkie opóźnienie przed rozpoczęciem sesji głosowej.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle => 'Włącz Wake Word Aligner';
 
   @override

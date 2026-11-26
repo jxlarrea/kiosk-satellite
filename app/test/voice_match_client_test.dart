@@ -250,7 +250,27 @@ void main() {
     expect(got.current['wake_word_verifier'], isFalse);
     expect(got.current['verifier_trusts_enrolled'], isFalse);
     expect(got.current['wake_word_aligner'], isFalse);
+    expect(got.current.containsKey('wake_verified'), isFalse);
     off.end();
+
+    // Wait for wake word verification: a session whose wake word Ground
+    // Control already passed names that check. Only a wake word has one.
+    for (final (wakeWord, expected) in [('Okay Nabu', 'c1'), (null, null)]) {
+      final verified = VoiceMatchTurn.open(
+        baseUrl: 'http://127.0.0.1:${server.port}',
+        token: 't',
+        deviceId: 'k1',
+        deviceName: 'Kitchen',
+        policy: 'anyone',
+        wakeVerified: 'c1',
+        wakeWord: wakeWord,
+        onEvent: (_) {},
+        follow: true,
+      );
+      expect(await got.moveNext(), isTrue);
+      expect(got.current['wake_verified'], expected);
+      verified.end();
+    }
     await server.close(force: true);
   });
 }

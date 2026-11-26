@@ -16499,6 +16499,14 @@ class UiStringsFr extends UiStrings {
       'Un mot de réveil prononcé avec la voix d\'une personne enregistrée passe toujours la vérification. Désactivez cette option si votre propre voix réveille le kiosque par erreur, par exemple pendant une conférence téléphonique.';
 
   @override
+  String get settingVoiceMatchVerifierWaitTitle =>
+      'Attendre la vérification du mot de réveil';
+
+  @override
+  String get settingVoiceMatchVerifierWaitDescription =>
+      'Le mot de réveil est vérifié avant que le carillon retentisse et que la session vocale s\'affiche à l\'écran. Cela réduit les faux déclenchements du mot de réveil, mais peut ajouter un léger délai avant le début de la session vocale.';
+
+  @override
   String get settingVoiceMatchWakeWordAlignerTitle =>
       'Activer Wake Word Aligner';
 

@@ -28272,6 +28272,18 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
+  /// **'Wait for wake word verification'**
+  String get settingVoiceMatchVerifierWaitTitle;
+
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The wake word is verified before the chime plays and the voice session shows on the screen. This reduces false wake word positives but can add a small delay before the voice session starts.'**
+  String get settingVoiceMatchVerifierWaitDescription;
+
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Wake Word Verifier, Wake Word Aligner, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
   /// **'Enable Wake Word Aligner'**
   String get settingVoiceMatchWakeWordAlignerTitle;
 

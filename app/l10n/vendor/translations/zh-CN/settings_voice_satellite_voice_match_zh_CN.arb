@@ -38,6 +38,8 @@
   "settingVoiceMatchWakeWordVerifierDescription": "信息亭被唤醒后会立即检查唤醒词。如果唤醒它的是其他声音，例如房间另一头的电视，它会无声地停止聆听。需要在 Ground Control 中开启 Wake Word Verifier。",
   "settingVoiceMatchVerifierTrustEnrolledTitle": "信任已录入的声音",
   "settingVoiceMatchVerifierTrustEnrolledDescription": "由已录入的人的声音说出的唤醒词始终通过检查。如果你自己的声音会误唤醒信息亭，例如在电话会议期间，请关闭此项。",
+  "settingVoiceMatchVerifierWaitTitle": "等待唤醒词验证",
+  "settingVoiceMatchVerifierWaitDescription": "先验证唤醒词，再播放提示音并在屏幕上显示语音会话。这会减少唤醒词误触发，但语音会话开始前可能会有短暂延迟。",
   "settingVoiceMatchWakeWordAlignerTitle": "启用 Wake Word Aligner",
   "settingVoiceMatchWakeWordAlignerDescription": "唤醒词的结尾，例如“Alexa”中的“xa”，不会进入命令。需要在 Ground Control 中开启 Wake Word Aligner。",
   "settingVoiceMatchIsolationTitle": "启用 Isolation",

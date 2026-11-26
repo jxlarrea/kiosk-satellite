@@ -46,6 +46,8 @@ A wake word engine now and then wakes the kiosk up to speech that is nothing lik
 - **It works with every wake word and every wake word engine.**
 - **It doesn't stop a TV that says the wake word itself.** Set **Answer** to **Chosen people** for that.
 
+**Wait for wake word verification** is off by default. With it on, the wake word is verified before the chime plays and the voice session shows on the screen. A false positive then plays no sound and shows nothing. This reduces false wake word positives but can add a small delay before the voice session starts: the kiosk waits for the 0.3 seconds after the wake word that the check listens to and then for Ground Control's answer, which takes a few milliseconds. What you say during the wait is kept. Without an answer within 0.3 seconds, the session starts and the wake word is checked a moment in.
+
 **Trust enrolled voices** is on by default. With it on, a wake word in the voice of someone enrolled always passes the check, however unclear it was. Turn it off if your own voice wakes the kiosk up by mistake, like during a conference call. A wake word you didn't say clearly can then be stopped too.
 
 ## Wake Word Aligner
@@ -85,6 +87,7 @@ If Ground Control goes away mid-conversation, the provider's own speech detectio
 | **Wake Word Verifier** | | |
 | Enable Wake Word Verifier | on | The wake word is checked a moment after the kiosk wakes up. If something else woke it up, like a TV across the room, it stops listening without a sound. Needs Trimming on and the Wake Word Verifier on in Ground Control. |
 | Trust enrolled voices | on | A wake word in the voice of someone enrolled always passes the check. Turn it off if your own voice wakes the kiosk up by mistake, like during a conference call. |
+| Wait for wake word verification | off | The wake word is verified before the chime plays and the voice session shows on the screen. This reduces false wake word positives but can add a small delay before the voice session starts. |
 | **Wake Word Aligner** | | |
 | Enable Wake Word Aligner | on | The end of the wake word is left out of the command. Shows with **Talk right after the wake word** on. Needs Trimming on and the Wake Word Aligner on in Ground Control. |
 | **Isolation** | | |
