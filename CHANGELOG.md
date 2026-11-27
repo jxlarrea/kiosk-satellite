@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.34 - 2026-11-26
 
 ### Added
 - **Camera rotation.** A new **Camera rotation** setting under **Settings > Camera** turns the camera image 90° clockwise, 180° or 90° counterclockwise, for a camera whose picture shows sideways or upside down. Some devices report the wrong orientation for a USB webcam, which turned Vision Match frames, face enrollment and the RTSP stream on their side (#1616). The rotation applies to snapshots, the RTSP and ONVIF stream, intercom video, the camera preview, face and hand detection, Vision Match and plugins. It stays on **Automatic** by default, which uses the orientation the camera reports. See [Device Camera](docs/camera.md#settings).
