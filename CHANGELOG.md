@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **A realtime assistant answered "Timer is already running" to a new timer.** Gemini Live sometimes asks for the same timer twice in one turn. The second request never reaches Home Assistant, so only one timer starts (#1475), but its answer to the model said the timer was already running and the model read that out instead of confirming the timer (#1630). The second request now gets a plain success that says the timer is set.
+
 ## v2026.11.35 - 2026-11-27
 
 ### Added

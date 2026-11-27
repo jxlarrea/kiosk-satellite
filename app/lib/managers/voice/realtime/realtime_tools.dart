@@ -122,12 +122,15 @@ class McpToolbox implements RealtimeToolbox {
 
   /// What the model gets for a repeated start. Home Assistant answers a
   /// start with empty lists, which some models read as nothing done and
-  /// call again, so this says plainly that the timer is running.
+  /// call again, so this says plainly that the timer is set. It reads as
+  /// a plain success because models repeat it to the user: "already
+  /// running" made Gemini Live answer "Timer is already running" to a
+  /// start it had just made twice in one turn (issue #1630).
   static final repeatedTimerStart = jsonEncode({
     'success': true,
     'result':
-        'The timer is already running. It was started a moment ago. '
-        'Confirm it to the user and do not start it again.',
+        'Timer started. Tell the user the timer is set. '
+        'Do not call HassStartTimer again for it.',
   });
 
   static bool _isTimerStart(String name) =>
