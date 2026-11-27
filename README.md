@@ -90,7 +90,7 @@ Also built in: [PIN-protected kiosk mode](https://kiosksatellite.com/docs/kiosk/
 
 ## Ground Control
 
-[Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) is a companion service for Kiosk Satellite. It runs on a computer or server in your home and handles the voice and vision processing that kiosks don't have the computing power for. Install it as a Home Assistant app or run it in Docker on ARM, AMD64, NVIDIA GPU (CUDA) or Intel GPU (OpenVINO).
+[Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) is a companion service for Kiosk Satellite. It runs on a computer or server in your home and handles the voice and vision processing that kiosks don't have the computing power for. Install it as a Home Assistant app or run it in Docker on CPU (ARM and AMD64) or GPU (CUDA, OpenVINO and Vulkan).
 
 Kiosk Satellite Ground Control includes these two components:
 
