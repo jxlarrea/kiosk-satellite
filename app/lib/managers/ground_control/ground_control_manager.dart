@@ -149,9 +149,25 @@ class GroundControlManager extends Manager {
 
   /// How the service is installed, for the Ground Control page and Kiosk
   /// Satellite Analytics: `install` (ha_app, docker or python), `arch`,
-  /// `cuda` (the CUDA image's version, empty for the CPU image) and `onGpu`.
-  /// Empty from a Ground Control that doesn't say.
+  /// `cuda` (the CUDA image's version, empty for the other images), `onGpu`
+  /// and `gpu` (what the GPU is used through: cuda, openvino, vulkan or empty
+  /// on a CPU). Empty from a Ground Control that doesn't say. One from before
+  /// the OpenVINO and Vulkan images has no `gpu`.
   Map<String, Object?> install = const {};
+
+  /// What the Ground Control page shows under Runs on. A Ground Control
+  /// that doesn't say what its GPU is used through only had CUDA.
+  static String runsOn(Map<String, Object?> install) {
+    final gpu = install['gpu'];
+    if (gpu is! String) return install['onGpu'] == true ? 'CUDA' : 'CPU';
+    if (gpu.isEmpty) return 'CPU';
+    return const {
+          'cuda': 'CUDA',
+          'openvino': 'OpenVINO',
+          'vulkan': 'Vulkan',
+        }[gpu] ??
+        gpu;
+  }
 
   /// Where Open goes: the app's page in Home Assistant, or the Docker
   /// container's own web page. Null until connected.
@@ -720,6 +736,7 @@ class GroundControlManager extends Manager {
             'arch': '${msg['arch'] ?? ''}',
             'cuda': '${msg['cuda'] ?? ''}',
             'onGpu': msg['on_gpu'] == true,
+            if (msg['gpu'] is String) 'gpu': msg['gpu'],
           };
         } else {
           // An older Ground Control: nothing left from the one before it.

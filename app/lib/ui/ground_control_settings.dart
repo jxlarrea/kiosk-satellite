@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../l10n/messages.dart';
+import '../managers/ground_control/ground_control_manager.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'entity_picker.dart';
 import 'ground_control_tag.dart';
@@ -150,7 +151,7 @@ class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
         if (m.version.isNotEmpty) value('Version', m.version),
         if (arch.isNotEmpty) value('Architecture', arch),
         if (m.install.isNotEmpty)
-          value('Runs on', m.install['onGpu'] == true ? 'CUDA' : 'CPU'),
+          value('Runs on', GroundControlManager.runsOn(m.install)),
       ],
     );
   }

@@ -55,8 +55,8 @@ While the kiosk is connected, three more rows describe the Ground Control it is 
 | --- | --- |
 | Version | The Ground Control version. |
 | Architecture | The CPU architecture of the machine Ground Control runs on: `amd64` or `aarch64`. |
-| Runs on | **CUDA** when the speaker model runs on an NVIDIA GPU, **CPU** otherwise. |
+| Runs on | **CUDA**, **OpenVINO** or **Vulkan** when Ground Control runs models on a GPU, named after the image it uses. **CPU** otherwise. |
 
-**Architecture** and **Runs on** need Ground Control 2026.11.10 or newer.
+**Architecture** and **Runs on** need Ground Control 2026.11.10 or newer. Up to Ground Control 2026.11.16 the row shows **CUDA** or **CPU** only.
 
 The Kiosks page of the Ground Control app also shows which Voice Match and Vision Match features each kiosk has turned on under **Settings > Ground Control**.

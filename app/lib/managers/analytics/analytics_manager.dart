@@ -749,6 +749,9 @@ class AnalyticsManager extends Manager {
             groundControl['gc_arch'] = clip(install['arch']);
             groundControl['gc_cuda'] = clip(install['cuda']);
             groundControl['gc_on_gpu'] = install['onGpu'] == true;
+            if (install['gpu'] is String) {
+              groundControl['gc_gpu'] = clip(install['gpu']);
+            }
           }
           final people = data['people'];
           groundControl['gc_people'] = people is List ? people.length : 0;

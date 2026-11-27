@@ -995,6 +995,7 @@ void main() {
           'arch': 'aarch64',
           'cuda': '13.0',
           'onGpu': true,
+          'gpu': 'cuda',
         },
         'people': [
           {'id': 'p1', 'name': 'Alice'},
@@ -1015,6 +1016,7 @@ void main() {
         'gc_arch',
         'gc_cuda',
         'gc_on_gpu',
+        'gc_gpu',
         'gc_people',
         'voice_match_enabled',
         'voice_match_policy',
@@ -1045,6 +1047,7 @@ void main() {
       expect(u['gc_arch'], 'aarch64');
       expect(u['gc_cuda'], '13.0');
       expect(u['gc_on_gpu'], isTrue);
+      expect(u['gc_gpu'], 'cuda');
       expect(u['gc_people'], 2);
       expect(u['voice_match_enabled'], isTrue);
       expect(u['voice_match_policy'], 'people');
@@ -1128,7 +1131,13 @@ void main() {
       gcState!.remove('install');
       final u = await usage({'ks.ground_control.enabled': true});
       expect(u['gc_version'], '1.2.0');
-      for (final k in ['gc_install', 'gc_arch', 'gc_cuda', 'gc_on_gpu']) {
+      for (final k in [
+        'gc_install',
+        'gc_arch',
+        'gc_cuda',
+        'gc_on_gpu',
+        'gc_gpu',
+      ]) {
         expect(u.containsKey(k), isFalse, reason: k);
       }
     });

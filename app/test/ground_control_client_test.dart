@@ -129,6 +129,7 @@ void main() {
           'arch': 'amd64',
           'cuda': '12.9',
           'on_gpu': true,
+          'gpu': 'cuda',
         }),
       );
       await until(() => gc.status == 'connected');
@@ -137,6 +138,7 @@ void main() {
         'arch': 'amd64',
         'cuda': '12.9',
         'onGpu': true,
+        'gpu': 'cuda',
       });
       expect(published.last.ticket, 't1');
       expect(published.last.baseUrl, 'http://127.0.0.1:${server.port}');

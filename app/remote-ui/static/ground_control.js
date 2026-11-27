@@ -1,7 +1,7 @@
 /* The Ground Control page's status rows under its switch, as on the device
    (ground_control_settings.dart): found or not, signed in or not, who is
    enrolled, Open for the Ground Control app and its version, architecture
-   and whether it runs on the CPU or with CUDA. */
+   and whether it runs on the CPU or on a GPU with CUDA, OpenVINO or Vulkan. */
 
 import { t, voiceText } from './localization.js';
 import { cmd, state } from './core.js';
@@ -9,6 +9,15 @@ import { cachedList, pickItems } from './entity_picker.js';
 import { readOnlyRow } from './device.js';
 import { watchUpdates } from './live.js';
 import { messageBox } from './widgets.js';
+
+// As GroundControlManager.runsOn: what the GPU is used through, and CUDA for
+// a Ground Control from before the OpenVINO and Vulkan images, which only
+// says whether the speaker model is on a GPU.
+function runsOn(install) {
+  if (typeof install.gpu !== 'string') return install.onGpu === true ? 'CUDA' : 'CPU';
+  if (!install.gpu) return 'CPU';
+  return { cuda: 'CUDA', openvino: 'OpenVINO', vulkan: 'Vulkan' }[install.gpu] || install.gpu;
+}
 
 function statusWord(row, text, color) {
   const span = row.lastElementChild;
@@ -63,7 +72,7 @@ async function paint(tab) {
   const values = [];
   if (status.version) values.push(['Version', status.version]);
   if (install.arch) values.push(['Architecture', install.arch]);
-  if (install.install) values.push(['Runs on', install.onGpu === true ? 'CUDA' : 'CPU']);
+  if (install.install) values.push(['Runs on', runsOn(install)]);
   let last = app;
   for (const [title, text] of values) {
     const info = readOnlyRow(voiceText(title), '', text, false);

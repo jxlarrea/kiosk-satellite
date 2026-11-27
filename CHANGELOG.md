@@ -8,6 +8,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Recognition cards change their line smoothly.** When an action comes while a card is up, or ends and the card goes back to **Recognized**, the old line rolls up and fades out while the new one rolls in from below and the card eases to its new width. Before, the line switched at once.
 
 ### Fixed
+- **Runs on showed CUDA for a Ground Control that uses another kind of GPU.** **Settings > Ground Control** showed **CUDA** whenever Ground Control's speaker model ran on a GPU and **CPU** otherwise. With Ground Control's Vulkan image for AMD GPUs it read CUDA and with the OpenVINO image for Intel GPUs it read CPU. The row now shows **CUDA**, **OpenVINO**, **Vulkan** or **CPU**, on the kiosk and in the remote UI. With **Usage** on, the daily report includes the same word. Needs the Ground Control release after 2026.11.16.
 - **Two action cards showed when a face turned Lockdown Mode off.** With the camera preview on, the face that turned Lockdown Mode off and dismissed the screensaver showed the **Lockdown Mode off** card beside the preview and in the card corner at once. The action came a moment before the preview's first frame, and the corner card only stepped aside once a frame was there. It now steps aside as soon as a preview is on its way.
 
 ## v2026.11.33 - 2026-11-26

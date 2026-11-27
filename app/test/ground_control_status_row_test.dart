@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
+import 'package:kiosk_satellite/managers/ground_control/ground_control_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/ground_control_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,6 +65,47 @@ void main() {
     expect(find.text('aarch64'), findsOneWidget);
     expect(find.text('CPU'), findsOneWidget);
     expect(find.text('CUDA'), findsNothing);
+  });
+
+  testWidgets('the Vulkan image is named', (tester) async {
+    c.groundControl.install = {
+      'install': 'docker',
+      'arch': 'amd64',
+      'cuda': '',
+      'onGpu': true,
+      'gpu': 'vulkan',
+    };
+    await pump(tester);
+    expect(find.text('Vulkan'), findsOneWidget);
+    expect(find.text('CUDA'), findsNothing);
+  });
+
+  testWidgets('the OpenVINO image is named with its voices on the CPU', (
+    tester,
+  ) async {
+    c.groundControl.install = {
+      'install': 'docker',
+      'arch': 'amd64',
+      'cuda': '',
+      'onGpu': false,
+      'gpu': 'openvino',
+    };
+    await pump(tester);
+    expect(find.text('OpenVINO'), findsOneWidget);
+    expect(find.text('CPU'), findsNothing);
+  });
+
+  test('Runs on, from what Ground Control says about its GPU', () {
+    String of(Map<String, Object?> install) =>
+        GroundControlManager.runsOn(install);
+    expect(of({'onGpu': true, 'gpu': 'cuda'}), 'CUDA');
+    expect(of({'onGpu': true, 'gpu': 'vulkan'}), 'Vulkan');
+    expect(of({'onGpu': false, 'gpu': 'openvino'}), 'OpenVINO');
+    // A GPU that is slower than the CPU, or a CUDA image without one.
+    expect(of({'onGpu': false, 'gpu': ''}), 'CPU');
+    // Up to Ground Control 2026.11.16, which only had CUDA.
+    expect(of({'onGpu': true}), 'CUDA');
+    expect(of({'onGpu': false}), 'CPU');
   });
 
   testWidgets('an older Ground Control only gives its version', (tester) async {
