@@ -9538,6 +9538,15 @@ const companionHiddenSettings = {
   'voice.announcement_linger',
 };
 
+/// Every companion screen setting. All of it belongs to the device: Fleet
+/// never syncs it and a clone of the kiosk does not take it along.
+const companionSettings = {
+  'voice.companion_mode',
+  'voice.companion_of',
+  'voice.companion_invite',
+  'voice.companion_screens',
+};
+
 /// The kiosk this companion screen shows, JSON `{id, name, address, port,
 /// tls, nonce, at}`; empty for none. The nonce of the accepted invitation
 /// is what the stream presents to it.

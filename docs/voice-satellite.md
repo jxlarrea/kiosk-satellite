@@ -120,6 +120,8 @@ To set it up:
 
 A kiosk can have any number of companion screens, and a companion screen shows one kiosk. A device without a screen, such as an Echo Dot, can invite companion screens but cannot be one. The **Status** row on the companion screen's Voice Satellite page says which kiosk it shows and whether it is connected. On the kiosk you talk to, **Companion screens** lists each screen with its state. **Remove** there, or **Stop** on the companion screen, ends the pairing. Turn off **Enable companion screen mode** to make the screen a voice satellite again. The pairing is kept for when it is turned back on.
 
+Companion screen settings stay with each kiosk, the switch included. [Fleet Management](fleet.md) never syncs them, and a backup imported onto another kiosk as a second device leaves them out, so the copy starts as a voice satellite with no pairing.
+
 Both kiosks need the remote admin on with a password and **Find other kiosks** on, the same as for [Fleet Management](fleet.md), but they do not need to be in a fleet. The companion screen connects to the remote admin port of the kiosk it shows and connects again when that kiosk restarts or drops off the network. Nothing leaves your network. Neither kiosk needs a key: the invitation carries a random code the companion screen uses from then on, and only the kiosk you talk to can send one.
 
 ## Realtime conversations

@@ -1130,6 +1130,10 @@ class SettingsManager extends Manager {
     // follows the original's leader.
     final importedFleetId = map[fleetId.key];
     map.removeWhere((k, _) => k.startsWith('fleet.'));
+    // So are companion screens, the mode included: the other kiosks know
+    // the original by its id, and which screen shows which kiosk is a
+    // choice for each device.
+    map.removeWhere((k, _) => companionSettings.contains(k));
     if (importedFleetId is String &&
         importedFleetId.isNotEmpty &&
         get(fleetId) == importedFleetId) {

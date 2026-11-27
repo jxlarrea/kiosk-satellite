@@ -555,6 +555,33 @@ void main() {
   // The raw settings dump path (/api/settings/import) used to apply the
   // source device's identity verbatim, reintroducing the #136 collision.
   group('shedImportedIdentity (issue #221)', () {
+    test('drops companion screens, the mode included', () async {
+      await build({});
+      final map = <String, Object?>{
+        'voice.companion_mode': true,
+        'voice.companion_of': '{"id":"dot","nonce":"n"}',
+        'voice.companion_invite': '',
+        'voice.companion_screens': '[{"id":"panel","nonce":"m"}]',
+        'voice.skin': 'default',
+      };
+      await settings.shedImportedIdentity(map);
+      expect(map.keys, ['voice.skin']);
+    });
+
+    test('every companion screen setting is per device', () {
+      final defsByKey = {for (final d in defs.allSettings) d.key: d};
+      for (final key in defs.companionSettings) {
+        expect(defsByKey[key]?.perDevice, isTrue, reason: key);
+      }
+      expect(
+        {
+          for (final d in defs.allSettings)
+            if (d.key.startsWith('voice.companion_')) d.key,
+        },
+        defs.companionSettings,
+      );
+    });
+
     test('drops the identity keys and leaves the rest of the dump', () async {
       await build({
         'ks.device.name': 'Kitchen',
