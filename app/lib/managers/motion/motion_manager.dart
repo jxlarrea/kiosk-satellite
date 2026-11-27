@@ -884,6 +884,7 @@ class MotionManager extends Manager {
           !e.key.startsWith('motion.') &&
           !e.key.startsWith('face.') &&
           e.key != defs.cameraDevice.key &&
+          e.key != defs.cameraRotation.key &&
           // The pre-bound snapshot capture is sized at bind time; a new
           // resolution needs a rebind to take effect mid-screensaver.
           e.key != defs.cameraSnapshotResolution.key) {
@@ -1125,6 +1126,9 @@ class MotionManager extends Manager {
             fps: fps,
             sensitivity: sensitivity,
             camera: camera,
+            rotation: defs.cameraRotationDegrees(
+              _settings.get(defs.cameraRotation),
+            ),
             snapshotWidth: snapW,
             snapshotHeight: snapH,
             startDelayMs: startDelay * 1000,

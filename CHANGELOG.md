@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Camera rotation.** A new **Camera rotation** setting under **Settings > Camera** turns the camera image 90° clockwise, 180° or 90° counterclockwise, for a camera whose picture shows sideways or upside down. Some devices report the wrong orientation for a USB webcam, which turned Vision Match frames, face enrollment and the RTSP stream on their side (#1616). The rotation applies to snapshots, the RTSP and ONVIF stream, intercom video, the camera preview, face and hand detection, Vision Match and plugins. It stays on **Automatic** by default, which uses the orientation the camera reports. See [Device Camera](docs/camera.md#settings).
+
 ### Changed
 - **Recognition cards change their line smoothly.** When an action comes while a card is up, or ends and the card goes back to **Recognized**, the old line rolls up and fades out while the new one rolls in from below and the card eases to its new width. Before, the line switched at once.
 

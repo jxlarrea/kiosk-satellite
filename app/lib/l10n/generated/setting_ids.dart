@@ -984,6 +984,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingCameraDeviceTitle",
     "description": "settingCameraDeviceDescription",
   },
+  "camera.rotation": {
+    "title": "settingCameraRotationTitle",
+    "description": "settingCameraRotationDescription",
+  },
   "camera.snapshot_resolution": {
     "title": "settingCameraSnapshotResolutionTitle",
     "description": "settingCameraSnapshotResolutionDescription",

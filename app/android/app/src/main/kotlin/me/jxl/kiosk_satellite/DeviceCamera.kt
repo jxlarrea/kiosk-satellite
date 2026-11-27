@@ -128,7 +128,7 @@ class DeviceCamera(
         var rotated: Bitmap? = null
         try {
             bitmap = image.toBitmap()
-            val rotation = image.imageInfo.rotationDegrees
+            val rotation = CameraRotation.of(image)
             rotated = if (rotation == 0) bitmap else Bitmap.createBitmap(
                 bitmap, 0, 0, bitmap.width, bitmap.height,
                 Matrix().apply { postRotate(rotation.toFloat()) }, true,
@@ -243,6 +243,7 @@ class DeviceCamera(
                     call.argument<Int>("width") ?: DEFAULT_TARGET.width,
                     call.argument<Int>("height") ?: DEFAULT_TARGET.height,
                 )
+                CameraRotation.apply(call.argument<Any>("rotation"))
                 mainHandler.post { snapshot(facing, target, result) }
             }
             // Whether the device has a usable camera at all: hardware
@@ -530,17 +531,38 @@ class DeviceCamera(
             ContextCompat.getMainExecutor(context),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
-                    CameraDiagnostics.record(diagnosticId, "JPEG snapshot", "actual=${image.width}x${image.height}, rotation=${image.imageInfo.rotationDegrees}")
+                    CameraDiagnostics.record(diagnosticId, "JPEG snapshot", "actual=${image.width}x${image.height}, rotation=${image.imageInfo.rotationDegrees}, extraRotation=${CameraRotation.extraDegrees}")
+                    val rotation = image.imageInfo.rotationDegrees
                     val bytes = try {
                         jpegBytes(image)
                     } finally {
                         image.close()
                     }
-                    if (bytes != null) {
+                    if (bytes == null) {
+                        done(null, "unexpected capture format")
+                        return
+                    }
+                    if (CameraRotation.extraDegrees == 0) {
                         Log.i(TAG, "snapshot: ${bytes.size} bytes")
                         done(bytes, null)
-                    } else {
-                        done(null, "unexpected capture format")
+                        return
+                    }
+                    // Camera rotation is set: the still is decoded and
+                    // turned, which is too slow for the main thread.
+                    kotlin.concurrent.thread(name = "camera-rotate", isDaemon = true) {
+                        val turned = try {
+                            CameraRotation.jpeg(bytes, rotation, JPEG_QUALITY)
+                        } catch (e: Exception) {
+                            CameraDiagnostics.record(diagnosticId, "JPEG rotation failure", "rotation=$rotation", true, e)
+                            bytes
+                        } catch (e: OutOfMemoryError) {
+                            CameraDiagnostics.record(diagnosticId, "JPEG rotation failure", "rotation=$rotation, out of memory", true)
+                            bytes
+                        }
+                        mainHandler.post {
+                            Log.i(TAG, "snapshot: ${turned.size} bytes")
+                            done(turned, null)
+                        }
                     }
                 }
 

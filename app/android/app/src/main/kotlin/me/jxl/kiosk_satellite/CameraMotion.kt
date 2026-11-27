@@ -953,8 +953,9 @@ class CameraMotion(
         val sameRtsp = boundRtsp && wantsRtsp && boundRtspServer === rtsp && boundVideoConfig == rtspConfig
         val sameIntercom = !boundRtsp && !wantsRtsp && boundIntercom != null && boundIntercom == wantsIntercom
         val canReuse = (sameRtsp || sameIntercom) && boundCamera != null &&
-            listOf("camera", "snapshotWidth", "snapshotHeight", "plugin").all { boundArguments?.get(it) == args?.get(it) }
+            listOf("camera", "rotation", "snapshotWidth", "snapshotHeight", "plugin").all { boundArguments?.get(it) == args?.get(it) }
         if (!canReuse) releaseCamera()
+        CameraRotation.apply(args?.get("rotation"))
         boundArguments = args
         boundRtsp = wantsRtsp
         boundIntercom = wantsIntercom
@@ -1242,7 +1243,7 @@ class CameraMotion(
                     Log.i(TAG, "camera $cameraId first frame ${image.width}x${image.height}, " +
                         "capture fallback=$captureLevel, RTSP=$boundRtsp")
                     CameraDiagnostics.record(diagnosticId, if (captureLevel > 0) "analysis recovered" else "first analysis frame", "camera=$cameraId, " +
-                        "actual=${image.width}x${image.height}, rotation=${image.imageInfo.rotationDegrees}, " +
+                        "actual=${image.width}x${image.height}, rotation=${image.imageInfo.rotationDegrees}, extraRotation=${CameraRotation.extraDegrees}, " +
                         "fallback=$captureLevel, RTSP=$boundRtsp")
                 }
                 analyze(image, sink, mySession)
@@ -1298,7 +1299,7 @@ class CameraMotion(
                                     finishRequest()
                                     return@setTransformationInfoListener
                                 }
-                                val transform = RtspVideoTransform(info.rotationDegrees,
+                                val transform = RtspVideoTransform(CameraRotation.turned(info.rotationDegrees),
                                     cameraInfo.sensorRotationDegrees,
                                     cameraInfo.lensFacing == CameraSelector.LENS_FACING_FRONT,
                                     info.hasCameraTransform())
@@ -1732,7 +1733,7 @@ class CameraMotion(
                         entryStartNs = now
                     }
                     lastBigChangeNs = now
-                    noteActivity(cx0, cy0, cx1, cy1, image.imageInfo.rotationDegrees)
+                    noteActivity(cx0, cy0, cx1, cy1, CameraRotation.of(image))
                 }
                 val entering = lastBigChangeNs != 0L && now - lastBigChangeNs <= PALM_ENTRY_NS
                 val sprinting = palmCount > 0 && now - presenceSinceNs <= PALM_SPRINT_NS
@@ -1898,7 +1899,7 @@ class CameraMotion(
             val bytes = out.toByteArray()
             val costNs = SystemClock.elapsedRealtimeNanos() - startNs
             previewIntervalNs = max(PREVIEW_MIN_INTERVAL_NS, costNs * PREVIEW_DUTY)
-            val rotation = image.imageInfo.rotationDegrees
+            val rotation = CameraRotation.of(image)
             val mirror = boundFront
             mainHandler.post {
                 sink.success(mapOf("preview" to bytes, "rotation" to rotation, "mirror" to mirror))
@@ -1924,7 +1925,7 @@ class CameraMotion(
         now: Long,
         sink: EventChannel.EventSink,
     ): Boolean {
-        val face = detector.detect(image, image.imageInfo.rotationDegrees) ?: return false
+        val face = detector.detect(image, CameraRotation.of(image)) ?: return false
         Log.d(
             TAG,
             "face: width=${"%.2f".format(face.width)} score=${"%.2f".format(face.score)} " +
@@ -2019,7 +2020,7 @@ class CameraMotion(
                     handCropSide = 0f
                 }
             }
-            tracker.feed(image, image.imageInfo.rotationDegrees, now, handCropU, handCropV, handCropSide)
+            tracker.feed(image, CameraRotation.of(image), now, handCropU, handCropV, handCropSide)
         } catch (e: Throwable) {
             // Nothing in here may take the analyzer down (a missing native
             // library on some ABI would surface here as an Error).

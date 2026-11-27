@@ -6695,6 +6695,39 @@ const cameraScanScreenLight = SettingDef<bool>(
   perDevice: true,
 );
 
+/// Extra clockwise turn on top of the orientation the camera reports
+/// (issue #1616). Some vendor HALs report one fixed orientation for every
+/// USB webcam, so the frames arrive sideways and cannot be fixed on the
+/// device. Applied natively to every frame reader: face and hand
+/// detection, Vision Match, the camera preview, plugins, snapshots and the
+/// RTSP and intercom video. Per device, since it depends on how the camera
+/// is mounted.
+const cameraRotation = SettingDef<String>(
+  key: 'camera.rotation',
+  type: SettingType.select,
+  defaultValue: '0',
+  title: 'Camera rotation',
+  description: 'Turn the camera image if it shows sideways or upside down.',
+  category: 'Camera',
+  options: ['0', '90', '180', '270'],
+  optionLabels: {
+    '0': 'Automatic',
+    '90': '90° clockwise',
+    '180': '180°',
+    '270': '90° counterclockwise',
+  },
+  dependsOn: 'camera.enabled',
+  perDevice: true,
+);
+
+/// The [cameraRotation] value in degrees, 0 for anything unknown.
+int cameraRotationDegrees(String value) => switch (value) {
+  '90' => 90,
+  '180' => 180,
+  '270' => 270,
+  _ => 0,
+};
+
 // The tiers are the standard 4:3 ladder (640x480, 960x720, 1440x1080)
 // that Android cameras virtually always offer, so the "p" labels match
 // what actually comes out; CameraX still lands on the nearest size on
@@ -15869,6 +15902,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverPostponeOnPerson,
   cameraEnabled,
   cameraDevice,
+  cameraRotation,
   cameraScanScreenLight,
   cameraSnapshotResolution,
   cameraDisableDetectionSnapshots,

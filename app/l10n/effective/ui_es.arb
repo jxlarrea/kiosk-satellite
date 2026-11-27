@@ -20441,6 +20441,84 @@
       ]
     }
   },
+  "settingCameraRotationTitle": "Rotación de la cámara",
+  "@settingCameraRotationTitle": {
+    "context": "Settings > Camera",
+    "description": "Setting label: turns the picture from the device camera.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "settingCameraRotationDescription": "Gira la imagen de la cámara si se ve de lado o al revés.",
+  "@settingCameraRotationDescription": {
+    "context": "Settings > Camera",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationAutomatic": "Automática",
+  "@cameraRotationAutomatic": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: use the orientation the camera reports.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationClockwise": "90° en sentido horario",
+  "@cameraRotationClockwise": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: turn the camera image a quarter turn clockwise.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationUpsideDown": "180°",
+  "@cameraRotationUpsideDown": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: turn the camera image upside down.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationCounterclockwise": "90° en sentido antihorario",
+  "@cameraRotationCounterclockwise": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: turn the camera image a quarter turn counterclockwise.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
   "settingCameraSnapshotResolutionTitle": "Resolución de las capturas",
   "@settingCameraSnapshotResolutionTitle": {
     "context": "Settings > Camera",

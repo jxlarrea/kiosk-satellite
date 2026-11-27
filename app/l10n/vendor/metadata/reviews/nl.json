@@ -31724,5 +31724,41 @@
     "translation": "5b7705f79d51301a20e21e00be576756515abe5688584bf11d2e551d09d9ac73",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "cameraRotationUpsideDown": {
+    "source": "8a389931c6581e710a5fae2da530dad90460b65c3715fbb03c86c61806f53412",
+    "translation": "ed9d69cda379bb5bd3b1eb519fa9a25b8461fddda9bcb0ecd426e55e2b087c4c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingCameraRotationDescription": {
+    "source": "9c29e98de617694b338fbec2f8592067bc7dbec4ca0845edd6aaf6014c3837b6",
+    "translation": "ed998909d9867936eba5b511807c0476f31b12321a98e715ae2403b57b37b41f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingCameraRotationTitle": {
+    "source": "01dd60dc97c0907a4e7e5effa2a84ffee3b374781fc31cc8f53a9731d3c7a985",
+    "translation": "db40166c7a9f84387be3e60ab583e4f0412fe0d3aba0f8021fb7aa077ce1c318",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraRotationAutomatic": {
+    "source": "8caef5945d1b92221cc08b20beff6270d7e10a33932c685f20d5342f7608e7a9",
+    "translation": "4c2a3993c15df5918ed140a3ea63cf8f45fb449cfe32254767dea894675c2cf4",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraRotationCounterclockwise": {
+    "source": "0b7f65c3a61dd4fa36cc650ac85c62ead81ee12d96883dbdcd7f598e3d411979",
+    "translation": "bbe0ee6c243c6dc683c82373810a29a42c5744f0b45daeb22c2f8aee71e2cefc",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraRotationClockwise": {
+    "source": "b3c1a953c86b689008ba869988f5b9857eff6aa8757d37d2a122d294be379d5f",
+    "translation": "7854fda15b49738680818454cbe0a41636a5ef6df1a215e94adc2abdf3d03c7b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

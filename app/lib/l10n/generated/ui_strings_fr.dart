@@ -5518,6 +5518,25 @@ class UiStringsFr extends UiStrings {
   String get settingCameraDeviceDescription => 'Quelle caméra utiliser.';
 
   @override
+  String get settingCameraRotationTitle => 'Rotation de la caméra';
+
+  @override
+  String get settingCameraRotationDescription =>
+      'Faites pivoter l\'image de la caméra si elle apparaît de côté ou à l\'envers.';
+
+  @override
+  String get cameraRotationAutomatic => 'Automatique';
+
+  @override
+  String get cameraRotationClockwise => '90° dans le sens horaire';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '90° dans le sens antihoraire';
+
+  @override
   String get settingCameraSnapshotResolutionTitle =>
       'Résolution des instantanés';
 

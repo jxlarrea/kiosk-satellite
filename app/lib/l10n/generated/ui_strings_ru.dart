@@ -5478,6 +5478,25 @@ class UiStringsRu extends UiStrings {
   String get settingCameraDeviceDescription => 'Какую камеру использовать.';
 
   @override
+  String get settingCameraRotationTitle => 'Поворот камеры';
+
+  @override
+  String get settingCameraRotationDescription =>
+      'Поверните изображение камеры, если оно лежит на боку или перевёрнуто.';
+
+  @override
+  String get cameraRotationAutomatic => 'Автоматически';
+
+  @override
+  String get cameraRotationClockwise => '90° по часовой стрелке';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '90° против часовой стрелки';
+
+  @override
   String get settingCameraSnapshotResolutionTitle => 'Разрешение снимков';
 
   @override

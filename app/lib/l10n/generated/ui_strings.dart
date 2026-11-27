@@ -9590,6 +9590,42 @@ abstract class UiStrings {
   /// **'Which camera to use.'**
   String get settingCameraDeviceDescription;
 
+  /// Setting label: turns the picture from the device camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera rotation'**
+  String get settingCameraRotationTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn the camera image if it shows sideways or upside down.'**
+  String get settingCameraRotationDescription;
+
+  /// Camera rotation choice: use the orientation the camera reports.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get cameraRotationAutomatic;
+
+  /// Camera rotation choice: turn the camera image a quarter turn clockwise.
+  ///
+  /// In en, this message translates to:
+  /// **'90° clockwise'**
+  String get cameraRotationClockwise;
+
+  /// Camera rotation choice: turn the camera image upside down.
+  ///
+  /// In en, this message translates to:
+  /// **'180°'**
+  String get cameraRotationUpsideDown;
+
+  /// Camera rotation choice: turn the camera image a quarter turn counterclockwise.
+  ///
+  /// In en, this message translates to:
+  /// **'90° counterclockwise'**
+  String get cameraRotationCounterclockwise;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

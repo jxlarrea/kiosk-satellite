@@ -5493,6 +5493,25 @@ class UiStringsPl extends UiStrings {
   String get settingCameraDeviceDescription => 'Kamera, której używać.';
 
   @override
+  String get settingCameraRotationTitle => 'Obrót kamery';
+
+  @override
+  String get settingCameraRotationDescription =>
+      'Obróć obraz z kamery, jeśli jest obrócony na bok lub do góry nogami.';
+
+  @override
+  String get cameraRotationAutomatic => 'Automatycznie';
+
+  @override
+  String get cameraRotationClockwise => '90° w prawo';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '90° w lewo';
+
+  @override
   String get settingCameraSnapshotResolutionTitle => 'Rozdzielczość zdjęć';
 
   @override

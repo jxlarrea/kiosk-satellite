@@ -18,6 +18,7 @@ For devices that were already using the **Dismiss on motion** feature before the
 | --- | --- | --- |
 | Enable camera | off | The master switch. All settings below depend on this being turned on. |
 | Camera | Front | Choose Front or Back. This single choice applies to every camera feature. On devices with only one camera, this picker acts as a plain label. A USB or monitor webcam that is the only camera shows as External. |
+| Camera rotation | Automatic | Turn the camera image 90° clockwise, 180° or 90° counterclockwise. Use it when the picture shows sideways or upside down, such as a USB webcam on a device that reports the wrong orientation for it. The rotation applies to snapshots, the RTSP and ONVIF stream, intercom video, the camera preview, face and hand detection, Vision Match and plugins. **Automatic** uses the orientation the camera reports. |
 | Snapshot resolution | 480p | Choose 480p, 720p, or 1080p on the 4:3 ladder. This maps to the nearest resolution the hardware offers. A single 480p frame is approximately 30 KB. |
 | Disable snapshots on detection | off | Prevent automatic snapshots triggered by detection while keeping motion, face, presence and gesture detection working. Manual requests and continuous snapshots can still capture images. |
 | Continuous snapshots | off | Capture a new snapshot for Home Assistant at a fixed, recurring interval. |

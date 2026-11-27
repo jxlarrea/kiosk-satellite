@@ -61,6 +61,7 @@ class NativeMotion {
     required double fps,
     required int sensitivity,
     required String camera,
+    int rotation = 0,
     required int snapshotWidth,
     required int snapshotHeight,
     int startDelayMs = 0,
@@ -83,6 +84,9 @@ class NativeMotion {
           'fps': fps,
           'sensitivity': sensitivity,
           'camera': camera,
+          // Camera rotation (issue #1616): clockwise degrees added to the
+          // orientation the camera reports, for every reader of a frame.
+          'rotation': rotation,
           // For the snapshot capture use case pre-bound into this session, so
           // a frame taken mid-screensaver matches the configured resolution.
           'snapshotWidth': snapshotWidth,

@@ -20441,6 +20441,84 @@
       ]
     }
   },
+  "settingCameraRotationTitle": "摄像头旋转",
+  "@settingCameraRotationTitle": {
+    "context": "Settings > Camera",
+    "description": "Setting label: turns the picture from the device camera.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "settingCameraRotationDescription": "摄像头画面横置或倒置时，旋转画面。",
+  "@settingCameraRotationDescription": {
+    "context": "Settings > Camera",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationAutomatic": "自动",
+  "@cameraRotationAutomatic": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: use the orientation the camera reports.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationClockwise": "顺时针 90°",
+  "@cameraRotationClockwise": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: turn the camera image a quarter turn clockwise.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationUpsideDown": "180°",
+  "@cameraRotationUpsideDown": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: turn the camera image upside down.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
+  "cameraRotationCounterclockwise": "逆时针 90°",
+  "@cameraRotationCounterclockwise": {
+    "context": "Settings > Camera",
+    "description": "Camera rotation choice: turn the camera image a quarter turn counterclockwise.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera"
+      ],
+      "remoteAdmin": [
+        "Camera"
+      ]
+    }
+  },
   "settingCameraSnapshotResolutionTitle": "快照分辨率",
   "@settingCameraSnapshotResolutionTitle": {
     "context": "Settings > Camera",

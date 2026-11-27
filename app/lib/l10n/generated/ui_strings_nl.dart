@@ -5501,6 +5501,25 @@ class UiStringsNl extends UiStrings {
       'De camera die moet worden gebruikt.';
 
   @override
+  String get settingCameraRotationTitle => 'Camerarotatie';
+
+  @override
+  String get settingCameraRotationDescription =>
+      'Draai het camerabeeld als het op zijn kant of ondersteboven staat.';
+
+  @override
+  String get cameraRotationAutomatic => 'Automatisch';
+
+  @override
+  String get cameraRotationClockwise => '90° met de klok mee';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '90° tegen de klok in';
+
+  @override
   String get settingCameraSnapshotResolutionTitle =>
       'Resolutie van momentopnamen';
 

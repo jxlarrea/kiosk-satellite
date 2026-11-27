@@ -419,6 +419,9 @@ class DeviceCameraManager extends Manager {
       // a wedged platform call can never pin _capturing until app restart.
       final jpeg = await NativeCamera.snapshot(
         camera: _settings.get(defs.cameraDevice),
+        rotation: defs.cameraRotationDegrees(
+          _settings.get(defs.cameraRotation),
+        ),
         width: width,
         height: height,
       ).timeout(const Duration(seconds: 30));

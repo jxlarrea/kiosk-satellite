@@ -22,17 +22,20 @@ class NativeCamera {
     return CameraStreamingCapabilities.fromJson(result);
   }
 
-  /// A JPEG still from [camera] ('front' or 'back'), aimed at
+  /// A JPEG still from [camera] ('front' or 'back') turned [rotation]
+  /// more degrees clockwise (the Camera rotation setting), aimed at
   /// [width]x[height] (CameraX lands on the nearest size the hardware
   /// offers). Throws a [PlatformException] when the capture fails, or a
   /// [MissingPluginException] when no Activity is attached (the cached
   /// engine outlives the Activity; there is no camera without one).
   static Future<Uint8List?> snapshot({
     required String camera,
+    int rotation = 0,
     required int width,
     required int height,
   }) => _channel.invokeMethod<Uint8List>('snapshot', {
     'camera': camera,
+    'rotation': rotation,
     'width': width,
     'height': height,
   });

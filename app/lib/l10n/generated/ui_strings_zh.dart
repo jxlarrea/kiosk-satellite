@@ -5258,6 +5258,24 @@ class UiStringsZh extends UiStrings {
   String get settingCameraDeviceDescription => '选择使用的摄像头。';
 
   @override
+  String get settingCameraRotationTitle => '摄像头旋转';
+
+  @override
+  String get settingCameraRotationDescription => '摄像头画面横置或倒置时，旋转画面。';
+
+  @override
+  String get cameraRotationAutomatic => '自动';
+
+  @override
+  String get cameraRotationClockwise => '顺时针 90°';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '逆时针 90°';
+
+  @override
   String get settingCameraSnapshotResolutionTitle => '快照分辨率';
 
   @override
@@ -21879,6 +21897,24 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingCameraDeviceDescription => '选择使用的摄像头。';
+
+  @override
+  String get settingCameraRotationTitle => '摄像头旋转';
+
+  @override
+  String get settingCameraRotationDescription => '摄像头画面横置或倒置时，旋转画面。';
+
+  @override
+  String get cameraRotationAutomatic => '自动';
+
+  @override
+  String get cameraRotationClockwise => '顺时针 90°';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '逆时针 90°';
 
   @override
   String get settingCameraSnapshotResolutionTitle => '快照分辨率';

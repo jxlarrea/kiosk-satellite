@@ -28,7 +28,7 @@ export async function updateNoCameraNotice() {
   if (!anchor) return;
   const input = anchor.querySelector('.switch input');
   if (input) { input.checked = false; input.disabled = true; }
-  for (const key of ['camera.device', 'camera.snapshot_resolution',
+  for (const key of ['camera.device', 'camera.rotation', 'camera.snapshot_resolution',
     'camera.disable_detection_snapshots', 'camera.snapshots',
     'camera.snapshot_interval', 'motion.sensor',
     'motion.sensor_off_delay', 'motion.fps', 'motion.sensitivity',

@@ -217,6 +217,12 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "front": "cameraFront",
     "back": "cameraBack"
   },
+  "camera.rotation": {
+    "0": "cameraRotationAutomatic",
+    "90": "cameraRotationClockwise",
+    "180": "cameraRotationUpsideDown",
+    "270": "cameraRotationCounterclockwise"
+  },
   "sendspin.player_source": {
     "": "mediaThisDevice"
   },

@@ -168,7 +168,7 @@ class GroundControlVision {
             android.util.Log.w("GroundControlVision", "frame not encoded: $e")
             return null
         }
-        val rotation = image.imageInfo.rotationDegrees
+        val rotation = CameraRotation.of(image)
         val turned = rotation == 90 || rotation == 270
         val look = Look(
             id = ++nextId,

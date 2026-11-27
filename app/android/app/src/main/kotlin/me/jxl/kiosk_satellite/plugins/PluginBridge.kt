@@ -780,7 +780,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         if (!claim.busy.compareAndSet(false, true)) return
         claim.lastFrameNs = now
         val frame = try {
-            me.jxl.kiosk.plugins.CameraFrame(image.width, image.height, image.imageInfo.rotationDegrees, front,
+            me.jxl.kiosk.plugins.CameraFrame(image.width, image.height, me.jxl.kiosk_satellite.CameraRotation.of(image), front,
                 image.imageInfo.timestamp, claim.request.format, PluginCameraFrames.copy(image, claim.request.format == "nv21"))
         } catch (error: Exception) {
             claim.busy.set(false)

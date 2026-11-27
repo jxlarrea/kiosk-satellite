@@ -1478,6 +1478,12 @@ final _messages = <String, String Function(UiStrings)>{
   'settingCameraEnabledDescription': (s) => s.settingCameraEnabledDescription,
   'settingCameraDeviceTitle': (s) => s.settingCameraDeviceTitle,
   'settingCameraDeviceDescription': (s) => s.settingCameraDeviceDescription,
+  'settingCameraRotationTitle': (s) => s.settingCameraRotationTitle,
+  'settingCameraRotationDescription': (s) => s.settingCameraRotationDescription,
+  'cameraRotationAutomatic': (s) => s.cameraRotationAutomatic,
+  'cameraRotationClockwise': (s) => s.cameraRotationClockwise,
+  'cameraRotationUpsideDown': (s) => s.cameraRotationUpsideDown,
+  'cameraRotationCounterclockwise': (s) => s.cameraRotationCounterclockwise,
   'settingCameraSnapshotResolutionTitle': (s) =>
       s.settingCameraSnapshotResolutionTitle,
   'settingCameraSnapshotResolutionDescription': (s) =>

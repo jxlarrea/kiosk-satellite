@@ -5550,6 +5550,25 @@ class UiStringsDe extends UiStrings {
   String get settingCameraDeviceDescription => 'Die zu verwendende Kamera.';
 
   @override
+  String get settingCameraRotationTitle => 'Kameradrehung';
+
+  @override
+  String get settingCameraRotationDescription =>
+      'Dreht das Kamerabild, wenn es seitlich oder kopfüber angezeigt wird.';
+
+  @override
+  String get cameraRotationAutomatic => 'Automatisch';
+
+  @override
+  String get cameraRotationClockwise => '90° im Uhrzeigersinn';
+
+  @override
+  String get cameraRotationUpsideDown => '180°';
+
+  @override
+  String get cameraRotationCounterclockwise => '90° gegen den Uhrzeigersinn';
+
+  @override
   String get settingCameraSnapshotResolutionTitle =>
       'Auflösung der Schnappschüsse';
 
