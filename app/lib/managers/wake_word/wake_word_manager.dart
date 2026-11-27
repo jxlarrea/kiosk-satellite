@@ -336,7 +336,7 @@ class WakeWordManager extends Manager
   bool get _arbitrationOn =>
       enabled &&
       _settings.get(defs.voiceRuntime) == 'native' &&
-      _settings.get(defs.voiceEnabled) &&
+      _settings.voiceSatelliteOn &&
       _settings.get(defs.voiceWakeArbitration);
 
   Duration get _arbitrationWindow => Duration(
@@ -495,7 +495,7 @@ class WakeWordManager extends Manager
   bool get inUse =>
       enabled &&
       (_settings.get(defs.voiceRuntime) == 'dashboard' ||
-          _settings.get(defs.voiceEnabled));
+          _settings.voiceSatelliteOn);
 
   /// The satellite is muted (the card said so when it released the mic).
   /// Carried on [WakeWordStateChanged] so the clap detector goes quiet too.
@@ -969,6 +969,7 @@ class WakeWordManager extends Manager
       } else if (e.key == defs.voiceWakeArbitration.key ||
           e.key == defs.voiceWakeArbitrationWindowMs.key ||
           e.key == defs.voiceEnabled.key ||
+          e.key == defs.voiceCompanionMode.key ||
           e.key == defs.voiceRuntime.key) {
         unawaited(_applyArbitration());
       } else if (e.key == defs.wakeWordPreferFp32.key) {

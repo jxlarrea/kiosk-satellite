@@ -289,7 +289,9 @@ class LedManager extends Manager {
   }
 
   void _onSetting(SettingChanged e) {
-    if (e.key == defs.voiceMute.key || e.key == defs.voiceEnabled.key) {
+    if (e.key == defs.voiceMute.key ||
+        e.key == defs.voiceEnabled.key ||
+        e.key == defs.voiceCompanionMode.key) {
       _update();
       return;
     }
@@ -413,7 +415,7 @@ class LedManager extends Manager {
     }
     if (voiceOn &&
         s.get(defs.ledVoiceMuted) &&
-        s.get(defs.voiceEnabled) &&
+        s.voiceSatelliteOn &&
         s.get(defs.voiceMute)) {
       return LedScene(
         name: 'voice_muted',

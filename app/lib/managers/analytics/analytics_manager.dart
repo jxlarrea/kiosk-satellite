@@ -485,7 +485,7 @@ class AnalyticsManager extends Manager {
     // Native voice that is off reports nothing: whatever the engine last
     // loaded is not what the kiosk listens for.
     final native = s.get(defs.voiceRuntime) == 'native';
-    final nativeOn = native && s.get(defs.voiceEnabled);
+    final nativeOn = native && s.voiceSatelliteOn;
     var wakeEngine = '';
     var wakeWord = '';
     var wakeWord2 = '';
@@ -762,8 +762,7 @@ class AnalyticsManager extends Manager {
               : model;
         }
       } catch (_) {}
-      final voiceMatch =
-          s.get(defs.voiceEnabled) && s.get(defs.voiceMatchEnabled);
+      final voiceMatch = s.voiceSatelliteOn && s.get(defs.voiceMatchEnabled);
       groundControl['voice_match_enabled'] = voiceMatch;
       if (voiceMatch) {
         final chosen = s.get(defs.voiceMatchPolicy) == 'people';

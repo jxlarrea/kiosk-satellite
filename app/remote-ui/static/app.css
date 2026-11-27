@@ -611,6 +611,9 @@
   .row { display: flex; align-items: center; gap: 12px; padding: 13px 0;
     border-bottom: 1px solid var(--divider); }
   .row:last-child { border-bottom: none; }
+  /* Last on screen too: the rows after it hide while the kiosk is a
+     companion screen. */
+  .row:has(~ .companion-hidden):not(:has(~ :not(.companion-hidden))) { border-bottom: none; }
   .row .info { flex: 1; min-width: 0; }
   .row .info .name { font-size: 17px; font-weight: 500; line-height: 1.3; }
   /* Quiet text anywhere (a field label, a note under a control) is 12.5
@@ -2208,3 +2211,7 @@
   .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); --gap: 6px; --tile-h: clamp(52px, 14cqi, 64px); }
   .compass-tile { font-size: 10.5px; border-radius: 9px; }
 }
+
+/* Hidden while the kiosk is a companion screen, in place so the switch
+   never re-renders the Voice Satellite page. */
+.companion-hidden { display: none !important; }

@@ -8,6 +8,7 @@ import { banner, messageBox, modalShell, selectLoading, showToast } from './widg
 import { vsSelectRow } from './vs.js';
 import { watchUpdates } from './live.js';
 import { toggleRow } from './audio.js';
+import { companionScreenOn, linkText, renderCompanionPanel, syncCompanionVs } from './companion.js';
 
 /* ---- Native Voice Satellite (runs in the kiosk, not the dashboard) ---- */
 // Mirrors the device's native page: the switch with the status and Home
@@ -32,7 +33,7 @@ const WAKE_ROWS = [
   ['wake_word', 'Wake word 1', 'The word that starts a voice command.'],
   ['wake_word_2', 'Wake word 2', 'A second wake word, answered by Assistant 2.'],
 ];
-const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Appearance', 'Conversation', 'Chimes'];
+const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Appearance', 'Conversation', 'Chimes', 'Companion screens'];
 
 
 function voiceRow(name, desc, value = '') {
@@ -69,6 +70,25 @@ async function paintStatus(card, byKey) {
   } catch (_) {}
   if (!enabledRow.isConnected || card._vsStatusGen !== gen) return;
   card.querySelectorAll('.vs-native-status').forEach((r) => r.remove());
+  // A companion screen: whether it shows the kiosk it is a companion of.
+  if (companionScreenOn()) {
+    let companion = {};
+    try {
+      const r = await cmd('companionStatus', {});
+      if (r.ok) companion = r.data || {};
+    } catch (_) {}
+    if (!enabledRow.isConnected || card._vsStatusGen !== gen) return;
+    card.querySelectorAll('.vs-native-status').forEach((r) => r.remove());
+    const of = companion.of;
+    const row = readOnlyRow(voiceText('Status'), of
+      ? t('voiceCompanionShowsSessionsOf', { name: `${of.name || ''}` }, `Shows the voice sessions of ${of.name || ''}.`)
+      : voiceText('Companion screen. Waiting for an invitation.'), '', false);
+    statusWord(row, of ? linkText(of.state) : voiceText('Not paired'),
+      of?.state === 'connected' ? 'var(--primary)' : 'var(--warn)');
+    row.classList.add('vs-native-status');
+    enabledRow.after(row);
+    return;
+  }
   const esphome = byKey['esphome.enabled']?.value === true;
   const muted = byKey['voice.mute']?.value === true;
   const entity = `${status.satelliteEntity || ''}`;
@@ -579,8 +599,14 @@ export async function renderNativeVs(root, byKey) {
     card._vsByKey = byKey;
     if (card._vsStatusWatch) paintStatus(card, byKey);
     else {
-      card._vsStatusWatch = watchUpdates(['voice-status'],
+      card._vsStatusWatch = watchUpdates(['voice-status', 'companion'],
         () => paintStatus(card, card._vsByKey), { owner: card });
+      // Companion screen mode flips in place: rows hide or come back and
+      // the status says the other thing, with no re-render.
+      onSettings(card, new Set(['voice.companion_mode']), () => {
+        paintStatus(card, card._vsByKey);
+        syncCompanionVs(root);
+      });
     }
   }
   const entryCard = (sub) => root.querySelector(`[data-subpage-entry="${sub}"]`)?.closest('.card');
@@ -631,6 +657,7 @@ export async function renderNativeVs(root, byKey) {
       const skin = panel('Appearance')?.querySelector(`[data-key="${key}"]`);
       if (skin) skinRow(skin, key, byKey[key]?.value || '');
     }
+    renderCompanionPanel(panel('Companion screens'));
     const reactive = panel('Appearance')?.querySelector('[data-key="voice.reactive_bar"]');
     if (reactive) {
       const row = voiceRow('Preview', 'Show the overlay on the kiosk screen for five seconds.');
@@ -642,6 +669,7 @@ export async function renderNativeVs(root, byKey) {
       row.appendChild(btn);
       reactive.after(row);
     }
+    syncCompanionVs(root);
   }
   // The way back, while the integration is still installed.
   let installed = false;

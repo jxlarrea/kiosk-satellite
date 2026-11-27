@@ -240,10 +240,10 @@ class BtProxyManager extends Manager {
   }
 
   /// Whether this start should serve the voice assistant: the native
-  /// runtime with Voice Satellite enabled.
+  /// runtime with Voice Satellite enabled, and not as a companion screen.
   bool get _voiceWanted =>
       _settings.get(defs.voiceRuntime) == 'native' &&
-      _settings.get(defs.voiceEnabled);
+      _settings.voiceSatelliteOn;
 
   @override
   Future<void> init() async {
@@ -348,6 +348,7 @@ class BtProxyManager extends Manager {
       // once per connection.
       'voice.runtime',
       'voice.enabled',
+      'voice.companion_mode',
       'voice.wake_word_engine',
       // Timers on or off: Home Assistant reads whether the satellite
       // offers timers at connect, and the timer entities and actions

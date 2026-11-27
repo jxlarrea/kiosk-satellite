@@ -207,13 +207,14 @@ class GroundControlManager extends Manager {
   /// Whether the Ground Control app can record a voice here: Allow
   /// enrollment here, on a kiosk that runs Voice Match.
   bool get _enrollAllowed =>
-      _settings.get(defs.voiceEnabled) &&
+      _settings.voiceSatelliteOn &&
       _settings.get(defs.voiceMatchEnabled) &&
       _settings.get(defs.voiceMatchAllowEnroll);
 
   /// The settings that make what [features] says.
   static final _featureKeys = {
     defs.voiceEnabled.key,
+    defs.voiceCompanionMode.key,
     defs.voiceMatchEnabled.key,
     defs.voiceMatchPolicy.key,
     defs.voiceMatchPeople.key,
@@ -252,7 +253,7 @@ class GroundControlManager extends Manager {
     ];
     final chosen = s.get(defs.voiceMatchPolicy) == 'people';
     return {
-      'voice_match': s.get(defs.voiceEnabled) && s.get(defs.voiceMatchEnabled),
+      'voice_match': s.voiceSatelliteOn && s.get(defs.voiceMatchEnabled),
       'policy': !chosen ? 'anyone' : (people.isEmpty ? 'enrolled' : 'people'),
       if (chosen && people.isNotEmpty) 'people': people,
       'trimming': s.get(defs.voiceMatchEndOnOtherVoice),

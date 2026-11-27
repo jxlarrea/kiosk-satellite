@@ -82,6 +82,7 @@ When Home Assistant runs the integration, onboarding offers the same migration i
 | Conversation | Show what you said, Show the answer, Show tool use, Hide sentiment tags | What the overlay shows. |
 | | Keep the answer on screen, Keep results on screen, Announcement time | How long each stays. Results at 0 stay until dismissed. |
 | Chimes | Play chimes, per-event sounds and volumes | The wake, done, error and announcement sounds, built in or from the sounds folder, each with its own volume under the assistant volume. The timer sound is under **Settings > Timers**. |
+| Companion screens | Enable companion screen mode, Companion screens | Show the voice sessions of another kiosk on this screen, or pick the screens that show this kiosk's. See [Companion screens](#companion-screens). |
 
 The timer settings have their own page, **Settings > Timers**. See [Timer settings](timers.md#timer-settings).
 
@@ -102,6 +103,24 @@ When a kiosk hears the wake word, it broadcasts how loud the wake word reached i
 | Arbitration offset | Added to how loud this kiosk heard the wake word, -30 to 30 dB (0 by default). Raise it on a kiosk that loses when you speak right next to it, or lower it on one that answers from across the room. The log shows each kiosk's level on every wake, under the `wake_word` tag, which tells you how far apart two kiosks are. It is not synced through Fleet Management, since it describes the kiosk's own hardware. |
 
 The kiosks talk over UDP on port 2330 and need nothing else turned on: no fleet, intercom or remote admin. Each claim is broadcast, and also sent directly to every kiosk heard from before, since Wi-Fi delivers a direct packet more reliably and to a sleeping device sooner. Kiosks say hello when arbitration starts and every five minutes, so they know each other before the first wake word. They have to be on the same network segment, and an access point that blocks broadcast traffic between wireless clients stops arbitration. When a claim does not arrive, each kiosk answers as it would without arbitration. A louder claim that arrives just after a kiosk's window closed, from a kiosk that detected the wake word later, still ends the first kiosk's turn, so only one of them answers. A muted kiosk does not take part.
+
+## Companion screens
+
+A companion screen shows the voice sessions of another kiosk. Use it to pair a kiosk without a screen, such as an [Echo Dot](echo-dot.md), with a wall panel or a tablet that shows the answers, or to show the sessions of a kitchen tablet on a second screen across the room.
+
+The kiosk you talk to keeps running Voice Satellite as it always does, and keeps showing its sessions if it has a screen. Each companion screen shows the same thing at the same time: the listening bar, what you said, the tool use, the answer, results such as weather and images, announcements and realtime conversations. The sessions use its own **Appearance** and **Conversation** settings, so each screen can use its own skin, theme, text size and overlay mode. How long an answer, a result or an announcement stays is up to the kiosk you talk to. A double tap on the companion screen ends the session on that kiosk, and a result opened there stays up on both.
+
+A companion screen runs no voice assistant of its own. Its microphone and wake word stay off and it is not an Assist satellite in Home Assistant. Shared timers still show and ring there. See [Shared timers](timers.md#shared-timers).
+
+To set it up:
+
+1. On the screen that should show the sessions, open **Voice Satellite > Companion screens** and turn on **Enable companion screen mode**.
+2. On the kiosk you talk to, open **Voice Satellite > Companion screens**, tap **Add a companion screen** and pick the screen. The list shows the kiosks on the network, and only those in companion screen mode can be picked.
+3. Accept the invitation on the companion screen, or under **Voice Satellite > Companion screens** in its remote admin.
+
+A kiosk can have any number of companion screens, and a companion screen shows one kiosk. A device without a screen, such as an Echo Dot, can invite companion screens but cannot be one. The **Status** row on the companion screen's Voice Satellite page says which kiosk it shows and whether it is connected. On the kiosk you talk to, **Companion screens** lists each screen with its state. **Remove** there, or **Stop** on the companion screen, ends the pairing. Turn off **Enable companion screen mode** to make the screen a voice satellite again. The pairing is kept for when it is turned back on.
+
+Both kiosks need the remote admin on with a password and **Find other kiosks** on, the same as for [Fleet Management](fleet.md), but they do not need to be in a fleet. The companion screen connects to the remote admin port of the kiosk it shows and connects again when that kiosk restarts or drops off the network. Nothing leaves your network. Neither kiosk needs a key: the invitation carries a random code the companion screen uses from then on, and only the kiosk you talk to can send one.
 
 ## Realtime conversations
 

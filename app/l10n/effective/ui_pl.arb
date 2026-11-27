@@ -56620,6 +56620,557 @@
       ]
     }
   },
+  "voiceCompanionScreens": "Ekrany towarzyszące",
+  "@voiceCompanionScreens": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionScreensHint": "Pokazuj sesje głosowe na innych kioskach lub sesje innego kiosku tutaj",
+  "@voiceCompanionScreensHint": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionPairedScreens": "Sparowane ekrany towarzyszące",
+  "@voiceCompanionPairedScreens": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionRemoved": "Usunięto",
+  "@voiceCompanionRemoved": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionNotConnected": "Brak połączenia",
+  "@voiceCompanionNotConnected": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionInvitation": "Zaproszenie",
+  "@voiceCompanionInvitation": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionInvitationRow": "Zaproszenie do pokazywania jego sesji głosowych na tym ekranie.",
+  "@voiceCompanionInvitationRow": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionDecline": "Odrzuć",
+  "@voiceCompanionDecline": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionAccept": "Akceptuj",
+  "@voiceCompanionAccept": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionShows": "Sparowany kiosk",
+  "@voiceCompanionShows": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionRefused": "Ten kiosk nie ma już tego ekranu na swojej liście.",
+  "@voiceCompanionRefused": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionShowsHere": "Jego sesje Voice Satellite są wyświetlane na tym ekranie.",
+  "@voiceCompanionShowsHere": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionWaiting": "Oczekiwanie na zaproszenie. Na kiosku, którego sesje głosowe ma pokazywać ten ekran, otwórz Voice Satellite, Ekrany towarzyszące i dodaj ten ekran.",
+  "@voiceCompanionWaiting": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionStopTitle": "Przestać pokazywać ten kiosk?",
+  "@voiceCompanionStopTitle": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionStopMessage": "Jego sesje głosowe nie będą już tu pokazywane. Może ponownie zaprosić ten ekran.",
+  "@voiceCompanionStopMessage": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionRemove": "Usuń",
+  "@voiceCompanionRemove": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionAdd": "Dodaj ekran towarzyszący",
+  "@voiceCompanionAdd": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionAddHelp": "Ekran towarzyszący pokazuje sesje Voice Satellite tego kiosku. Najpierw włącz tryb ekranu towarzyszącego na tamtym kiosku.",
+  "@voiceCompanionAddHelp": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionPending": "Oczekiwanie na zgodę kiosku",
+  "@voiceCompanionPending": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionDeclined": "Odrzucił zaproszenie",
+  "@voiceCompanionDeclined": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionLeft": "Przestał pokazywać ten kiosk",
+  "@voiceCompanionLeft": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionShowsThis": "Wyświetla sesje Voice Satellite tego urządzenia.",
+  "@voiceCompanionShowsThis": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionRemoveMessage": "Sesje głosowe tego kiosku nie będą już pokazywane na tamtym ekranie.",
+  "@voiceCompanionRemoveMessage": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionUnsupported": "Wymaga nowszej wersji Kiosk Satellite",
+  "@voiceCompanionUnsupported": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionModeOffThere": "Tryb ekranu towarzyszącego jest tam wyłączony",
+  "@voiceCompanionModeOffThere": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionShowsAnother": "Pokazuje inny kiosk",
+  "@voiceCompanionShowsAnother": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionNoKiosks": "Nie znaleziono innych kiosków w tej sieci.",
+  "@voiceCompanionNoKiosks": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionInviteTitle": "Zaproszenie do ekranu towarzyszącego",
+  "@voiceCompanionInviteTitle": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionInviteMessage": "Od teraz jego sesje głosowe są pokazywane na tym ekranie. Możesz to zakończyć w dowolnej chwili w Ustawienia, Voice Satellite, Ekrany towarzyszące.",
+  "@voiceCompanionInviteMessage": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionStatusWaiting": "Ekran towarzyszący. Oczekiwanie na zaproszenie.",
+  "@voiceCompanionStatusWaiting": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionNotPaired": "Niesparowany",
+  "@voiceCompanionNotPaired": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorVoiceOff": "Voice Satellite jest wyłączony na tym kiosku",
+  "@voiceCompanionErrorVoiceOff": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorOffline": "Ten kiosk nie jest online",
+  "@voiceCompanionErrorOffline": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorListed": "Ten kiosk jest już na liście",
+  "@voiceCompanionErrorListed": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorNoAnswer": "Ten kiosk nie odpowiedział",
+  "@voiceCompanionErrorNoAnswer": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorRefused": "Ten kiosk odrzucił zaproszenie",
+  "@voiceCompanionErrorRefused": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorNoScreen": "Nie ma takiego ekranu towarzyszącego",
+  "@voiceCompanionErrorNoScreen": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorNoInvite": "Brak oczekującego zaproszenia",
+  "@voiceCompanionErrorNoInvite": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionErrorNotCompanion": "To nie jest ekran towarzyszący",
+  "@voiceCompanionErrorNotCompanion": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "settingVoiceCompanionModeTitle": "Włącz tryb ekranu towarzyszącego",
+  "@settingVoiceCompanionModeTitle": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "settingVoiceCompanionModeDescription": "Wyświetlaj na tym ekranie sesje Voice Satellite innego kiosku zamiast uruchamiać tu Voice Satellite.",
+  "@settingVoiceCompanionModeDescription": {
+    "context": "Settings > Voice Satellite > Companion screens",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Companion screens"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Companion screens"
+      ]
+    }
+  },
+  "voiceCompanionShowsSessionsOf": "Pokazuje sesje głosowe kiosku {name}.",
+  "@voiceCompanionShowsSessionsOf": {
+    "context": "Settings > Voice Satellite",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged. {name} is a kiosk name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite"
+      ]
+    }
+  },
   "settingVoiceShowCommandTitle": "Pokazuj, co mówisz",
   "@settingVoiceShowCommandTitle": {
     "context": "Settings > Voice Satellite > Conversation",

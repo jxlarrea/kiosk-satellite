@@ -22,6 +22,7 @@ import '../wake_word/engine.dart';
 import '../wake_word/pryon/pryon_catalog.dart';
 import '../wake_word/wake_word_manager.dart';
 import 'assist_view.dart';
+import 'companion_voice.dart';
 import 'chat_log.dart';
 import 'custom_wake_models.dart';
 import 'ha_socket.dart';
@@ -77,7 +78,7 @@ enum RealtimeStatus { unconfigured, unvalidated, validated, failed }
 /// Active only on the native runtime with Voice Satellite enabled. On the
 /// dashboard runtime the Voice Satellite integration's engine in the page
 /// drives the wake word manager itself, and this manager keeps its hands off.
-class VoiceManager extends Manager {
+class VoiceManager extends Manager implements CompanionVoice {
   VoiceManager(
     super.bus,
     super.commands,
@@ -95,7 +96,8 @@ class VoiceManager extends Manager {
   String get name => 'voice';
 
   /// What the assist overlay draws.
-  final view = ValueNotifier<AssistView>(AssistView.hidden);
+  @override
+  final ValueNotifier<AssistView> view = ValueNotifier(AssistView.hidden);
 
   /// A Voice Match enrollment on this kiosk: the reading screen while it
   /// records, then its result card for a few seconds. Null otherwise.
@@ -133,10 +135,13 @@ class VoiceManager extends Manager {
   /// Seconds into the answer (or announcement) playing now and its length,
   /// while the player knows both; the overlay paces a long answer's scroll
   /// to it.
-  ({double elapsed, double duration})? get playback => _session.playback;
+  @override
+  ({double elapsed, double duration})? get playback =>
+      companionScreen ? _companionPlayback : _session.playback;
 
   /// The bar's audio level, 0..1.
-  final level = ValueNotifier<double>(0);
+  @override
+  final ValueNotifier<double> level = ValueNotifier(0);
 
   final homeAssistant = ValueNotifier<VoiceHaState>(const VoiceHaState());
 
@@ -160,7 +165,8 @@ class VoiceManager extends Manager {
 
   /// How much of a realtime conversation's closing silence is left, 0..1:
   /// the docked bar drains with it. 1 while it is not counting down.
-  final dockCountdown = ValueNotifier<double>(1);
+  @override
+  final ValueNotifier<double> dockCountdown = ValueNotifier(1);
 
   /// The last problem each realtime provider ran into: a conversation
   /// that could not connect, or tools that were missing when it saved.
@@ -322,8 +328,16 @@ class VoiceManager extends Manager {
   int _audioRefused = 0;
   final _eventLog = <String>[];
 
+  @override
   bool get nativeRuntime => _settings.get(defs.voiceRuntime) == 'native';
-  bool get enabled => nativeRuntime && _settings.get(defs.voiceEnabled);
+
+  /// The kiosk runs the satellite. A companion screen does not: it shows
+  /// the sessions of the kiosk it is a companion of ([companionScreen]).
+  bool get enabled => nativeRuntime && _settings.voiceSatelliteOn;
+
+  /// Voice Satellite on as a companion screen.
+  @override
+  bool get companionScreen => nativeRuntime && _settings.companionScreen;
 
   /// Voice Satellite's engine in the dashboard must not run: the native
   /// runtime owns the satellite (see kiosk_screen's suppress script).
@@ -538,6 +552,7 @@ class VoiceManager extends Manager {
           }
           if (e.key == defs.voiceRuntime.key ||
               e.key == defs.voiceEnabled.key ||
+              e.key == defs.voiceCompanionMode.key ||
               e.key == defs.voiceMute.key ||
               e.key == defs.voiceWakeWordEngine.key ||
               e.key == defs.voiceAmazonLocale.key ||
@@ -556,7 +571,8 @@ class VoiceManager extends Manager {
             _refreshSelects();
           }
           if (e.key == defs.voiceRuntime.key ||
-              e.key == defs.voiceEnabled.key) {
+              e.key == defs.voiceEnabled.key ||
+              e.key == defs.voiceCompanionMode.key) {
             _watchSelects();
           }
           // A pick from the fleet leader (or a backup): Home Assistant owns
@@ -3045,6 +3061,66 @@ class VoiceManager extends Manager {
     log.info(name, 'stop word ignored: the sound had only just started');
   }
 
+  // ── a companion screen ─────────────────────────────────────────────────
+
+  /// What the kiosk this companion screen shows has on screen.
+  AssistView _companionView = AssistView.hidden;
+  ({double elapsed, double duration})? _companionPlayback;
+
+  /// The companion manager's way back to that kiosk: a dismissal or a
+  /// result opened here acts on its session.
+  @override
+  void Function()? companionDismiss;
+  @override
+  void Function({bool silence})? companionHold;
+
+  /// The session of the kiosk this companion screen shows, drawn here with
+  /// this kiosk's own appearance. Hidden when it is not a companion
+  /// screen, or the link to that kiosk is gone.
+  @override
+  void showCompanion(AssistView next) {
+    if (!companionScreen) next = AssistView.hidden;
+    final was = _companionView;
+    if (identical(was, next)) return;
+    _companionView = next;
+    if (!next.visible) _companionPlayback = null;
+    if (next.visible) _assistant = next.assistant;
+    _onView(next);
+    // Holds like a turn of its own: the screensaver waits, the rotation
+    // pauses and the music ducks. An answer left on screen does not hold.
+    final active = next.visible && !next.lingering;
+    if (active != (was.visible && !was.lingering)) {
+      bus.publish(
+        VoiceInteractionChanged(
+          active: active,
+          reason: VoiceInteractionChanged.companionReason,
+          source: InteractionSource.native,
+        ),
+      );
+    }
+    // A session starting there lands on a lit screen here, in front.
+    if (next.visible && !was.visible && !Headless.active) {
+      unawaited(commands.execute('screenOn', const {}));
+      unawaited(
+        commands.execute('bringToFront', const {'voiceInteraction': true}),
+      );
+    }
+  }
+
+  /// The bar's level, the docked countdown and the answer's playback on the
+  /// kiosk this companion screen shows, a few times a second.
+  @override
+  void companionTick({
+    double? level,
+    double? countdown,
+    ({double elapsed, double duration})? playback,
+  }) {
+    if (!companionScreen || !_companionView.visible) return;
+    if (level != null) this.level.value = level.clamp(0.0, 1.0);
+    if (countdown != null) dockCountdown.value = countdown.clamp(0.0, 1.0);
+    _companionPlayback = playback;
+  }
+
   // ── the overlay ────────────────────────────────────────────────────────
 
   void _onView(AssistView next) {
@@ -3107,15 +3183,27 @@ class VoiceManager extends Manager {
     }
   }
 
-  /// A result was opened on the overlay: keep it up until dismissed.
-  void holdResults({bool silence = false}) =>
-      _session.holdResults(silence: silence);
+  /// A result was opened on the overlay: keep it up until dismissed. On a
+  /// companion screen the kiosk it shows keeps it up.
+  @override
+  void holdResults({bool silence = false}) {
+    if (companionScreen) {
+      companionHold?.call(silence: silence);
+      return;
+    }
+    _session.holdResults(silence: silence);
+  }
 
   /// Double tap on the overlay, or the voiceCancel command: a ringing timer
   /// first, then the turn or the lingering answer.
+  @override
   void dismiss() {
     if (_ringing.isNotEmpty || _sharedRinging) {
       _dismissRinging();
+      return;
+    }
+    if (companionScreen) {
+      if (_companionView.visible) companionDismiss?.call();
       return;
     }
     if (_realtime.busy) {

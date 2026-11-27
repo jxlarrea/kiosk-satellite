@@ -2996,4 +2996,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingCalendarFaceFocusTitle",
     "description": "settingVisionMatchLinkCalendarFocusDescription",
   },
+  "voice.companion_mode": {
+    "title": "settingVoiceCompanionModeTitle",
+    "description": "settingVoiceCompanionModeDescription",
+  },
 };

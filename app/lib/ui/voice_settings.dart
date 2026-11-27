@@ -9,6 +9,7 @@ import '../managers/settings/definitions.dart' as defs;
 import '../managers/voice/realtime/openai_realtime_backend.dart';
 import '../managers/voice/voice_manager.dart';
 import 'assist/assist_skins.dart';
+import 'companion_settings.dart';
 import 'kit.dart';
 import 'theme.dart';
 import 'toast.dart';
@@ -106,14 +107,19 @@ class VoiceStatusCard extends StatefulWidget {
   State<VoiceStatusCard> createState() => _VoiceStatusCardState();
 }
 
-class _VoiceStatusCardState extends State<VoiceStatusCard> {
+class _VoiceStatusCardState extends State<VoiceStatusCard>
+    with CompanionStatusReader {
   AppContainer get c => widget.container;
   StreamSubscription<Object?>? _wakeSub;
   StreamSubscription<Object?>? _statusSub;
 
   @override
+  AppContainer get companionContainer => widget.container;
+
+  @override
   void initState() {
     super.initState();
+    startCompanionStatus();
     c.voice.homeAssistant.addListener(_changed);
     _wakeSub = c.bus.on<WakeWordStateChanged>().listen((_) => _changed());
     // A turn starting or ending: the kiosk announces it for the status rows.
@@ -124,6 +130,7 @@ class _VoiceStatusCardState extends State<VoiceStatusCard> {
 
   @override
   void dispose() {
+    stopCompanionStatus();
     c.voice.homeAssistant.removeListener(_changed);
     _wakeSub?.cancel();
     _statusSub?.cancel();
@@ -153,6 +160,34 @@ class _VoiceStatusCardState extends State<VoiceStatusCard> {
         fontWeight: FontWeight.w500,
       ),
     );
+    // A companion screen: whether it shows the kiosk it is a companion of.
+    if (enabled && settings.companionScreen) {
+      final of = companionStatus['of'];
+      final state = of is Map ? '${of['state']}' : '';
+      return SettingsCard(
+        children: [
+          ...widget.rows.take(1),
+          SettingsRow(
+            title: Text(voiceText(context, 'Status')),
+            subtitle: Text(
+              of is Map
+                  ? l10n(context).voiceCompanionShowsSessionsOf('${of['name']}')
+                  : voiceText(
+                      context,
+                      'Companion screen. Waiting for an invitation.',
+                    ),
+            ),
+            trailing: statusWord(
+              of is Map
+                  ? companionLinkText(context, state)
+                  : voiceText(context, 'Not paired'),
+              state == 'connected' ? scheme.primary : scheme.tertiary,
+            ),
+          ),
+          ...widget.rows.skip(1),
+        ],
+      );
+    }
     final rows = <Widget>[
       ...widget.rows.take(1),
       if (enabled) ...[

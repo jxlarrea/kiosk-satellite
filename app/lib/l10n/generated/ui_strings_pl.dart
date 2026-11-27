@@ -15270,6 +15270,154 @@ class UiStringsPl extends UiStrings {
       'Dźwięki wybudzenia, zakończenia, błędu i ogłoszenia';
 
   @override
+  String get voiceCompanionScreens => 'Ekrany towarzyszące';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Pokazuj sesje głosowe na innych kioskach lub sesje innego kiosku tutaj';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Sparowane ekrany towarzyszące';
+
+  @override
+  String get voiceCompanionRemoved => 'Usunięto';
+
+  @override
+  String get voiceCompanionNotConnected => 'Brak połączenia';
+
+  @override
+  String get voiceCompanionInvitation => 'Zaproszenie';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Zaproszenie do pokazywania jego sesji głosowych na tym ekranie.';
+
+  @override
+  String get voiceCompanionDecline => 'Odrzuć';
+
+  @override
+  String get voiceCompanionAccept => 'Akceptuj';
+
+  @override
+  String get voiceCompanionShows => 'Sparowany kiosk';
+
+  @override
+  String get voiceCompanionRefused =>
+      'Ten kiosk nie ma już tego ekranu na swojej liście.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'Jego sesje Voice Satellite są wyświetlane na tym ekranie.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'Oczekiwanie na zaproszenie. Na kiosku, którego sesje głosowe ma pokazywać ten ekran, otwórz Voice Satellite, Ekrany towarzyszące i dodaj ten ekran.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Przestać pokazywać ten kiosk?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'Jego sesje głosowe nie będą już tu pokazywane. Może ponownie zaprosić ten ekran.';
+
+  @override
+  String get voiceCompanionRemove => 'Usuń';
+
+  @override
+  String get voiceCompanionAdd => 'Dodaj ekran towarzyszący';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'Ekran towarzyszący pokazuje sesje Voice Satellite tego kiosku. Najpierw włącz tryb ekranu towarzyszącego na tamtym kiosku.';
+
+  @override
+  String get voiceCompanionPending => 'Oczekiwanie na zgodę kiosku';
+
+  @override
+  String get voiceCompanionDeclined => 'Odrzucił zaproszenie';
+
+  @override
+  String get voiceCompanionLeft => 'Przestał pokazywać ten kiosk';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Wyświetla sesje Voice Satellite tego urządzenia.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'Sesje głosowe tego kiosku nie będą już pokazywane na tamtym ekranie.';
+
+  @override
+  String get voiceCompanionUnsupported =>
+      'Wymaga nowszej wersji Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere =>
+      'Tryb ekranu towarzyszącego jest tam wyłączony';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Pokazuje inny kiosk';
+
+  @override
+  String get voiceCompanionNoKiosks =>
+      'Nie znaleziono innych kiosków w tej sieci.';
+
+  @override
+  String get voiceCompanionInviteTitle =>
+      'Zaproszenie do ekranu towarzyszącego';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'Od teraz jego sesje głosowe są pokazywane na tym ekranie. Możesz to zakończyć w dowolnej chwili w Ustawienia, Voice Satellite, Ekrany towarzyszące.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Ekran towarzyszący. Oczekiwanie na zaproszenie.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Niesparowany';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite jest wyłączony na tym kiosku';
+
+  @override
+  String get voiceCompanionErrorOffline => 'Ten kiosk nie jest online';
+
+  @override
+  String get voiceCompanionErrorListed => 'Ten kiosk jest już na liście';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => 'Ten kiosk nie odpowiedział';
+
+  @override
+  String get voiceCompanionErrorRefused => 'Ten kiosk odrzucił zaproszenie';
+
+  @override
+  String get voiceCompanionErrorNoScreen =>
+      'Nie ma takiego ekranu towarzyszącego';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'Brak oczekującego zaproszenia';
+
+  @override
+  String get voiceCompanionErrorNotCompanion =>
+      'To nie jest ekran towarzyszący';
+
+  @override
+  String get settingVoiceCompanionModeTitle =>
+      'Włącz tryb ekranu towarzyszącego';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Wyświetlaj na tym ekranie sesje Voice Satellite innego kiosku zamiast uruchamiać tu Voice Satellite.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Pokazuje sesje głosowe kiosku $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Pokazuj, co mówisz';
 
   @override

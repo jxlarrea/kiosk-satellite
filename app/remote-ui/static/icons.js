@@ -54,6 +54,7 @@ export const SUBPAGE_ICONS = {
   'Realtime': svg('<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>'),
   'Voice Match': svg('<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M18 5a5 5 0 0 1 0 7M21 3a9 9 0 0 1 0 11"/>'),
   'Conversation': svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
+  'Companion screens': svg('<rect x="2" y="4" width="14" height="10" rx="2"/><path d="M6 18h6M9 14v4"/><rect x="18" y="8" width="4" height="10" rx="1"/>'),
   // Screen & Audio.
   'Microphone settings': svg('<rect x="9" y="3" width="6" height="11" rx="3"/>'
     + '<path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M9 21h6"/>'),

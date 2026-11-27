@@ -681,6 +681,8 @@ class RemoteManager extends Manager {
 
     if (path.startsWith('api/intercom/')) return _intercomRoutes(request);
 
+    if (path.startsWith('api/companion/')) return _companionRoute(request);
+
     // Shared timers between kiosks, before the password like the intercom's
     // knock: a kiosk has no session on the kiosks it shares with. The
     // receiving kiosk's Show shared timers switch is the gate.
@@ -1136,6 +1138,70 @@ class RemoteManager extends Manager {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Companion screens, before the password like Fleet's invitation: the
+  /// kiosks have no session on each other. An invitation waits on the
+  /// screen and decides nothing by itself, and the stream opens only for
+  /// the nonce of an invitation this kiosk sent.
+  Future<Response> _companionRoute(Request request) async {
+    final path = request.url.path;
+    final ip = _clientIp(request);
+    if (path == 'api/companion/identity' && request.method == 'GET') {
+      final r = await commands.execute('companionIdentity', const {});
+      return r.ok
+          ? _json(200, (r.data as Map).cast<String, Object?>())
+          : _json(503, {'error': r.error});
+    }
+    if (path == 'api/companion/invite' && request.method == 'POST') {
+      final last = _inviteAt[ip];
+      final now = DateTime.now();
+      if (last != null && now.difference(last) < const Duration(seconds: 3)) {
+        return _json(429, {'error': 'too many invitations'});
+      }
+      _inviteAt[ip] = now;
+      final body = await _body(request);
+      if (body == null) return _json(400, {'error': 'invalid JSON'});
+      final r = await commands.execute('companionInviteReceived', {
+        ...body,
+        // Where it really came from, whatever the body says.
+        'address': ip,
+      });
+      return _json(r.ok ? 200 : 400, r.toJson());
+    }
+    if (path.startsWith('api/companion/invite/') && request.method == 'GET') {
+      final r = await commands.execute('companionInvitePoll', {
+        'nonce': path.substring('api/companion/invite/'.length),
+      });
+      return _json(200, (r.data as Map?)?.cast<String, Object?>() ?? {});
+    }
+    if ((path == 'api/companion/leave' || path == 'api/companion/left') &&
+        request.method == 'POST') {
+      final body = await _body(request);
+      if (body == null) return _json(400, {'error': 'invalid JSON'});
+      final r = await commands.execute(
+        path.endsWith('left') ? 'companionLeft' : 'companionLeave',
+        body,
+      );
+      return _json(r.ok ? 200 : 404, r.toJson());
+    }
+    if (path == 'api/companion/stream') {
+      final id = request.url.queryParameters['id'] ?? '';
+      final verified = await commands.execute('companionStreamVerify', {
+        'id': id,
+        'nonce': request.url.queryParameters['nonce'] ?? '',
+        'address': ip,
+      });
+      if (!verified.ok) return _json(403, {'error': 'refused'});
+      return webSocketHandler(pingInterval: const Duration(seconds: 15), (
+        WebSocketChannel channel,
+        String? protocol,
+      ) {
+        // In-process: the channel rides the command's parameters.
+        commands.execute('companionAttach', {'id': id, 'channel': channel});
+      })(request);
+    }
+    return Response.notFound('not found');
   }
 
   static String _clientIp(Request request) =>

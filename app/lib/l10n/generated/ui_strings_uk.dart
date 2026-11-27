@@ -15256,6 +15256,151 @@ class UiStringsUk extends UiStrings {
       'Звуки активації, завершення, помилки та оголошень';
 
   @override
+  String get voiceCompanionScreens => 'Екрани-компаньйони';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Показувати голосові сеанси на інших кіосках або сеанси іншого кіоска тут';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Пов\'язані екрани-компаньйони';
+
+  @override
+  String get voiceCompanionRemoved => 'Вилучено';
+
+  @override
+  String get voiceCompanionNotConnected => 'Не підключено';
+
+  @override
+  String get voiceCompanionInvitation => 'Запрошення';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Запрошення показувати його голосові сеанси на цьому екрані.';
+
+  @override
+  String get voiceCompanionDecline => 'Відхилити';
+
+  @override
+  String get voiceCompanionAccept => 'Прийняти';
+
+  @override
+  String get voiceCompanionShows => 'Пов\'язаний кіоск';
+
+  @override
+  String get voiceCompanionRefused =>
+      'Цей кіоск більше не має цього екрана у своєму списку.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'Його сеанси Voice Satellite показуються на цьому екрані.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'Очікування запрошення. На кіоску, голосові сеанси якого має показувати цей екран, відкрийте Voice Satellite, Екрани-компаньйони та додайте цей.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Більше не показувати цей кіоск?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'Його голосові сеанси більше не показуватимуться тут. Він може знову запросити цей екран.';
+
+  @override
+  String get voiceCompanionRemove => 'Вилучити';
+
+  @override
+  String get voiceCompanionAdd => 'Додати екран-компаньйон';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'Екран-компаньйон показує сеанси Voice Satellite цього кіоска. Спершу увімкніть режим екрана-компаньйона на тому кіоску.';
+
+  @override
+  String get voiceCompanionPending => 'Очікування підтвердження';
+
+  @override
+  String get voiceCompanionDeclined => 'Відхилив запрошення';
+
+  @override
+  String get voiceCompanionLeft => 'Більше не показує цей кіоск';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Показує сеанси Voice Satellite цього пристрою.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'Голосові сеанси цього кіоска більше не показуватимуться на тому екрані.';
+
+  @override
+  String get voiceCompanionUnsupported =>
+      'Потрібна новіша версія Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere =>
+      'Режим екрана-компаньйона там вимкнено';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Показує інший кіоск';
+
+  @override
+  String get voiceCompanionNoKiosks =>
+      'У цій мережі не знайдено інших кіосків.';
+
+  @override
+  String get voiceCompanionInviteTitle => 'Запрошення екрана-компаньйона';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'Відтепер його голосові сеанси показуються на цьому екрані. Ви можете припинити це будь-коли в Налаштування, Voice Satellite, Екрани-компаньйони.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Екран-компаньйон. Очікування запрошення.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Не пов\'язано';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite вимкнено на цьому кіоску';
+
+  @override
+  String get voiceCompanionErrorOffline => 'Цей кіоск не в мережі';
+
+  @override
+  String get voiceCompanionErrorListed => 'Цей кіоск уже є у списку';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => 'Цей кіоск не відповів';
+
+  @override
+  String get voiceCompanionErrorRefused => 'Цей кіоск відхилив запрошення';
+
+  @override
+  String get voiceCompanionErrorNoScreen => 'Такого екрана-компаньйона немає';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'Немає запрошення, що очікує';
+
+  @override
+  String get voiceCompanionErrorNotCompanion => 'Це не екран-компаньйон';
+
+  @override
+  String get settingVoiceCompanionModeTitle =>
+      'Увімкнути режим екрана-компаньйона';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Показує на цьому екрані сеанси Voice Satellite іншого кіоска замість роботи Voice Satellite тут.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Показує голосові сеанси $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Показувати, що ви сказали';
 
   @override

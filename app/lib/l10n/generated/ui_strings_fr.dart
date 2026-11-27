@@ -15388,6 +15388,152 @@ class UiStringsFr extends UiStrings {
       'Sons de réveil, de fin, d\'erreur et d\'annonce';
 
   @override
+  String get voiceCompanionScreens => 'Écrans compagnons';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Afficher les sessions vocales sur d\'autres kiosques ou celles d\'un autre kiosque ici';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Écrans compagnons associés';
+
+  @override
+  String get voiceCompanionRemoved => 'Retiré';
+
+  @override
+  String get voiceCompanionNotConnected => 'Non connecté';
+
+  @override
+  String get voiceCompanionInvitation => 'Invitation';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Invitation à afficher ses sessions vocales sur cet écran.';
+
+  @override
+  String get voiceCompanionDecline => 'Refuser';
+
+  @override
+  String get voiceCompanionAccept => 'Accepter';
+
+  @override
+  String get voiceCompanionShows => 'Kiosque associé';
+
+  @override
+  String get voiceCompanionRefused =>
+      'Ce kiosque n\'a plus cet écran dans sa liste.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'Ses sessions Voice Satellite s\'affichent sur cet écran.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'En attente d\'une invitation. Sur le kiosque dont cet écran doit afficher les sessions vocales, ouvrez Voice Satellite, Écrans compagnons et ajoutez celui-ci.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Ne plus afficher ce kiosque ?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'Ses sessions vocales ne s\'affichent plus ici. Il peut inviter à nouveau cet écran.';
+
+  @override
+  String get voiceCompanionRemove => 'Retirer';
+
+  @override
+  String get voiceCompanionAdd => 'Ajouter un écran compagnon';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'Un écran compagnon affiche les sessions Voice Satellite de ce kiosque. Activez d\'abord le mode écran compagnon sur ce kiosque.';
+
+  @override
+  String get voiceCompanionPending => 'En attente de son accord';
+
+  @override
+  String get voiceCompanionDeclined => 'A refusé l\'invitation';
+
+  @override
+  String get voiceCompanionLeft => 'N\'affiche plus ce kiosque';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Affiche les sessions Voice Satellite de cet appareil.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'Les sessions vocales de ce kiosque ne s\'affichent plus sur cet écran.';
+
+  @override
+  String get voiceCompanionUnsupported =>
+      'Nécessite une version plus récente de Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere =>
+      'Le mode écran compagnon y est désactivé';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Affiche un autre kiosque';
+
+  @override
+  String get voiceCompanionNoKiosks =>
+      'Aucun autre kiosque trouvé sur ce réseau.';
+
+  @override
+  String get voiceCompanionInviteTitle => 'Invitation d\'écran compagnon';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'Ses sessions vocales s\'affichent désormais sur cet écran. Vous pouvez arrêter à tout moment dans Paramètres, Voice Satellite, Écrans compagnons.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Écran compagnon. En attente d\'une invitation.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Non associé';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite est désactivé sur ce kiosque';
+
+  @override
+  String get voiceCompanionErrorOffline => 'Ce kiosque n\'est pas en ligne';
+
+  @override
+  String get voiceCompanionErrorListed => 'Ce kiosque est déjà dans la liste';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => 'Ce kiosque n\'a pas répondu';
+
+  @override
+  String get voiceCompanionErrorRefused => 'Ce kiosque a refusé l\'invitation';
+
+  @override
+  String get voiceCompanionErrorNoScreen => 'Cet écran compagnon n\'existe pas';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'Aucune invitation en attente';
+
+  @override
+  String get voiceCompanionErrorNotCompanion =>
+      'Ce n\'est pas un écran compagnon';
+
+  @override
+  String get settingVoiceCompanionModeTitle =>
+      'Activer le mode écran compagnon';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Affiche sur cet écran les sessions Voice Satellite d\'un autre kiosque au lieu d\'exécuter Voice Satellite ici.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Affiche les sessions vocales de $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Afficher ce que vous avez dit';
 
   @override

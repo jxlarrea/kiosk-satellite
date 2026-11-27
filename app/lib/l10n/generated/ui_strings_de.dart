@@ -15415,6 +15415,155 @@ class UiStringsDe extends UiStrings {
       'Aktivierungs-, Abschluss-, Fehler- und Ansagetöne';
 
   @override
+  String get voiceCompanionScreens => 'Begleitbildschirme';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Sprachinteraktionen auf anderen Kiosks zeigen oder die eines anderen Kiosks hier';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Gekoppelte Begleitbildschirme';
+
+  @override
+  String get voiceCompanionRemoved => 'Entfernt';
+
+  @override
+  String get voiceCompanionNotConnected => 'Nicht verbunden';
+
+  @override
+  String get voiceCompanionInvitation => 'Einladung';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Einladung, seine Sprachinteraktionen auf diesem Bildschirm zu zeigen.';
+
+  @override
+  String get voiceCompanionDecline => 'Ablehnen';
+
+  @override
+  String get voiceCompanionAccept => 'Annehmen';
+
+  @override
+  String get voiceCompanionShows => 'Gekoppelter Kiosk';
+
+  @override
+  String get voiceCompanionRefused =>
+      'Dieser Kiosk hat diesen Bildschirm nicht mehr in seiner Liste.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'Seine Voice-Satellite-Sitzungen werden auf diesem Bildschirm angezeigt.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'Warte auf eine Einladung. Öffne auf dem Kiosk, dessen Sprachinteraktionen dieser Bildschirm zeigen soll, Voice Satellite, Begleitbildschirme und füge diesen hinzu.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Diesen Kiosk nicht mehr zeigen?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'Seine Sprachinteraktionen werden hier nicht mehr angezeigt. Er kann diesen Bildschirm erneut einladen.';
+
+  @override
+  String get voiceCompanionRemove => 'Entfernen';
+
+  @override
+  String get voiceCompanionAdd => 'Begleitbildschirm hinzufügen';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'Ein Begleitbildschirm zeigt die Voice-Satellite-Sitzungen dieses Kiosks. Schalte zuerst auf diesem Kiosk den Begleitbildschirm-Modus ein.';
+
+  @override
+  String get voiceCompanionPending => 'Warte auf Bestätigung';
+
+  @override
+  String get voiceCompanionDeclined => 'Hat die Einladung abgelehnt';
+
+  @override
+  String get voiceCompanionLeft => 'Zeigt diesen Kiosk nicht mehr';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Zeigt die Voice-Satellite-Sitzungen dieses Geräts an.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'Die Sprachinteraktionen dieses Kiosks werden auf diesem Bildschirm nicht mehr angezeigt.';
+
+  @override
+  String get voiceCompanionUnsupported =>
+      'Benötigt eine neuere Version von Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere =>
+      'Der Begleitbildschirm-Modus ist dort ausgeschaltet';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Zeigt einen anderen Kiosk';
+
+  @override
+  String get voiceCompanionNoKiosks =>
+      'Keine anderen Kiosks in diesem Netzwerk gefunden.';
+
+  @override
+  String get voiceCompanionInviteTitle => 'Einladung als Begleitbildschirm';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'Seine Sprachinteraktionen werden ab sofort auf diesem Bildschirm angezeigt. Du kannst das jederzeit unter Einstellungen, Voice Satellite, Begleitbildschirme beenden.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Begleitbildschirm. Warte auf eine Einladung.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Nicht gekoppelt';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite ist auf diesem Kiosk ausgeschaltet';
+
+  @override
+  String get voiceCompanionErrorOffline => 'Dieser Kiosk ist nicht online';
+
+  @override
+  String get voiceCompanionErrorListed =>
+      'Dieser Kiosk ist bereits in der Liste';
+
+  @override
+  String get voiceCompanionErrorNoAnswer =>
+      'Dieser Kiosk hat nicht geantwortet';
+
+  @override
+  String get voiceCompanionErrorRefused =>
+      'Dieser Kiosk hat die Einladung abgelehnt';
+
+  @override
+  String get voiceCompanionErrorNoScreen =>
+      'Diesen Begleitbildschirm gibt es nicht';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'Es wartet keine Einladung';
+
+  @override
+  String get voiceCompanionErrorNotCompanion => 'Kein Begleitbildschirm';
+
+  @override
+  String get settingVoiceCompanionModeTitle =>
+      'Begleitbildschirm-Modus aktivieren';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Zeigt die Voice-Satellite-Sitzungen eines anderen Kiosks auf diesem Bildschirm an, statt hier Voice Satellite auszuführen.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Zeigt die Sprachinteraktionen von $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Zeigen, was du gesagt hast';
 
   @override

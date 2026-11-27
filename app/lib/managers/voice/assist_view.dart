@@ -27,6 +27,17 @@ class AssistResult {
   const AssistResult(this.kind, this.data);
   final String kind;
   final Map<String, Object?> data;
+
+  Map<String, Object?> toJson() => {'kind': kind, 'data': data};
+
+  static AssistResult? fromJson(Object? raw) {
+    if (raw is! Map || raw['kind'] is! String) return null;
+    final data = raw['data'];
+    return AssistResult(
+      raw['kind'] as String,
+      data is Map ? data.cast<String, Object?>() : const {},
+    );
+  }
 }
 
 /// A finished turn of the conversation, kept on screen above the turns
@@ -50,7 +61,37 @@ class AssistTurn {
   final String? speakerColor;
 
   bool get isEmpty => command.isEmpty && tools.isEmpty && answer.isEmpty;
+
+  Map<String, Object?> toJson() => {
+    'command': command,
+    'tools': tools,
+    'answer': answer,
+    'speaker': speaker,
+    'speakerColor': ?speakerColor,
+  };
+
+  static AssistTurn fromJson(Object? raw) {
+    if (raw is! Map) return const AssistTurn();
+    return AssistTurn(
+      command: _string(raw['command']),
+      tools: _strings(raw['tools']),
+      answer: _string(raw['answer']),
+      speaker: _string(raw['speaker']),
+      speakerColor: raw['speakerColor'] is String
+          ? raw['speakerColor'] as String
+          : null,
+    );
+  }
 }
+
+String _string(Object? v) => v is String ? v : '';
+
+List<String> _strings(Object? v) => v is List
+    ? [
+        for (final e in v)
+          if (e is String) e,
+      ]
+    : const [];
 
 class AssistView {
   const AssistView({
@@ -113,6 +154,56 @@ class AssistView {
   final String? speakerColor;
 
   bool get visible => phase != AssistPhase.hidden;
+
+  /// The snapshot as a companion screen receives it.
+  Map<String, Object?> toJson() => {
+    'phase': phase.name,
+    'earlier': [for (final t in earlier) t.toJson()],
+    'command': command,
+    'answer': answer,
+    'streaming': streaming,
+    'tools': tools,
+    'results': [for (final r in results) r.toJson()],
+    'reactive': reactive,
+    'docked': docked,
+    'lingering': lingering,
+    'assistant': assistant,
+    'speaker': speaker,
+    'speakerColor': ?speakerColor,
+  };
+
+  /// A snapshot from [toJson]. Anything it cannot read reads hidden.
+  static AssistView fromJson(Object? raw) {
+    if (raw is! Map) return hidden;
+    final phase = AssistPhase.values
+        .where((p) => p.name == raw['phase'])
+        .firstOrNull;
+    if (phase == null) return hidden;
+    final earlier = raw['earlier'];
+    final results = raw['results'];
+    final assistant = raw['assistant'];
+    return AssistView(
+      phase: phase,
+      earlier: earlier is List
+          ? [for (final t in earlier) AssistTurn.fromJson(t)]
+          : const [],
+      command: _string(raw['command']),
+      answer: _string(raw['answer']),
+      streaming: raw['streaming'] == true,
+      tools: _strings(raw['tools']),
+      results: results is List
+          ? [for (final r in results) ?AssistResult.fromJson(r)]
+          : const [],
+      reactive: raw['reactive'] != false,
+      docked: raw['docked'] == true,
+      lingering: raw['lingering'] == true,
+      assistant: assistant == 2 ? 2 : 1,
+      speaker: _string(raw['speaker']),
+      speakerColor: raw['speakerColor'] is String
+          ? raw['speakerColor'] as String
+          : null,
+    );
+  }
 
   /// The turn in progress, as it would be kept once the next one starts.
   AssistTurn get turn => AssistTurn(

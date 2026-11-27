@@ -1591,7 +1591,7 @@ class EspEntitySurface {
   /// and actions exist only then.
   bool get _voiceNative =>
       _settings.get(defs.voiceRuntime) == 'native' &&
-      _settings.get(defs.voiceEnabled);
+      _settings.voiceSatelliteOn;
 
   /// Native Voice Satellite with Enable timers on: the timer sensors, the
   /// Mute timers switch and the timer actions exist only then.

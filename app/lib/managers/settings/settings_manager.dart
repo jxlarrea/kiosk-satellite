@@ -796,6 +796,17 @@ class SettingsManager extends Manager {
     }
   }
 
+  /// Voice Satellite is on and this kiosk runs it: the microphone, the
+  /// wake word and the Assist satellite in Home Assistant. Off for a
+  /// companion screen, which only shows another kiosk's voice sessions.
+  bool get voiceSatelliteOn => get(voiceEnabled) && !companionScreen;
+
+  /// Voice Satellite is on as a companion screen ([voiceCompanionMode]).
+  /// Never on a device without a screen: it only invites companion
+  /// screens.
+  bool get companionScreen =>
+      !Headless.active && get(voiceEnabled) && get(voiceCompanionMode);
+
   T get<T>(SettingDef<T> def) {
     final raw = _prefs.get(_prefix + def.key);
     // Amazon's wake word language is one of the locales installed on the

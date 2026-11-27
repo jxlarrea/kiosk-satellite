@@ -440,7 +440,7 @@ class VoiceTimerManager extends Manager {
       enabled &&
       settings != null &&
       settings!.get(defs.voiceRuntime) == 'native' &&
-      settings!.get(defs.voiceEnabled);
+      settings!.voiceSatelliteOn;
 
   /// Enable timers: off, the kiosk shows and rings no timers at all
   /// (issue #1508).

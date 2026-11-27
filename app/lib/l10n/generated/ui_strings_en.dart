@@ -15104,6 +15104,147 @@ class UiStringsEn extends UiStrings {
       'Wake, done, error and announcement sounds';
 
   @override
+  String get voiceCompanionScreens => 'Companion screens';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Show voice sessions on other kiosks or another kiosk\'s here';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Paired companion screens';
+
+  @override
+  String get voiceCompanionRemoved => 'Removed';
+
+  @override
+  String get voiceCompanionNotConnected => 'Not connected';
+
+  @override
+  String get voiceCompanionInvitation => 'Invitation';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Invitation to show its voice sessions on this screen.';
+
+  @override
+  String get voiceCompanionDecline => 'Decline';
+
+  @override
+  String get voiceCompanionAccept => 'Accept';
+
+  @override
+  String get voiceCompanionShows => 'Paired kiosk';
+
+  @override
+  String get voiceCompanionRefused =>
+      'That kiosk no longer has this screen on its list.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'Its Voice Satellite sessions are displayed on this screen.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'Waiting for an invitation. On the kiosk whose voice sessions this screen should show, open Voice Satellite, Companion screens and add this one.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Stop showing this kiosk?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'Its voice sessions no longer show here. It can invite this screen again.';
+
+  @override
+  String get voiceCompanionRemove => 'Remove';
+
+  @override
+  String get voiceCompanionAdd => 'Add a companion screen';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'A companion screen shows this kiosk\'s Voice Satellite sessions. Turn on companion screen mode on that kiosk first.';
+
+  @override
+  String get voiceCompanionPending => 'Waiting for its OK';
+
+  @override
+  String get voiceCompanionDeclined => 'Declined the invitation';
+
+  @override
+  String get voiceCompanionLeft => 'Stopped showing this kiosk';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Displays this device\'s Voice Satellite sessions.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'This kiosk\'s voice sessions no longer show on that screen.';
+
+  @override
+  String get voiceCompanionUnsupported => 'Needs a newer Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere => 'Companion screen mode is off there';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Shows another kiosk';
+
+  @override
+  String get voiceCompanionNoKiosks => 'No other kiosks found on this network.';
+
+  @override
+  String get voiceCompanionInviteTitle => 'Companion screen invitation';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'Its voice sessions show on this screen from now on. You can stop at any time under Settings, Voice Satellite, Companion screens.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Companion screen. Waiting for an invitation.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Not paired';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite is off on this kiosk';
+
+  @override
+  String get voiceCompanionErrorOffline => 'That kiosk is not online';
+
+  @override
+  String get voiceCompanionErrorListed => 'That kiosk is already on the list';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => 'That kiosk did not answer';
+
+  @override
+  String get voiceCompanionErrorRefused => 'That kiosk refused the invitation';
+
+  @override
+  String get voiceCompanionErrorNoScreen => 'No such companion screen';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'No invitation is waiting';
+
+  @override
+  String get voiceCompanionErrorNotCompanion => 'Not a companion screen';
+
+  @override
+  String get settingVoiceCompanionModeTitle => 'Enable companion screen mode';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Display Voice Satellite sessions of another kiosk on this screen instead of running Voice Satellite here.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Shows the voice sessions of $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Show what you said';
 
   @override

@@ -60,6 +60,7 @@ import 'glance_rows.dart';
 import 'esphome_entity_picker.dart';
 import 'camera_settings.dart';
 import 'tls_settings.dart';
+import 'companion_settings.dart';
 import 'fleet_settings.dart';
 import 'camera_views_picker.dart';
 import 'dashboard_view_picker.dart';
@@ -4266,6 +4267,14 @@ class _CategoryContentState extends State<_CategoryContent> {
           if (def.subpage == subpage) def,
       ];
       switch (subpage) {
+        case 'Companion screens':
+          return [CompanionScreensPage(container: container)];
+        case 'Conversation' when container.settings.companionScreen:
+          // How long it stays is the kiosk's whose session it is.
+          return sectioned([
+            for (final def in pageDefs)
+              if (!companionHiddenSettings.contains(def.key)) def,
+          ]);
         case 'Assistant':
           return [
             SectionHeading(voiceText(context, 'Pipelines')),
@@ -4741,6 +4750,9 @@ extension on _CategoryContentState {
   List<Widget> _nativeVsContent(AppContainer container) {
     final settings = container.settings;
     final enabled = settings.get(voiceEnabled);
+    // A companion screen runs no satellite of its own: only the switch,
+    // the status and the pages about how the sessions look are left.
+    final companion = settings.companionScreen;
     void changed() => _rebuild();
     SettingTile tile(SettingDef<Object> def) =>
         SettingTile(container: container, def: def, onChanged: changed);
@@ -4751,7 +4763,7 @@ extension on _CategoryContentState {
           container: container,
           rows: [
             tile(voiceEnabled),
-            if (enabled) ...[
+            if (enabled && !companion) ...[
               tile(voiceMute),
               for (final def in [
                 wakeWordBackground,
@@ -4762,7 +4774,14 @@ extension on _CategoryContentState {
           ],
         ),
       ),
-      if (enabled) ...[
+      if (enabled && companion)
+        for (final page in const [
+          'Appearance',
+          'Conversation',
+          'Companion screens',
+        ])
+          _subpageEntryCard(container, 'Voice Satellite', page),
+      if (enabled && !companion) ...[
         for (final page in const [
           'Wake Word',
           'Assistant',
@@ -4770,6 +4789,7 @@ extension on _CategoryContentState {
           'Appearance',
           'Conversation',
           'Chimes',
+          'Companion screens',
         ])
           _subpageEntryCard(container, 'Voice Satellite', page),
         SectionHeading(voiceText(context, 'Wake Word Tester')),

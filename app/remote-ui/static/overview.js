@@ -13,6 +13,7 @@ import { loadPlugins, reviewPluginUpdate } from './plugins.js';
 import { showTab } from './tabs.js';
 import { attachSlider, showToast } from './widgets.js';
 import { openVsMigrationWizard } from './vs_native.js';
+import { companionScreenOn, linkText } from './companion.js';
 import { ALARM_ICON, alarmClockText } from './alarms.js';
 
 /* ---- Overview ----
@@ -373,7 +374,7 @@ function openButton(btn, label, tab) {
    results) that one source, and the tiles and the attention list are
    painted whole from the cache. A settings change repaints from the
    cache without a single command. */
-const health = { ha: null, wake: null, voice: null, esp: null, media: null, svc: null,
+const health = { ha: null, wake: null, voice: null, companion: null, esp: null, media: null, svc: null,
   upd: null, sys: null, perms: null, guard: null, buttons: null, fleet: null, tiles: null, plugins: null };
 const SOURCES = {
   ha: { topics: ['ha'], read: async () => { health.ha = await ask('haStatus'); } },
@@ -381,8 +382,10 @@ const SOURCES = {
   wake: { topics: [], read: async () => { health.wake = await ask('getWakeWordState'); } },
   // The native satellite: added to Home Assistant, listening or mid-turn.
   // The same source and topic as the Voice Satellite page's Status row.
-  voice: { topics: ['voice-status'], read: async () => {
+  // A companion screen says whether it shows the kiosk it is paired with.
+  voice: { topics: ['voice-status', 'companion'], read: async () => {
     health.voice = settingVal('voice.runtime') === 'dashboard' ? null : await ask('voiceStatus');
+    health.companion = companionScreenOn() ? await ask('companionStatus') : null;
   } },
   // Sampled on the device, pushed only when something other than the
   // beacon counters moved, with the sample attached.
@@ -485,7 +488,12 @@ async function paintHaStatus(ha, { filter = true } = {}) {
 function paintNativeVoice(wake, voice) {
   const words = (wake?.models || []).map((m) => m.wakeWord).filter(Boolean).join(', ');
   if (!settingOn('voice.enabled')) paintTile('voice', '', overviewText('Off'));
-  else if (!settingOn('esphome.enabled') || voice?.subscribed !== true) paintTile('voice', 'warn', voiceText('Not added'));
+  else if (companionScreenOn()) {
+    // A companion screen runs no satellite: its link is what matters.
+    const of = health.companion?.of;
+    paintTile('voice', of?.state === 'connected' ? 'on' : 'warn',
+      of ? linkText(of.state) : voiceText('Not paired'));
+  } else if (!settingOn('esphome.enabled') || voice?.subscribed !== true) paintTile('voice', 'warn', voiceText('Not added'));
   else if (settingOn('voice.mute')) paintTile('voice', '', voiceText('Muted'));
   else if (wake?.released && !['muted', 'native-off'].includes(wake.releaseReason)) {
     paintTile('voice', 'warn', overviewStatus(wake.statusLabel || 'Not listening'));
@@ -646,7 +654,8 @@ function paintHealth({ filter = true } = {}) {
       action: (btn) => openButton(btn, 'Open setup', 'homeassistant'),
     });
   }
-  if (settingOn('wake_word.enabled') && wake?.released) {
+  // A companion screen releases the wake word on purpose.
+  if (settingOn('wake_word.enabled') && wake?.released && !companionScreenOn()) {
     items.push({
       key: 'wake',
       name: overviewText('Wake word detection stopped'),

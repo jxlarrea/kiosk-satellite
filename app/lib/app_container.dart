@@ -83,6 +83,7 @@ import 'managers/ground_control/ground_control_manager.dart';
 import 'managers/ground_control/mine.dart';
 import 'managers/ground_control/recognition_cards.dart';
 import 'managers/voice_timers/shared_timers_manager.dart';
+import 'managers/companion/companion_manager.dart';
 import 'managers/voice_timers/voice_timer_manager.dart';
 import 'managers/wake_word/wake_word_manager.dart';
 
@@ -284,6 +285,7 @@ class AppContainer {
       settings,
       voiceTimers,
     );
+    companion = CompanionManager(bus, commands, log, settings, voice);
     alarms = AlarmManager(bus, commands, log, settings)
       ..screensaverModeOverride = () => screensaver.modeOverride.value;
     calendar = CalendarManager(bus, commands, log, settings);
@@ -424,6 +426,7 @@ class AppContainer {
   late final FleetSyncManager fleetSync;
   late final IntercomManager intercom;
   late final SharedTimersManager sharedTimers;
+  late final CompanionManager companion;
   late final AlarmManager alarms;
   late final CalendarManager calendar;
   late final MusicLibraryManager musicLibrary;
@@ -529,6 +532,9 @@ class AppContainer {
     // After fleet, whose list names the kiosks to share with, and after
     // voice, whose timers it shares.
     sharedTimers,
+    // After fleet, whose list says where the other kiosks are, and after
+    // voice, whose overlay it streams or feeds.
+    companion,
     // Its first check can ring at once, and a ring reaches for the
     // screen, the screensaver, the kiosk and the wake word's stop word.
     alarms,

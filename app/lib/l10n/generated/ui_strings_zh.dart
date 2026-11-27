@@ -14339,6 +14339,138 @@ class UiStringsZh extends UiStrings {
   String get voiceChimesSoundsHint => '唤醒、完成、错误和播报声音';
 
   @override
+  String get voiceCompanionScreens => '伴随屏幕';
+
+  @override
+  String get voiceCompanionScreensHint => '在其他 Kiosk 设备上显示语音会话，或在此显示其他设备的语音会话';
+
+  @override
+  String get voiceCompanionPairedScreens => '已配对的伴随屏幕';
+
+  @override
+  String get voiceCompanionRemoved => '已移除';
+
+  @override
+  String get voiceCompanionNotConnected => '未连接';
+
+  @override
+  String get voiceCompanionInvitation => '邀请';
+
+  @override
+  String get voiceCompanionInvitationRow => '邀请在此屏幕上显示其语音会话。';
+
+  @override
+  String get voiceCompanionDecline => '拒绝';
+
+  @override
+  String get voiceCompanionAccept => '接受';
+
+  @override
+  String get voiceCompanionShows => '已配对的 Kiosk 设备';
+
+  @override
+  String get voiceCompanionRefused => '该设备的列表中已不再包含此屏幕。';
+
+  @override
+  String get voiceCompanionShowsHere => '其 Voice Satellite 会话将显示在此屏幕上。';
+
+  @override
+  String get voiceCompanionWaiting =>
+      '正在等待邀请。请在此屏幕要显示其语音会话的 Kiosk 设备上，打开 Voice Satellite、伴随屏幕，然后添加此屏幕。';
+
+  @override
+  String get voiceCompanionStopTitle => '停止显示此设备？';
+
+  @override
+  String get voiceCompanionStopMessage => '其语音会话将不再显示在这里。该设备可以再次邀请此屏幕。';
+
+  @override
+  String get voiceCompanionRemove => '移除';
+
+  @override
+  String get voiceCompanionAdd => '添加伴随屏幕';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      '伴随屏幕会显示此 Kiosk 设备的 Voice Satellite 会话。请先在该设备上开启伴随屏幕模式。';
+
+  @override
+  String get voiceCompanionPending => '等待设备确认';
+
+  @override
+  String get voiceCompanionDeclined => '已拒绝邀请';
+
+  @override
+  String get voiceCompanionLeft => '已停止显示此设备';
+
+  @override
+  String get voiceCompanionShowsThis => '显示此设备的 Voice Satellite 会话。';
+
+  @override
+  String get voiceCompanionRemoveMessage => '此 Kiosk 设备的语音会话将不再显示在该屏幕上。';
+
+  @override
+  String get voiceCompanionUnsupported => '需要更新版本的 Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere => '该设备未开启伴随屏幕模式';
+
+  @override
+  String get voiceCompanionShowsAnother => '显示其他设备';
+
+  @override
+  String get voiceCompanionNoKiosks => '在此网络中未找到其他 Kiosk 设备。';
+
+  @override
+  String get voiceCompanionInviteTitle => '伴随屏幕邀请';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      '从现在起，其语音会话将显示在此屏幕上。你可以随时在设置、Voice Satellite、伴随屏幕中停止。';
+
+  @override
+  String get voiceCompanionStatusWaiting => '伴随屏幕。正在等待邀请。';
+
+  @override
+  String get voiceCompanionNotPaired => '未配对';
+
+  @override
+  String get voiceCompanionErrorVoiceOff => '此 Kiosk 设备上的 Voice Satellite 已关闭';
+
+  @override
+  String get voiceCompanionErrorOffline => '该设备不在线';
+
+  @override
+  String get voiceCompanionErrorListed => '该设备已在列表中';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => '该设备没有响应';
+
+  @override
+  String get voiceCompanionErrorRefused => '该设备拒绝了邀请';
+
+  @override
+  String get voiceCompanionErrorNoScreen => '没有此伴随屏幕';
+
+  @override
+  String get voiceCompanionErrorNoInvite => '没有待处理的邀请';
+
+  @override
+  String get voiceCompanionErrorNotCompanion => '不是伴随屏幕';
+
+  @override
+  String get settingVoiceCompanionModeTitle => '启用伴随屏幕模式';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      '在此屏幕上显示其他 Kiosk 设备的 Voice Satellite 会话，而不是在此运行 Voice Satellite。';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return '显示 $name 的语音会话。';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => '显示你说的内容';
 
   @override
@@ -30978,6 +31110,138 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceChimesSoundsHint => '唤醒、完成、错误和播报声音';
+
+  @override
+  String get voiceCompanionScreens => '伴随屏幕';
+
+  @override
+  String get voiceCompanionScreensHint => '在其他 Kiosk 设备上显示语音会话，或在此显示其他设备的语音会话';
+
+  @override
+  String get voiceCompanionPairedScreens => '已配对的伴随屏幕';
+
+  @override
+  String get voiceCompanionRemoved => '已移除';
+
+  @override
+  String get voiceCompanionNotConnected => '未连接';
+
+  @override
+  String get voiceCompanionInvitation => '邀请';
+
+  @override
+  String get voiceCompanionInvitationRow => '邀请在此屏幕上显示其语音会话。';
+
+  @override
+  String get voiceCompanionDecline => '拒绝';
+
+  @override
+  String get voiceCompanionAccept => '接受';
+
+  @override
+  String get voiceCompanionShows => '已配对的 Kiosk 设备';
+
+  @override
+  String get voiceCompanionRefused => '该设备的列表中已不再包含此屏幕。';
+
+  @override
+  String get voiceCompanionShowsHere => '其 Voice Satellite 会话将显示在此屏幕上。';
+
+  @override
+  String get voiceCompanionWaiting =>
+      '正在等待邀请。请在此屏幕要显示其语音会话的 Kiosk 设备上，打开 Voice Satellite、伴随屏幕，然后添加此屏幕。';
+
+  @override
+  String get voiceCompanionStopTitle => '停止显示此设备？';
+
+  @override
+  String get voiceCompanionStopMessage => '其语音会话将不再显示在这里。该设备可以再次邀请此屏幕。';
+
+  @override
+  String get voiceCompanionRemove => '移除';
+
+  @override
+  String get voiceCompanionAdd => '添加伴随屏幕';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      '伴随屏幕会显示此 Kiosk 设备的 Voice Satellite 会话。请先在该设备上开启伴随屏幕模式。';
+
+  @override
+  String get voiceCompanionPending => '等待设备确认';
+
+  @override
+  String get voiceCompanionDeclined => '已拒绝邀请';
+
+  @override
+  String get voiceCompanionLeft => '已停止显示此设备';
+
+  @override
+  String get voiceCompanionShowsThis => '显示此设备的 Voice Satellite 会话。';
+
+  @override
+  String get voiceCompanionRemoveMessage => '此 Kiosk 设备的语音会话将不再显示在该屏幕上。';
+
+  @override
+  String get voiceCompanionUnsupported => '需要更新版本的 Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere => '该设备未开启伴随屏幕模式';
+
+  @override
+  String get voiceCompanionShowsAnother => '显示其他设备';
+
+  @override
+  String get voiceCompanionNoKiosks => '在此网络中未找到其他 Kiosk 设备。';
+
+  @override
+  String get voiceCompanionInviteTitle => '伴随屏幕邀请';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      '从现在起，其语音会话将显示在此屏幕上。你可以随时在设置、Voice Satellite、伴随屏幕中停止。';
+
+  @override
+  String get voiceCompanionStatusWaiting => '伴随屏幕。正在等待邀请。';
+
+  @override
+  String get voiceCompanionNotPaired => '未配对';
+
+  @override
+  String get voiceCompanionErrorVoiceOff => '此 Kiosk 设备上的 Voice Satellite 已关闭';
+
+  @override
+  String get voiceCompanionErrorOffline => '该设备不在线';
+
+  @override
+  String get voiceCompanionErrorListed => '该设备已在列表中';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => '该设备没有响应';
+
+  @override
+  String get voiceCompanionErrorRefused => '该设备拒绝了邀请';
+
+  @override
+  String get voiceCompanionErrorNoScreen => '没有此伴随屏幕';
+
+  @override
+  String get voiceCompanionErrorNoInvite => '没有待处理的邀请';
+
+  @override
+  String get voiceCompanionErrorNotCompanion => '不是伴随屏幕';
+
+  @override
+  String get settingVoiceCompanionModeTitle => '启用伴随屏幕模式';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      '在此屏幕上显示其他 Kiosk 设备的 Voice Satellite 会话，而不是在此运行 Voice Satellite。';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return '显示 $name 的语音会话。';
+  }
 
   @override
   String get settingVoiceShowCommandTitle => '显示你说的内容';

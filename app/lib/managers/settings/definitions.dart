@@ -286,6 +286,7 @@ const Map<String, String> subpageHints = {
   'Assistant': 'Pipelines, follow-ups',
   'Realtime': 'OpenAI, xAI Grok, Gemini, tools, talk over answers',
   'Conversation': 'What the overlay shows and for how long',
+  'Companion screens': 'Show voice sessions on other kiosks or another kiosk\'s here',
   // Ground Control's feature pages.
   'Voice Match': 'Recognition, Trimming and Isolation',
   'Vision Match':
@@ -9508,6 +9509,80 @@ const voiceAnnouncementLinger = SettingDef<num>(
   dependsOn: 'voice.enabled',
 );
 
+/// Companion screen mode: this kiosk stops being a voice satellite and
+/// shows the voice sessions of the kiosk that invited it instead. No
+/// microphone, no wake word and no Assist satellite in Home Assistant.
+///
+/// Nothing declares a dependency on it: the rows it hides are hidden by
+/// hand on both settings UIs, so flipping it never re-renders the page.
+const voiceCompanionMode = SettingDef<bool>(
+  key: 'voice.companion_mode',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable companion screen mode',
+  description:
+      'Display Voice Satellite sessions of another kiosk on this screen '
+      'instead of running Voice Satellite here.',
+  category: 'Voice Satellite',
+  subpage: 'Companion screens',
+  dependsOn: 'voice.enabled',
+  perDevice: true,
+);
+
+/// The Voice Satellite settings a companion screen hides: the kiosk whose
+/// session it is decides them. Everything else a companion screen hides is
+/// a whole page or a row of the Voice Satellite page, by hand on both UIs.
+const companionHiddenSettings = {
+  'voice.answer_linger',
+  'voice.results_linger',
+  'voice.announcement_linger',
+};
+
+/// The kiosk this companion screen shows, JSON `{id, name, address, port,
+/// tls, nonce, at}`; empty for none. The nonce of the accepted invitation
+/// is what the stream presents to it.
+const voiceCompanionOf = SettingDef<String>(
+  key: 'voice.companion_of',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Companion of',
+  description: 'Internal: the kiosk this companion screen shows.',
+  category: 'Voice Satellite',
+  hidden: true,
+  perDevice: true,
+  secret: true,
+);
+
+/// The invitation waiting on this companion screen, JSON `{nonce, from:
+/// {id, name, address, port, tls}, at, status}`: pending until answered,
+/// then accepted or declined until the inviting kiosk has read the answer.
+const voiceCompanionInvite = SettingDef<String>(
+  key: 'voice.companion_invite',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Companion screen invitation',
+  description: 'Internal: the invitation waiting for an answer.',
+  category: 'Voice Satellite',
+  hidden: true,
+  perDevice: true,
+  secret: true,
+);
+
+/// The companion screens of this kiosk, JSON list of `{id, name, address,
+/// port, tls, nonce, status, addedAt}` with status `pending`, `accepted`,
+/// `declined` or `left`.
+const voiceCompanionScreens = SettingDef<String>(
+  key: 'voice.companion_screens',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Companion screens',
+  description: 'Internal: the kiosks that show this one\'s voice sessions.',
+  category: 'Voice Satellite',
+  hidden: true,
+  perDevice: true,
+  secret: true,
+);
+
 /// The master switch for timers on this kiosk. Off, the ESPHome voice
 /// assistant stops offering timers, so Home Assistant's timer intents and
 /// its LLM timer tools leave this kiosk to your own setup (issue #1508).
@@ -16050,6 +16125,10 @@ const List<SettingDef<Object>> allSettings = [
   voiceAnswerLinger,
   voiceResultsLinger,
   voiceAnnouncementLinger,
+  voiceCompanionMode,
+  voiceCompanionOf,
+  voiceCompanionInvite,
+  voiceCompanionScreens,
   // The Timers page, in its groups' order: the untitled card, Shared
   // timers, When a timer ends, Text to Speech, Pills.
   timersEnabled,

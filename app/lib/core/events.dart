@@ -314,6 +314,12 @@ class FleetSyncChanged extends AppEvent {
   String get wireName => 'fleetsync';
 }
 
+/// Something about companion screens changed: the list, an invitation, a
+/// link coming up or going down.
+class CompanionChanged extends AppEvent {
+  const CompanionChanged();
+}
+
 /// The page's Home Assistant connection reported that the dashboard set
 /// may have moved: a dashboard created, deleted or edited (HA's own
 /// `panels_updated` and `lovelace_updated` events), or the connection
@@ -544,6 +550,11 @@ class VoiceInteractionChanged extends AppEvent {
   /// reading screen covers the whole display, so the screensaver is
   /// dismissed for it and the display is at its normal brightness.
   static const enrollmentReason = 'voice_match_enroll';
+
+  /// The reason a companion screen holds with while the kiosk it shows has
+  /// a voice session on screen: the screensaver waits and the music ducks
+  /// as for a turn of its own.
+  static const companionReason = 'companion';
 
   /// The reason the settings screen holds with while it is open. It only
   /// keeps ambient features away (the screensaver, the dashboard

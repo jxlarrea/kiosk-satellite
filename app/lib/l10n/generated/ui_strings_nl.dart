@@ -15274,6 +15274,153 @@ class UiStringsNl extends UiStrings {
       'Wek-, gereed-, fout- en aankondigingsgeluiden';
 
   @override
+  String get voiceCompanionScreens => 'Begeleidende schermen';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Spraaksessies op andere kiosken tonen of die van een andere kiosk hier';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Gekoppelde begeleidende schermen';
+
+  @override
+  String get voiceCompanionRemoved => 'Verwijderd';
+
+  @override
+  String get voiceCompanionNotConnected => 'Niet verbonden';
+
+  @override
+  String get voiceCompanionInvitation => 'Uitnodiging';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Uitnodiging om de spraaksessies op dit scherm te tonen.';
+
+  @override
+  String get voiceCompanionDecline => 'Afwijzen';
+
+  @override
+  String get voiceCompanionAccept => 'Accepteren';
+
+  @override
+  String get voiceCompanionShows => 'Gekoppelde kiosk';
+
+  @override
+  String get voiceCompanionRefused =>
+      'Die kiosk heeft dit scherm niet meer in de lijst.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'De Voice Satellite-sessies worden op dit scherm getoond.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'Wachten op een uitnodiging. Open op de kiosk waarvan dit scherm de spraaksessies moet tonen Voice Satellite, Begeleidende schermen en voeg dit scherm toe.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Deze kiosk niet meer tonen?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'De spraaksessies worden hier niet meer getoond. Die kiosk kan dit scherm opnieuw uitnodigen.';
+
+  @override
+  String get voiceCompanionRemove => 'Verwijderen';
+
+  @override
+  String get voiceCompanionAdd => 'Begeleidend scherm toevoegen';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'Een begeleidend scherm toont de Voice Satellite-sessies van deze kiosk. Schakel eerst de modus begeleidend scherm in op die kiosk.';
+
+  @override
+  String get voiceCompanionPending => 'Wachten op bevestiging';
+
+  @override
+  String get voiceCompanionDeclined => 'Heeft de uitnodiging afgewezen';
+
+  @override
+  String get voiceCompanionLeft => 'Toont deze kiosk niet meer';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Toont de Voice Satellite-sessies van dit apparaat.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'De spraaksessies van deze kiosk worden niet meer op dat scherm getoond.';
+
+  @override
+  String get voiceCompanionUnsupported =>
+      'Vereist een nieuwere versie van Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere =>
+      'De modus begeleidend scherm staat daar uit';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Toont een andere kiosk';
+
+  @override
+  String get voiceCompanionNoKiosks =>
+      'Geen andere kiosken gevonden op dit netwerk.';
+
+  @override
+  String get voiceCompanionInviteTitle => 'Uitnodiging als begeleidend scherm';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'De spraaksessies worden vanaf nu op dit scherm getoond. Je kunt dit altijd stoppen via Instellingen, Voice Satellite, Begeleidende schermen.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Begeleidend scherm. Wachten op een uitnodiging.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Niet gekoppeld';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite staat uit op deze kiosk';
+
+  @override
+  String get voiceCompanionErrorOffline => 'Die kiosk is niet online';
+
+  @override
+  String get voiceCompanionErrorListed => 'Die kiosk staat al in de lijst';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => 'Die kiosk heeft niet geantwoord';
+
+  @override
+  String get voiceCompanionErrorRefused =>
+      'Die kiosk heeft de uitnodiging afgewezen';
+
+  @override
+  String get voiceCompanionErrorNoScreen =>
+      'Dat begeleidende scherm bestaat niet';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'Er wacht geen uitnodiging';
+
+  @override
+  String get voiceCompanionErrorNotCompanion => 'Geen begeleidend scherm';
+
+  @override
+  String get settingVoiceCompanionModeTitle =>
+      'Modus begeleidend scherm inschakelen';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Toon op dit scherm de Voice Satellite-sessies van een andere kiosk in plaats van hier Voice Satellite te draaien.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Toont de spraaksessies van $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Tonen wat je hebt gezegd';
 
   @override

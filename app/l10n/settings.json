@@ -2994,5 +2994,9 @@
   "vision_match.link_calendar_focus": {
     "title": "settingCalendarFaceFocusTitle",
     "description": "settingVisionMatchLinkCalendarFocusDescription"
+  },
+  "voice.companion_mode": {
+    "title": "settingVoiceCompanionModeTitle",
+    "description": "settingVoiceCompanionModeDescription"
   }
 }

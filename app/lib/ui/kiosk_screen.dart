@@ -67,6 +67,7 @@ import 'camera_view_overlay.dart';
 import 'code_scanner.dart';
 import 'face_preview_overlay.dart';
 import 'recognition_card_overlay.dart';
+import 'companion_settings.dart';
 import 'fleet_settings.dart';
 import 'intercom_settings.dart';
 import 'back_nav.dart';
@@ -2310,6 +2311,8 @@ class _KioskScreenState extends State<KioskScreen>
                     // A fleet invitation: above the shield, since answering
                     // it is an admin act the shield must not swallow.
                     FleetInviteOverlay(container: c),
+                    // A companion screen invitation, the same way.
+                    CompanionInviteOverlay(container: c),
                   ],
                 ),
               );

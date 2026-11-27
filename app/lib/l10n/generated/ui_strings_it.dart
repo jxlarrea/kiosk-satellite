@@ -15359,6 +15359,153 @@ class UiStringsIt extends UiStrings {
       'Suoni di attivazione, di fine, di errore e degli annunci';
 
   @override
+  String get voiceCompanionScreens => 'Schermi complementari';
+
+  @override
+  String get voiceCompanionScreensHint =>
+      'Mostra le sessioni vocali su altri kiosk o quelle di un altro kiosk qui';
+
+  @override
+  String get voiceCompanionPairedScreens => 'Schermi complementari associati';
+
+  @override
+  String get voiceCompanionRemoved => 'Rimosso';
+
+  @override
+  String get voiceCompanionNotConnected => 'Non connesso';
+
+  @override
+  String get voiceCompanionInvitation => 'Invito';
+
+  @override
+  String get voiceCompanionInvitationRow =>
+      'Invito a mostrare le sue sessioni vocali su questo schermo.';
+
+  @override
+  String get voiceCompanionDecline => 'Rifiuta';
+
+  @override
+  String get voiceCompanionAccept => 'Accetta';
+
+  @override
+  String get voiceCompanionShows => 'Kiosk associato';
+
+  @override
+  String get voiceCompanionRefused =>
+      'Quel kiosk non ha più questo schermo nel suo elenco.';
+
+  @override
+  String get voiceCompanionShowsHere =>
+      'Le sue sessioni di Voice Satellite vengono mostrate su questo schermo.';
+
+  @override
+  String get voiceCompanionWaiting =>
+      'In attesa di un invito. Sul kiosk di cui questo schermo deve mostrare le sessioni vocali, apri Voice Satellite, Schermi complementari e aggiungi questo.';
+
+  @override
+  String get voiceCompanionStopTitle => 'Non mostrare più questo kiosk?';
+
+  @override
+  String get voiceCompanionStopMessage =>
+      'Le sue sessioni vocali non vengono più mostrate qui. Può invitare di nuovo questo schermo.';
+
+  @override
+  String get voiceCompanionRemove => 'Rimuovi';
+
+  @override
+  String get voiceCompanionAdd => 'Aggiungi uno schermo complementare';
+
+  @override
+  String get voiceCompanionAddHelp =>
+      'Uno schermo complementare mostra le sessioni di Voice Satellite di questo kiosk. Attiva prima la modalità schermo complementare su quel kiosk.';
+
+  @override
+  String get voiceCompanionPending => 'In attesa della conferma';
+
+  @override
+  String get voiceCompanionDeclined => 'Ha rifiutato l\'invito';
+
+  @override
+  String get voiceCompanionLeft => 'Non mostra più questo kiosk';
+
+  @override
+  String get voiceCompanionShowsThis =>
+      'Mostra le sessioni di Voice Satellite di questo dispositivo.';
+
+  @override
+  String get voiceCompanionRemoveMessage =>
+      'Le sessioni vocali di questo kiosk non vengono più mostrate su quello schermo.';
+
+  @override
+  String get voiceCompanionUnsupported =>
+      'Richiede una versione più recente di Kiosk Satellite';
+
+  @override
+  String get voiceCompanionModeOffThere =>
+      'Lì la modalità schermo complementare è disattivata';
+
+  @override
+  String get voiceCompanionShowsAnother => 'Mostra un altro kiosk';
+
+  @override
+  String get voiceCompanionNoKiosks =>
+      'Nessun altro kiosk trovato su questa rete.';
+
+  @override
+  String get voiceCompanionInviteTitle => 'Invito come schermo complementare';
+
+  @override
+  String get voiceCompanionInviteMessage =>
+      'D\'ora in poi le sue sessioni vocali vengono mostrate su questo schermo. Puoi interrompere in qualsiasi momento in Impostazioni, Voice Satellite, Schermi complementari.';
+
+  @override
+  String get voiceCompanionStatusWaiting =>
+      'Schermo complementare. In attesa di un invito.';
+
+  @override
+  String get voiceCompanionNotPaired => 'Non associato';
+
+  @override
+  String get voiceCompanionErrorVoiceOff =>
+      'Voice Satellite è disattivato su questo kiosk';
+
+  @override
+  String get voiceCompanionErrorOffline => 'Quel kiosk non è online';
+
+  @override
+  String get voiceCompanionErrorListed => 'Quel kiosk è già nell\'elenco';
+
+  @override
+  String get voiceCompanionErrorNoAnswer => 'Quel kiosk non ha risposto';
+
+  @override
+  String get voiceCompanionErrorRefused => 'Quel kiosk ha rifiutato l\'invito';
+
+  @override
+  String get voiceCompanionErrorNoScreen =>
+      'Questo schermo complementare non esiste';
+
+  @override
+  String get voiceCompanionErrorNoInvite => 'Nessun invito in attesa';
+
+  @override
+  String get voiceCompanionErrorNotCompanion =>
+      'Non è uno schermo complementare';
+
+  @override
+  String get settingVoiceCompanionModeTitle =>
+      'Attiva la modalità schermo complementare';
+
+  @override
+  String get settingVoiceCompanionModeDescription =>
+      'Mostra su questo schermo le sessioni di Voice Satellite di un altro kiosk invece di eseguire qui Voice Satellite.';
+
+  @override
+  String voiceCompanionShowsSessionsOf(String name) {
+    return 'Mostra le sessioni vocali di $name.';
+  }
+
+  @override
   String get settingVoiceShowCommandTitle => 'Mostra ciò che hai detto';
 
   @override
