@@ -540,6 +540,54 @@ void main() {
     expect(jsonEncode(u), isNot(contains('ding')));
   });
 
+  test('companion screens read as a switch, a count and a range, never as '
+      'the kiosks', () async {
+    await build({
+      'ks.voice.runtime': 'native',
+    }, firstDelay: const Duration(days: 1));
+    Future<Map> usage() async {
+      sent.clear();
+      expect(await analytics.sendSnapshot(force: true), isTrue);
+      return bodyOf(sent.single)['usage'] as Map;
+    }
+
+    // Voice Satellite off: nothing about companion screens.
+    var u = await usage();
+    expect(u.containsKey('companion_screen'), isFalse);
+    // The kiosk you talk to: how many screens show its sessions.
+    await settings.set(defs.voiceEnabled, true);
+    await settings.set(
+      defs.voiceCompanionScreens,
+      '[{"id":"aaaa1111","name":"Kitchen panel","nonce":"n1",'
+      '"status":"accepted"},{"id":"bbbb2222","name":"Hall","nonce":"n2",'
+      '"status":"pending"}]',
+    );
+    u = await usage();
+    expect(u['companion_screen'], isFalse);
+    expect(u['companion_screens'], 1);
+    expect(u.containsKey('companion_sessions'), isFalse);
+    expect(jsonEncode(u), isNot(contains('Kitchen')));
+    expect(jsonEncode(u), isNot(contains('aaaa1111')));
+    // A companion screen: paired, and how many sessions it showed.
+    await settings.set(defs.voiceCompanionMode, true);
+    await settings.set(
+      defs.voiceCompanionOf,
+      '{"id":"cccc3333","name":"KS Echo Dot","nonce":"n3"}',
+    );
+    for (var i = 0; i < 3; i++) {
+      await UsageCounters.bump(settings, 'companion_sessions');
+    }
+    u = await usage();
+    expect(u['companion_screen'], isTrue);
+    expect(u['companion_paired'], isTrue);
+    expect(u['companion_sessions'], '1-5');
+    expect(u.containsKey('companion_screens'), isFalse);
+    // A companion screen runs no satellite of its own.
+    expect(u.containsKey('vs_muted'), isFalse);
+    expect(jsonEncode(u), isNot(contains('Echo Dot')));
+    expect(jsonEncode(u), isNot(contains('cccc3333')));
+  });
+
   test(
     'what answers each wake word, the realtime picks and turn counts',
     () async {

@@ -10,6 +10,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/kiosk_http_client.dart';
 import '../../core/manager.dart';
+import '../analytics/usage_counters.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../voice/assist_view.dart';
@@ -143,6 +144,9 @@ class CompanionManager extends Manager {
   Timer? _retry;
   int _attempt = 0;
   int _linkGeneration = 0;
+
+  /// Whether the kiosk this screen shows has a session on screen.
+  bool _showing = false;
 
   /// `idle`, `connecting`, `connected`, `offline` or `refused`.
   String _linkState = 'idle';
@@ -1064,6 +1068,7 @@ class CompanionManager extends Manager {
     _link = null;
     unawaited(_linkSub?.cancel());
     _linkSub = null;
+    _showing = false;
     _voice.showCompanion(AssistView.hidden);
     if (_disposed || !_companion || companionOf == null) {
       _linkState = 'idle';
@@ -1113,7 +1118,13 @@ class CompanionManager extends Manager {
     if (decoded is! Map) return;
     switch (decoded['t']) {
       case 'view':
-        _voice.showCompanion(AssistView.fromJson(decoded['view']));
+        final view = AssistView.fromJson(decoded['view']);
+        // A session that came up, for the Usage analytics.
+        if (view.visible && !_showing) {
+          unawaited(UsageCounters.bump(_settings, 'companion_sessions'));
+        }
+        _showing = view.visible;
+        _voice.showCompanion(view);
       case 'tick':
         final playback = decoded['playback'];
         _voice.companionTick(

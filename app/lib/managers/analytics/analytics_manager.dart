@@ -592,6 +592,8 @@ class AnalyticsManager extends Manager {
         for (final k in ['timers_started', 'timers_by_hand']) k: counts[k] ?? 0,
       if (s.get(defs.voiceTimersReceive))
         'timers_shared_received': counts['timers_shared_received'] ?? 0,
+      if (native && s.companionScreen)
+        'companion_sessions': counts['companion_sessions'] ?? 0,
     };
     // Timers: the switches of Settings > Timers, how many kiosks the timers
     // are shared with and roughly how often timers start, are set by hand
@@ -871,6 +873,7 @@ class AnalyticsManager extends Manager {
       'wake_on_person': s.get(defs.screensaverDismissOnPerson),
       'wake_on_proximity': s.get(defs.screensaverDismissOnProximity),
       'voice_satellite': vs.state,
+      ..._companion(native),
       // The native satellite runs every turn itself; the switch is the
       // dashboard runtime's.
       'native_pipeline': native || s.get(defs.vsNativePipeline),
@@ -1080,6 +1083,33 @@ class AnalyticsManager extends Manager {
   /// while the page is mid-load or showing something else, says nothing on
   /// its own, so an install that received a wake word config this session
   /// or heard the hook within the last week still reads 'integration'.
+  /// Companion screens: whether this kiosk is one, whether it is paired
+  /// and roughly how many sessions it showed, or how many companion
+  /// screens this kiosk has. Never the names or addresses of the kiosks.
+  Map<String, Object?> _companion(bool native) {
+    final s = _settings;
+    if (!native || !s.get(defs.voiceEnabled)) return const {};
+    if (s.companionScreen) {
+      return {
+        'companion_screen': true,
+        'companion_paired': s.get(defs.voiceCompanionOf).isNotEmpty,
+        'companion_sessions': UsageCounters.bucket(
+          _reportedCounts['companion_sessions'] ?? 0,
+        ),
+      };
+    }
+    var screens = 0;
+    try {
+      final list = jsonDecode(s.get(defs.voiceCompanionScreens));
+      if (list is List) {
+        screens = list
+            .where((e) => e is Map && e['status'] == 'accepted')
+            .length;
+      }
+    } catch (_) {}
+    return {'companion_screen': false, 'companion_screens': screens};
+  }
+
   Future<({String state, String skin})> _voiceSatellite({
     required bool configPushed,
   }) async {

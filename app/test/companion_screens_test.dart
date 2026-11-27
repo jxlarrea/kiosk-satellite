@@ -162,6 +162,8 @@ class _Kiosk {
   ) async {
     settings.values[defs.voiceRuntime.key] = 'native';
     settings.values[defs.voiceEnabled.key] = true;
+    // No session counts: they live in the real preferences.
+    settings.values[defs.analyticsUsage.key] = false;
     commands.register(
       Command(
         name: 'fleet',
