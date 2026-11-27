@@ -49,7 +49,10 @@ import kotlin.math.max
  * Some firmware feeds nothing but zeros to MIC (a Meta Portal Mini), so
  * the format ladder ends on the other sources (voice recognition, then
  * the call or MIC source, whichever was not picked): a device reaches
- * them only when every format on the picked source read silence.
+ * them only when every format on the picked source read silence. The
+ * built-in mic of an Echo image has no ladder at all ([fixedCapture]):
+ * its privacy button feeds MIC zeros, and the other sources are Amazon's
+ * DSP.
  *
  * The tuning arrives as stream arguments, which is why a change of any of
  * it reopens capture.
@@ -105,6 +108,76 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             AudioDeviceInfo.TYPE_USB_HEADSET,
             AudioDeviceInfo.TYPE_USB_ACCESSORY,
         )
+
+        /**
+         * Inputs Android's automatic routing records from when they are
+         * connected, ahead of the built-in mic. A Bluetooth headset is not
+         * one: the mic source reaches it only when it is selected.
+         */
+        private val AUTO_ROUTED_INPUT_TYPES = USB_INPUT_TYPES + AudioDeviceInfo.TYPE_WIRED_HEADSET
+
+        /**
+         * Whether capture records from the built-in mic of an Echo image
+         * ([echoImage]), which gets one fixed format and no ladder. On
+         * every Echo the voice recognition and call sources go through
+         * Amazon's DSP, and on an Echo Show 8 (2nd gen) the call source
+         * also silences all playback until it closes. Zeros there mean the
+         * privacy button is on, never a broken format, so a walk down the
+         * ladder only ever lands on those sources. [selectedType] is the
+         * type of the selected input when it is connected, null for
+         * automatic routing. [connectedTypes] are the inputs connected now.
+         * USB and Bluetooth mics keep the ladder.
+         */
+        internal fun fixedCapture(
+            echoImage: Boolean,
+            selectedType: Int?,
+            connectedTypes: Collection<Int>,
+        ): Boolean {
+            if (!echoImage) return false
+            if (selectedType != null) return selectedType == AudioDeviceInfo.TYPE_BUILTIN_MIC
+            return connectedTypes.none { it in AUTO_ROUTED_INPUT_TYPES }
+        }
+
+        /**
+         * The shapes to try, in order. The engines' 16 kHz mono first, then
+         * the sound card's 48 kHz stereo, then 48 kHz mono for a HAL that
+         * gets stereo wrong. The hardware format starts at the card and
+         * keeps 16 kHz mono as its last resort. A channel pick fixes the
+         * channel count (the array's own), so only the rate varies, with the
+         * plain mono open as the last rung for a device that cannot satisfy
+         * the pick (mic swapped for a mono one, a ROM that refuses index
+         * masks): capture beats silence. Every shape is on the picked
+         * [source]. The other sources close the ladder for firmware that
+         * feeds the picked one nothing but zeros (a Meta Portal Mini read
+         * silence on MIC and captured on voice recognition). A [fixed]
+         * capture ([fixedCapture]) is 16 kHz mono on MIC and nothing else.
+         */
+        internal fun captureLadder(
+            source: Int,
+            hardwareFormat: Boolean,
+            chans: Int,
+            indexed: Boolean,
+            fixed: Boolean = false,
+        ): List<Shape> {
+            if (fixed) return listOf(Shape(SAMPLE_RATE, 1, MediaRecorder.AudioSource.MIC))
+            val usual = Shape(SAMPLE_RATE, chans, source)
+            val card = if (indexed) {
+                listOf(Shape(HARDWARE_RATE, chans, source))
+            } else {
+                listOf(
+                    Shape(HARDWARE_RATE, HARDWARE_CHANNELS, source),
+                    Shape(HARDWARE_RATE, 1, source),
+                )
+            }
+            val ladder = if (hardwareFormat) card + usual else listOf(usual) + card
+            val picked = if (indexed) ladder + Shape(SAMPLE_RATE, 1, source) else ladder
+            val fallbacks = listOf(
+                MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                MediaRecorder.AudioSource.MIC,
+            ).filter { it != source }
+            return picked + fallbacks.map { Shape(SAMPLE_RATE, 1, it) }
+        }
 
         const val CHANNEL = "kiosk_satellite/mic"
         const val LEVELS_CHANNEL = "kiosk_satellite/mic_levels"
@@ -223,7 +296,15 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         val args = arguments as? Map<*, *>
         val unprocessedSupported = appContext.getSystemService(AudioManager::class.java)
             .getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED)
-        val source = if (args?.get("source") == "voice_communication") {
+        val selector = args?.get("device") as? String
+        inputSelector = selector
+        val fixed = fixedCapture(
+            SystemUpdater.current != null,
+            AudioRouting.resolve(selector, source = true)?.type,
+            appContext.getSystemService(AudioManager::class.java)
+                .getDevices(AudioManager.GET_DEVICES_INPUTS).map { it.type },
+        )
+        val source = if (!fixed && args?.get("source") == "voice_communication") {
             MediaRecorder.AudioSource.VOICE_COMMUNICATION
         } else {
             MediaRecorder.AudioSource.MIC
@@ -237,8 +318,6 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             (args?.get("gainDb") as? Number)?.toDouble() ?: 0.0,
             (args?.get("baseGainDb") as? Number)?.toDouble() ?: 0.0,
         )
-        val selector = args?.get("device") as? String
-        inputSelector = selector
         // A channel pick is for a USB microphone array. A built-in mic
         // opened with one captures raw channels past the platform echo
         // canceller, so a pick left over from a USB array must not follow
@@ -246,7 +325,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         // cancellation: the assistant heard itself).
         val usbSelected = selector?.substringBefore('|')?.toIntOrNull() in USB_INPUT_TYPES
         val wantChannel = if (usbSelected) (args?.get("channel") as? Number)?.toInt() ?: 0 else 0
-        val hardwareFormat = args?.get("format") == "hardware"
+        val hardwareFormat = !fixed && args?.get("format") == "hardware"
         // The mask must reach the chosen channel even when the device cannot
         // be resolved right now (it may still appear by open time), and must
         // cover the whole device when it can, so a 4-channel array does not
@@ -262,9 +341,9 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         // plain stereo open is positional, the shape every input profile
         // lists, so a HAL that matches by mask finds it.
         val indexed = wantChannel >= 1
-        val ladder = captureLadder(source, hardwareFormat, chans, indexed)
+        val ladder = captureLadder(source, hardwareFormat, chans, indexed, fixed)
         // A proven fallback first, then the ladder in order.
-        val proven = provenFallback?.takeIf { it.first == source }
+        val proven = if (fixed) -1 else provenFallback?.takeIf { it.first == source }
             ?.let { ladder.indexOf(it.second) } ?: -1
         val order = if (proven > 0) listOf(proven) + ladder.indices.filter { it != proven } else ladder.indices.toList()
         var step = 0
@@ -292,7 +371,8 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                 "gain=${"%.1f".format(gainDbOf(gain))}dB echo-cancellation=$wantSoftwareAec ($echoMethod) ns=$wantNs" +
                 (if (wantChannel >= 1) " channel=$wantChannel/${ladder[step].channels}" else "") +
                 " format=${ladder[step]}" +
-                (if (hardwareFormat) " hardware-format" else "") + ")",
+                (if (hardwareFormat) " hardware-format" else "") +
+                (if (fixed) " fixed for the Echo image's built-in mic" else "") + ")",
         )
         applyPreferredDevice(opened, selector)
         silencePlatformEffects(opened, ladder[step].source)
@@ -313,7 +393,13 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         val channelIdx = wantChannel - 1
         worker = thread(name = "vsww-mic") {
             var cur = opened
-            val walk = CaptureWalk(ladder.size, step, ladder.indices.filter { ladder[it] in gatingShapes }.toSet())
+            // A fixed capture's one rung starts out gating: silence never
+            // walks from it and only reopens it in place.
+            val walk = CaptureWalk(
+                ladder.size,
+                step,
+                if (fixed) setOf(0) else ladder.indices.filter { ladder[it] in gatingShapes }.toSet(),
+            )
             var shape = ladder[walk.step]
             var decimator = if (shape.rateHz == HARDWARE_RATE) CaptureConvert.Decimator3() else null
             var announcedAudio = false
@@ -580,12 +666,14 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                     }
                 } else {
                     if (!silent) {
-                        if (walk.audible(zeroRun)) {
+                        // A fixed capture leaves both memories alone: they
+                        // steer the ladder, which it does not have.
+                        if (walk.audible(zeroRun) && !fixed) {
                             gatingShapes = gatingShapes + shape
                             Log.i(TAG, "$shape gates quiet audio to zeros; silence no longer walks the ladder from it")
                         }
                         if (shape.source == source) pickedAudible = true
-                        if (shape.source != source && !pickedAudible) provenFallback = source to shape
+                        if (!fixed && shape.source != source && !pickedAudible) provenFallback = source to shape
                         if (walk.step > 0 && !announcedAudio) {
                             announcedAudio = true
                             Log.i(TAG, "$shape capture is delivering audio")
@@ -627,44 +715,6 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         /** 80 ms of interleaved PCM16 at this shape. */
         val chunkBytes: Int get() = CHUNK_BYTES * (rateHz / SAMPLE_RATE) * channels
         override fun toString() = "${rateHz}Hz x$channels ${sourceName(source)}"
-    }
-
-    /**
-     * The shapes to try, in order. The engines' 16 kHz mono first, then
-     * the sound card's 48 kHz stereo, then 48 kHz mono for a HAL that gets
-     * stereo wrong; the hardware format starts at the card and keeps 16 kHz
-     * mono as its last resort. A channel pick fixes the channel count (the
-     * array's own), so only the rate varies, with the plain mono open as
-     * the last rung for a device that cannot satisfy the pick (mic swapped
-     * for a mono one, a ROM that refuses index masks): capture beats
-     * silence. Every shape is on the picked [source]. The other sources
-     * close the ladder for firmware that feeds the picked one nothing but
-     * zeros (a Meta Portal Mini read silence on MIC and captured on voice
-     * recognition).
-     */
-    private fun captureLadder(
-        source: Int,
-        hardwareFormat: Boolean,
-        chans: Int,
-        indexed: Boolean,
-    ): List<Shape> {
-        val usual = Shape(SAMPLE_RATE, chans, source)
-        val card = if (indexed) {
-            listOf(Shape(HARDWARE_RATE, chans, source))
-        } else {
-            listOf(
-                Shape(HARDWARE_RATE, HARDWARE_CHANNELS, source),
-                Shape(HARDWARE_RATE, 1, source),
-            )
-        }
-        val ladder = if (hardwareFormat) card + usual else listOf(usual) + card
-        val picked = if (indexed) ladder + Shape(SAMPLE_RATE, 1, source) else ladder
-        val fallbacks = listOf(
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
-            MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-            MediaRecorder.AudioSource.MIC,
-        ).filter { it != source }
-        return picked + fallbacks.map { Shape(SAMPLE_RATE, 1, it) }
     }
 
     /**

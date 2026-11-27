@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **The wake word and all sounds stopped on an Echo after the privacy button.** With the privacy button on, the microphone reads only zeros. After 30 seconds the capture moved through its other formats and ended on the call source, which on every Echo goes through Amazon's audio processing, and stayed there after the privacy button went off. The wake word stopped working and on the Echo Show 8 (2nd gen) Assist replies, announcements and system sounds played nothing until the mic was muted and unmuted in Kiosk Satellite. On the Echo Show and Echo Dot images the built-in mic now always records 16 kHz mono from the microphone source and never changes format or source on silence. USB and Bluetooth mics keep the format fallback. See [Capture Format](docs/microphone.md#capture-format).
+
 ## v2026.11.34 - 2026-11-26
 
 ### Added
