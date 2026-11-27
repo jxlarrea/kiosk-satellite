@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.35 - 2026-11-27
 
 ### Added
 - **Companion screens.** A kiosk can show the voice sessions of another kiosk: the listening bar, what you said, the answer, results, announcements and realtime conversations, drawn with its own appearance settings. Pair an Echo Dot with a wall panel that shows the answers, or show a kitchen tablet's sessions on a second screen. Turn on **Enable companion screen mode** under **Voice Satellite > Companion screens** on the screen, then invite it from the same page on the kiosk you talk to. A companion screen runs no voice assistant of its own, so its microphone and wake word stay off. A kiosk can have any number of companion screens. A device without a screen, such as an Echo Dot, can invite companion screens but cannot be one. The settings stay with each kiosk: Fleet Management never syncs them and a backup imported as a second device leaves them out. See [Companion screens](docs/voice-satellite.md#companion-screens).
