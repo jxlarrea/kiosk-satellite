@@ -169,6 +169,15 @@ class RealtimeSession {
   int _heldBytes = 0;
   bool _ready = false;
 
+  /// Ground Control ended the user's turn before the provider was ready.
+  /// The turn's audio is in [_held] and goes out when the provider is, so
+  /// the turn is ended then, after it. A short command said right after the
+  /// wake word is over before a slow connection is up (2.5 s to OpenAI in
+  /// one session): ended at once, its end reached a provider that had no
+  /// audio yet, the audio followed with nothing to end it and the answer
+  /// waited until the user said something more.
+  bool _turnEndHeld = false;
+
   /// The audio sent to the provider this session, in samples at [_inRate]:
   /// the clock the provider places speech on.
   int _sentSamples = 0;
@@ -971,6 +980,7 @@ class RealtimeSession {
       // Nobody has spoken yet: what the microphone held is only the room.
       _held.clear();
       _heldBytes = 0;
+      _turnEndHeld = false;
       // The chime has started by then. The line waits for it to end.
       await _chimed;
       final deaf = _deafUntil;
@@ -988,6 +998,13 @@ class RealtimeSession {
     }
     _held.clear();
     _heldBytes = 0;
+    if (_turnEndHeld) {
+      // The turn that ended while the connection opened: its audio just went out.
+      _turnEndHeld = false;
+      onTrace?.call('voice match: ending the turn said while connecting');
+      _backend?.endTurn();
+      return;
+    }
     _show(_docked(reactive: true));
   }
 
@@ -1336,6 +1353,8 @@ class RealtimeSession {
         }
         _userSpeaking = true;
         _heardUser = true;
+        // Talking again before the provider is ready: one turn, ended when this one is.
+        _turnEndHeld = false;
         _touch();
         _newExchange = true;
         _show(
@@ -1348,7 +1367,11 @@ class RealtimeSession {
       case 'turn_end' when _following:
         onTrace?.call('voice match: the user stopped');
         _userSpeaking = false;
-        _backend?.endTurn();
+        if (_ready) {
+          _backend?.endTurn();
+        } else {
+          _turnEndHeld = true;
+        }
         _awaiting = true;
         _awaitingSince = _now();
         _touch();
@@ -1469,6 +1492,7 @@ class RealtimeSession {
     _ready = false;
     _held.clear();
     _heldBytes = 0;
+    _turnEndHeld = false;
     _deafUntil = null;
     _written = 0;
     _playedKnown = 0;
