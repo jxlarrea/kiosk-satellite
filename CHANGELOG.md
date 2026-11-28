@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.36 - 2026-11-28
 
 ### Added
 - **More LED effects for the idle light.** The **Effect** setting of the **Idle** group under **Settings > LED Control** has 28 new effects. Pulse, Heartbeat, Wave, Shimmer, Sparkle, Flicker, Comet, Marquee, Sweep, Fan, Fill, Twin orbit and Pendulum use the group's color. Rainbow, Color cycle, Rainbow comet, Rainbow sparkle, Candlelight, Campfire, Lava, Northern lights, Sunset, Ocean, Frost, Forest, Candy cane, Holiday and Neon have colors of their own. The **LED Control Idle** light in Home Assistant now lists every effect, so an automation can set the color, brightness and effect with one `light.turn_on` action (lineageos-echo-kiosk-satellite#64). See [Idle effects](docs/led-control.md#idle-effects).
