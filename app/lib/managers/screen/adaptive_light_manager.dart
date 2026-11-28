@@ -9,13 +9,26 @@ import '../home_assistant/home_assistant_manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
+/// Whether a Home Assistant entity stands in for the device's light
+/// sensor (issue #1636): adaptive brightness is on and follows an entity
+/// that is picked. Night mode and plugins then read the entity too, so
+/// every part of the app agrees on how dark the room is. The ESPHome
+/// illuminance entity keeps reporting the device sensor, since sending a
+/// Home Assistant sensor back to Home Assistant says nothing new.
+bool followsLightEntity(SettingsManager settings) =>
+    settings.get(defs.adaptiveBrightness) &&
+    settings.get(defs.adaptiveUseEntity) &&
+    settings.get(defs.adaptiveLightEntity).trim().isNotEmpty;
+
 /// The light level adaptive brightness follows (issue #911): the device's
 /// own ambient light sensor, or a Home Assistant entity picked in its
 /// place, for a tablet without a sensor or a room where a better placed
 /// one exists. The screen manager and both settings UIs read this one
-/// source through `getAdaptiveLight` and [AdaptiveLightChanged]; the
-/// device sensor's own consumers (the illuminance entity, Night mode,
-/// plugins) keep reading the sensor.
+/// source through `getAdaptiveLight` and [AdaptiveLightChanged].
+///
+/// The room's light for everything else (issue #1636) comes from here too,
+/// through `getRoomLight` and [RoomLightChanged]: the entity while
+/// [followsLightEntity] holds, the device sensor otherwise.
 ///
 /// The entity is watched over a subscription of this app's own, open only
 /// while adaptive brightness is on, so Home Assistant sends this one
@@ -76,6 +89,30 @@ class AdaptiveLightManager extends Manager {
       ? 'entity'
       : (_sensorPresent ? 'sensor' : 'none');
 
+  /// `entity` while [followsLightEntity] holds, else `sensor`, or `none`
+  /// on a device without one. Unlike [source], a switch left on under
+  /// adaptive brightness turned off, or with no entity picked yet, leaves
+  /// the room on the device sensor.
+  String get roomSource => followsLightEntity(_settings)
+      ? 'entity'
+      : (_sensorPresent ? 'sensor' : 'none');
+
+  double? get roomLux => switch (roomSource) {
+    'entity' => _entityLux,
+    'sensor' => _sensorLux,
+    _ => null,
+  };
+
+  bool get roomLive => switch (roomSource) {
+    'entity' => _entityLive,
+    'sensor' => _sensorLive,
+    _ => false,
+  };
+
+  /// The room source last announced, so a settings change that moves it
+  /// announces the new source's reading once.
+  String? _announcedRoomSource;
+
   double? get lux => switch (source) {
     'entity' => _entityLux,
     'sensor' => _sensorLux,
@@ -106,6 +143,7 @@ class AdaptiveLightManager extends Manager {
         _sensorLux = e.lux;
         _sensorLive = true;
         if (source == 'sensor') _publish();
+        if (roomSource == 'sensor') _publishRoom();
       }),
     );
     _subscriptions.add(
@@ -125,6 +163,11 @@ class AdaptiveLightManager extends Manager {
                 : 'following the device sensor',
           );
           _publish();
+        }
+        if (e.key == defs.adaptiveBrightness.key ||
+            e.key == defs.adaptiveUseEntity.key ||
+            e.key == defs.adaptiveLightEntity.key) {
+          if (roomSource != _announcedRoomSource) _publishRoom();
         }
         // Another server or token: the open socket is the old one's.
         if (e.key == defs.haUrl.key || e.key == defs.haToken.key) _close();
@@ -153,6 +196,24 @@ class AdaptiveLightManager extends Manager {
         }),
       ),
     );
+
+    commands.register(
+      Command(
+        name: 'getRoomLight',
+        description:
+            "The room's light level everywhere but adaptive brightness: "
+            'the Home Assistant entity adaptive brightness follows, else '
+            'the device sensor. Its source (sensor, entity or none) and '
+            'the latest reading in lux',
+        handler: (_) async => CommandResult.ok({
+          'present': roomSource != 'none',
+          'lux': roomLux,
+          'live': roomLive,
+          'source': roomSource,
+        }),
+      ),
+    );
+    _announcedRoomSource = roomSource;
 
     // Not awaited: Home Assistant may take a while to answer, and the
     // screen manager after this one starts from the last reading.
@@ -188,6 +249,16 @@ class AdaptiveLightManager extends Manager {
 
   void _publish() =>
       bus.publish(AdaptiveLightChanged(source: source, lux: lux, live: live));
+
+  /// A room reading, or a new room source with one. A source with nothing
+  /// to report yet stays quiet: the next reading announces it.
+  void _publishRoom() {
+    final source = roomSource;
+    _announcedRoomSource = source;
+    final lux = roomLux;
+    if (lux == null) return;
+    bus.publish(RoomLightChanged(source: source, lux: lux));
+  }
 
   /// Open the entity's subscription when adaptive brightness wants it,
   /// close it when not.
@@ -278,6 +349,7 @@ class AdaptiveLightManager extends Manager {
     }
     _warnedState = false;
     if (_entityLux == lux && _entityLive) return;
+    final changed = _entityLux != lux;
     _entityLux = lux;
     _entityLive = true;
     // Only what the next session starts from: saved every ten minutes at
@@ -292,6 +364,12 @@ class AdaptiveLightManager extends Manager {
       unawaited(_settings.setInternal(_lastEntityLuxKey, '$entityId|$lux'));
     }
     _publish();
+    // The first live state after a reconnect repeats the last reading,
+    // which Night mode and plugins already have.
+    if (roomSource == 'entity' &&
+        (changed || _announcedRoomSource != 'entity')) {
+      _publishRoom();
+    }
   }
 
   @override

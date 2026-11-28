@@ -39,6 +39,7 @@ import '../managers/person/person_sensor_manager.dart' show LogAccess;
 import '../managers/sendspin/session_player.dart' show SessionPlayer;
 import '../managers/sendspin/sendspin_manager.dart' show SendspinManager;
 import '../managers/plugins/plugin_players.dart' show PluginPlayers;
+import '../managers/screen/adaptive_light_manager.dart' show followsLightEntity;
 import '../managers/service/service_manager.dart'
     show batteryAdbHint, overlayAdbHint;
 import '../managers/settings/export_filename.dart';
@@ -3398,8 +3399,12 @@ class _CategoryContentState extends State<_CategoryContent> {
     },
     // The Clock screensaver's Night mode (issue #391) has nothing to
     // watch without the sensor either: same disabled switch, same reason.
-    // Mirrored on the remote (notices.js, updateClockNightRows).
-    if (widget.category == 'Screensaver' && !container.device.hasLightSensor)
+    // The Home Assistant entity adaptive brightness follows stands in for
+    // a missing sensor (issue #1636). Mirrored on the remote (notices.js,
+    // updateClockNightRows).
+    if (widget.category == 'Screensaver' &&
+        !container.device.hasLightSensor &&
+        !followsLightEntity(container.settings))
       screensaverClockNight.key: SearchLandingTarget(
         id: screensaverClockNight.key,
         child: SwitchListTile(

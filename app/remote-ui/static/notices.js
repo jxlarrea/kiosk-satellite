@@ -431,6 +431,16 @@ export async function updateAdaptiveBrightnessRows({ reprobe = false } = {}) {
   }
 }
 
+/* Whether adaptive brightness follows a Home Assistant entity, which
+   then stands in for the device sensor everywhere (issue #1636). Mirrors
+   followsLightEntity in adaptive_light_manager.dart. */
+function followsLightEntity() {
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  return byKey['screen.adaptive_brightness']?.value === true
+    && byKey['screen.adaptive_use_entity']?.value === true
+    && String(byKey['screen.adaptive_light_entity']?.value ?? '').trim() !== '';
+}
+
 /* The sensor is asked about once per page load; the adaptive brightness
    rows and the Clock screensaver's Night mode share the answer, and a
    shared in-flight promise keeps the two from asking twice at once. */
@@ -454,12 +464,14 @@ function probeLightSensor() {
 
 /* Night mode on the Clock screensaver page (issue #391), mirroring the
    device: on a device without an ambient light sensor the switch renders
-   off and disabled with the reason. With one, the generic rows already
-   say everything. Idempotent, like the adaptive rows above. */
+   off and disabled with the reason, unless adaptive brightness follows a
+   Home Assistant entity, which Night mode then reads too (issue #1636).
+   Otherwise the generic rows already say everything. Idempotent, like the
+   adaptive rows above. */
 export async function updateClockNightRows() {
   await probeLightSensor();
   for (const stale of document.querySelectorAll('.clock-night-note')) stale.remove();
-  if (state.lightSensor !== false) return;
+  if (state.lightSensor !== false || followsLightEntity()) return;
   const row = document.querySelector('[data-key="screensaver.clock_night"]');
   if (!row) return;
   const input = row.querySelector('.switch input');

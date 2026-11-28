@@ -1004,14 +1004,15 @@ void main() {
     subscribe('screensaver.state');
     subscribe('device.light');
     bus.publish(const ScreensaverStateChanged(active: true));
-    bus.publish(const LightLevelChanged(lux: 1));
-    bus.publish(const LightLevelChanged(lux: 9));
+    bus.publish(const RoomLightChanged(source: 'sensor', lux: 1));
+    bus.publish(const RoomLightChanged(source: 'sensor', lux: 9));
     bus.publish(const SettingChanged(key: 'secret', value: 'token'));
     bus.publish(const MotionDetected());
     await Future<void>.delayed(const Duration(milliseconds: 180));
     expect(sent, hasLength(2));
     final light = sent.firstWhere((e) => e['event'] == 'device.light');
     expect((light['payload'] as Map)['lux'], 9);
+    expect((light['payload'] as Map)['source'], 'sensor');
     expect((light['payload'] as Map)['time'], isA<String>());
     expect(
       sent.every((e) => e['id'] == 'example' && e['session'] == 'one'),
@@ -1019,7 +1020,7 @@ void main() {
     );
     sent.clear();
     subscribe('device.light', subscribed: false);
-    bus.publish(const LightLevelChanged(lux: 20));
+    bus.publish(const RoomLightChanged(source: 'sensor', lux: 20));
     bus.publish(const ScreensaverStateChanged(active: false));
     await Future<void>.delayed(Duration.zero);
     api.close(session);

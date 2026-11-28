@@ -262,8 +262,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// One real minute, injectable for tests only.
   final Duration _screenOffUnit;
 
-  /// The ambient light the clock face reads (DeviceManager's lightLux, null
-  /// without a sensor), for Turn screen off at night.
+  /// The ambient light the clock face reads (the Home Assistant entity
+  /// adaptive brightness follows, else DeviceManager's lightLux, null
+  /// without either), for Turn screen off at night.
   final double? Function() _lightReading;
 
   /// Turn screen off at night after (issue #1060): one of its minutes, the
@@ -812,7 +813,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // The room getting darker or lighter is what Turn screen off at night
     // answers to, session or not: between sessions it only keeps the
     // decision in step with the face's.
+    // Either source: the device sensor, or the Home Assistant entity
+    // adaptive brightness follows in its place (issue #1636).
     bus.on<LightLevelChanged>().listen((_) => _reviewNight());
+    bus.on<RoomLightChanged>().listen((_) => _reviewNight());
     // The last known reading stands until the sensor speaks, so the face
     // starts in the colors it left off in.
     _reviewNight();

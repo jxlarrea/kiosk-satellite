@@ -144,7 +144,7 @@ When picking a **Background photo** on the device, the image file is copied into
 
 Changes apply live while the clock is running, and writing an empty value clears the photo. Every write reloads the image, even when the value did not change, so an automation can rewrite the entity to fetch a new image served under the same URL, or to pick up a file replaced under its old name. A file replaced in place is also picked up on its own within a minute. The value is limited to 255 characters, the most Home Assistant allows in a text entity, and a failed fetch keeps the current photo and tries again a minute later.
 
-**Night mode** recolors on screen text when the room gets dark to reduce room illumination. It relies on a physical ambient light sensor and is automatically disabled on hardware lacking one.
+**Night mode** recolors on screen text when the room gets dark to reduce room illumination. It reads the device's ambient light sensor. While [Adaptive brightness](screen.md) follows a Home Assistant entity, Night mode reads that entity instead. On a device without a sensor, Night mode is disabled unless Adaptive brightness follows an entity.
 
 | Setting | Notes |
 | --- | --- |

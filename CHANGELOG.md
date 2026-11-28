@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **Night mode and plugins follow the Home Assistant light sensor.** While **Adaptive brightness** follows a Home Assistant entity, the Clock screensaver's **Night mode** and plugins now read that entity in place of the device's light sensor, so every part of the app goes by the same light level (#1636). On a device without a light sensor, Night mode can now be turned on once Adaptive brightness follows an entity. Plugins see the source in a new `source` field of `getLightLevel` and `device.light`. The **Ambient light** entity in Home Assistant still reports the device's own sensor. See [Adaptive brightness](docs/screen.md).
+
 ## v2026.11.36 - 2026-11-28
 
 ### Added

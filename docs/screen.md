@@ -37,7 +37,7 @@ While Home Assistant automations can map the kiosk's ambient light sensor back t
 
 Turn on **Use Home Assistant entity** and pick an illuminance sensor, such as the light level a motion sensor near the tablet reports. The kiosk follows that entity over its own Home Assistant connection while Adaptive brightness is on, and the curve works the same as it does with the device's sensor. The entity's reading shows on the Light sensor entity row and is marked on the curve. The state must be a number in lux. States such as unavailable or unknown are ignored, and the screen stays at the level the last reading gave it. The last reading is kept across restarts, so the screen starts at the right level while the connection comes up. If Home Assistant is unreachable, the screen holds that level and the kiosk reconnects on its own.
 
-The Ambient light diagnostic entity and the Clock screensaver's Night mode always read the device's own sensor. They do not follow the Home Assistant entity.
+While Adaptive brightness follows a Home Assistant entity, the Clock screensaver's [Night mode](screensavers.md) and plugins read that entity in place of the device's sensor, so they all go by the same light level. On a device without a sensor, this also makes Night mode available. The Ambient light diagnostic entity always reports the device's own sensor.
 
 ### Brightness curve
 

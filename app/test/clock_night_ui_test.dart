@@ -96,6 +96,19 @@ void main() {
       expect(find.text(noSensor), findsOneWidget);
     });
 
+    testWidgets('without the sensor, the Home Assistant entity adaptive '
+        'brightness follows lets Night mode on (issue #1636)', (tester) async {
+      await open(tester, {
+        'ks.screen.adaptive_brightness': true,
+        'ks.screen.adaptive_use_entity': true,
+        'ks.screen.adaptive_light_entity': 'sensor.hallway_illuminance',
+      }, sensor: false);
+      await tab(tester, 'Screensaver');
+      await tab(tester, 'Clock screensaver');
+      expect(find.text('Night mode'), findsWidgets);
+      expect(find.text(noSensor), findsNothing);
+    });
+
     testWidgets('the switch reveals the light level and the color', (
       tester,
     ) async {
@@ -458,6 +471,26 @@ void main() {
       container.device.lightLux = 1;
       container.bus.publish(const LightLevelChanged(lux: 1));
       await settle();
+      expect(digitColor(tester), nightRed);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the Home Assistant entity adaptive brightness follows '
+        'decides over the device sensor (issue #1636)', (tester) async {
+      final container = await pumpClock(
+        tester,
+        prefs: {
+          'ks.screen.adaptive_brightness': true,
+          'ks.screen.adaptive_use_entity': true,
+          'ks.screen.adaptive_light_entity': 'sensor.hallway_illuminance',
+        },
+        lux: 200,
+      );
+      expect(digitColor(tester), const Color(0xFFFAFAFA));
+      container.adaptiveLight.seedEntity(lux: 2, live: true);
+      container.bus.publish(const RoomLightChanged(source: 'entity', lux: 2));
+      await tester.pump();
+      await tester.pump();
       expect(digitColor(tester), nightRed);
       await tester.pumpWidget(const SizedBox());
     });

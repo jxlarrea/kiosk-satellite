@@ -124,8 +124,12 @@ class AppContainer {
       commands,
       log,
       settings,
-      // The reading the Clock screensaver's Night mode decides by.
-      lightReading: () => device.hasLightSensor ? device.lightLux : null,
+      // The reading the Clock screensaver's Night mode decides by: the
+      // Home Assistant entity adaptive brightness follows, else the
+      // device sensor (issue #1636).
+      lightReading: () => followsLightEntity(settings)
+          ? adaptiveLight.roomLux
+          : (device.hasLightSensor ? device.lightLux : null),
     );
     immich = ImmichManager(bus, commands, log, settings);
     // Before motion: its init runs the legacy motion-camera migration the

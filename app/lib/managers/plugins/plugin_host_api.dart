@@ -505,7 +505,7 @@ class PluginHostApi {
   static const maxFacesInView = 8;
 
   static const _fields = {
-    'getLightLevel': ['present', 'lux', 'live'],
+    'getLightLevel': ['present', 'lux', 'live', 'source'],
     'getNoiseLevel': ['available', 'dbfs', 'held', 'updated'],
     'getStats': [
       'battery',
@@ -901,6 +901,9 @@ class PluginHostApi {
           .as('plugin:${session.id}')
           .execute(
             switch (name) {
+              // The room's light (issue #1636): the Home Assistant entity
+              // adaptive brightness follows, else the device sensor.
+              'getLightLevel' => 'getRoomLight',
               'getHaEntityState' => 'haPluginReadEntity',
               'getVoiceState' => 'voiceStatus',
               'getIntercomState' => 'intercomSensors',
@@ -1307,7 +1310,7 @@ class PluginHostApi {
             e.key == defs.assistantVolume.key ||
             e.key == defs.intercomVolume.key =>
       ('device.volume', {}),
-    LightLevelChanged e => ('device.light', {'lux': e.lux}),
+    RoomLightChanged e => ('device.light', {'lux': e.lux, 'source': e.source}),
     NoiseLevelChanged e => (
       'audio.noise',
       {'available': e.available, 'dbfs': e.dbfs, 'held': e.held},

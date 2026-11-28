@@ -236,6 +236,17 @@ class AdaptiveLightChanged extends AppEvent {
   final bool live;
 }
 
+/// The room's light level moved, or its source did (issue #1636): the
+/// Home Assistant entity adaptive brightness follows, else the device
+/// sensor. Night mode and plugins read this one. Internal-only.
+class RoomLightChanged extends AppEvent {
+  const RoomLightChanged({required this.source, required this.lux});
+
+  /// `sensor` or `entity`.
+  final String source;
+  final double lux;
+}
+
 /// A GPS fix arrived (issue #363): the location manager relays the native
 /// receiver's reading while Report location is on. Internal-only; the
 /// ESPHome surface mirrors it into the location sensors.
