@@ -462,12 +462,13 @@ class LedManager extends Manager {
       );
     }
     if (s.get(defs.ledIdleEnabled)) {
+      final look =
+          ledIdleLooks[s.get(defs.ledIdleStyle)] ?? ledIdleLooks['solid']!;
       return LedScene(
         name: 'idle',
-        effect: s.get(defs.ledIdleStyle) == 'breathe'
-            ? LedEffect.breathe
-            : LedEffect.solid,
+        effect: look.effect,
         color: _color(defs.ledIdleLightColor),
+        palette: look.palette,
         brightness: _brightness(defs.ledIdleBrightness),
       );
     }

@@ -37624,6 +37624,370 @@
       ]
     }
   },
+  "settingLedIdleStyleOptionPulse": "脉冲",
+  "@settingLedIdleStyleOptionPulse": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionHeartbeat": "心跳",
+  "@settingLedIdleStyleOptionHeartbeat": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionWave": "波浪",
+  "@settingLedIdleStyleOptionWave": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionShimmer": "微光",
+  "@settingLedIdleStyleOptionShimmer": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionSparkle": "闪烁",
+  "@settingLedIdleStyleOptionSparkle": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFlicker": "摇曳",
+  "@settingLedIdleStyleOptionFlicker": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionComet": "彗星",
+  "@settingLedIdleStyleOptionComet": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionMarquee": "跑马灯",
+  "@settingLedIdleStyleOptionMarquee": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionSweep": "扫动",
+  "@settingLedIdleStyleOptionSweep": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFan": "风扇",
+  "@settingLedIdleStyleOptionFan": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFill": "填充",
+  "@settingLedIdleStyleOptionFill": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionTwinOrbit": "双轨道",
+  "@settingLedIdleStyleOptionTwinOrbit": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionPendulum": "钟摆",
+  "@settingLedIdleStyleOptionPendulum": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionRainbow": "彩虹",
+  "@settingLedIdleStyleOptionRainbow": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionColorCycle": "颜色循环",
+  "@settingLedIdleStyleOptionColorCycle": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionRainbowComet": "彩虹彗星",
+  "@settingLedIdleStyleOptionRainbowComet": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionRainbowSparkle": "彩虹闪烁",
+  "@settingLedIdleStyleOptionRainbowSparkle": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionCandlelight": "烛光",
+  "@settingLedIdleStyleOptionCandlelight": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionCampfire": "篝火",
+  "@settingLedIdleStyleOptionCampfire": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionLava": "熔岩",
+  "@settingLedIdleStyleOptionLava": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionNorthernLights": "北极光",
+  "@settingLedIdleStyleOptionNorthernLights": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionSunset": "日落",
+  "@settingLedIdleStyleOptionSunset": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionOcean": "海洋",
+  "@settingLedIdleStyleOptionOcean": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFrost": "霜冻",
+  "@settingLedIdleStyleOptionFrost": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionForest": "森林",
+  "@settingLedIdleStyleOptionForest": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionCandyCane": "拐杖糖",
+  "@settingLedIdleStyleOptionCandyCane": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionHoliday": "节日",
+  "@settingLedIdleStyleOptionHoliday": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionNeon": "霓虹",
+  "@settingLedIdleStyleOptionNeon": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
   "settingLedVoiceEnabledTitle": "显示语音活动",
   "@settingLedVoiceEnabledTitle": {
     "context": "Settings > LED Control",

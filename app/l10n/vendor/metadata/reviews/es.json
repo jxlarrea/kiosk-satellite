@@ -26638,5 +26638,145 @@
     "source": "859a533d8f55d1cc6a264503f3b291b56a3311e690893acb9fd80d22fc479de8",
     "translation": "d886f3bd9e74ca27c67a2cbc5e74b132376a10d64909103876723e6755637040",
     "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionNeon": {
+    "source": "7cbef31c307898543bd8be73e30a91b4798c8a8f3bc02e04752141f02535638e",
+    "translation": "4c0050151b16f514a5b20b9a8ae2f23e212f6034a1f0d6e1f7ded81e916df016",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionLava": {
+    "source": "d2be3d05b4bca3b3c5458aa7232cde929808ede4bd661e69b3371bfb5cba2160",
+    "translation": "09541df867b71f0f0f9aed2dbc7f1aaf37219156f0ddc32fbeae28cccbad6c0b",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionRainbowComet": {
+    "source": "75559ccb023044516005c960848bca097a17de23c9c4357ebdfb9c7125535442",
+    "translation": "1b5994c308d446164a7a3578ebf633500053b98bb60eb4fa06720f6c3b288654",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionCandyCane": {
+    "source": "f376d08a420194d69f0b70fb0e2891f347dd50c5d879c078e3c3d53e23bc56da",
+    "translation": "e866121612b0bb41921de8828ad5f2be172e4fcd0071112974e1372c0c4a27d2",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionTwinOrbit": {
+    "source": "3217c701b8d2cb83828d77ebe1e301b6876310e488a32ef898e1e5df9a6c5914",
+    "translation": "620fa8bead6e68b0c03a32fb2536f2bd6cefc985da10796ec94271db8e19edd7",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionWave": {
+    "source": "126b7fbef9ffce48ff8906eedf37f1f448687c4021faaa4a8e27839db08b8206",
+    "translation": "f21d8a4f1f93e8abd047bc92fc4f36be7a1a17da212c3833480466db2f192e6e",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionSparkle": {
+    "source": "bdd86a8d9a17267ebe057bdeffcc8ee91b5ccc44359bb1cdb692984a305d13e5",
+    "translation": "4dd0e172aff8ed780aeefc067ca27c58b9d2fdb4df6c9c9edc08a4da32c9c301",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionShimmer": {
+    "source": "5aa7312d82075f35f78e11e6ea4af86398648b08118d34ed22ddef4c24c9b07c",
+    "translation": "60cc230929e1108b260f81df2c5affc1481229f93b7cc2111b09a39e48e4b1f6",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionFlicker": {
+    "source": "8cb6cc47b84706b01412b23e75ba2d8c21a44017872d4955a063cf54d3612dd7",
+    "translation": "ce7a10177f29d3f424d483b615ee7780dadf1b512045e82d9a09803d5f45f8aa",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionMarquee": {
+    "source": "c21b67edae2c4573059f6e3fba052faee3426f1f675ec7d489b2e560d17d0257",
+    "translation": "f06e5f24a3463efdbd1ec17a5f7df723f0d244ab0912bd3c1623f06a568cdbe0",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionHeartbeat": {
+    "source": "1d42e0d0d62f2f7f76650339fb0899cee3cafe819a28eb55edde130a2626277d",
+    "translation": "012429fbf31e6a31b40fca6f673654b38a4d158059f578e45f10be468aa270e3",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionFan": {
+    "source": "45f643033a85ca476e959270ec574028d371635f177c5d11ddb39ae49855a992",
+    "translation": "49bbf7c3f46d068d34ac17fcfb2620452092a7b4e7672eec1fa9a26b905abc1d",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionSunset": {
+    "source": "fbc1cbba277a3904847d758489bc36ec34b480f69541212c19f5b709919ad9a5",
+    "translation": "a1e674691653debf7593cea2f6cf2c60b1609224c1e7e42d2d6caaae7d0b0115",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionOcean": {
+    "source": "a94b1e50d3667797810f3d592b236c7c278e8e42fd89bcd680a18ee9836cf499",
+    "translation": "48d8285e64e2647142456b8c618ee6f39743452126003c689dc5b79735186f1a",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionPendulum": {
+    "source": "f56a5f06b17d2b22bbf9a991fcddaa1d47d7ee119179ed33ec35cfd85cd35bcf",
+    "translation": "5ee04600b40357b5d1e51a7aaf358ea74328df50a6bff62a684dbf53a5186068",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionPulse": {
+    "source": "424af0a159cd6b853a5b1c87527904b7a71dc42492335b35261f3420cf60bb53",
+    "translation": "a978a4ab5758868abfffc97fbd4e3b334a3d6c85f6d51ff450e88157c3725576",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionCampfire": {
+    "source": "71bb9916e223bbde8e8e561000bb72afdf2b70bd96e87b10286f59e42d447974",
+    "translation": "33922fc60c80742c81f201d8e16f12918b0a5ee211018511868f43bc69e9a59a",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionNorthernLights": {
+    "source": "8ac632f9dcba96d51f158587236db8606872db62d7d5d722542393bd964074e1",
+    "translation": "ff9622fbd4534d0297bdd7b39b25429fad5c12c974c3cfe9b17fee462c3429a5",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionFrost": {
+    "source": "3be4a0b1b97f957dc7437f9ce84601143240b2ed31a3d864eac86da430e1e225",
+    "translation": "7cc1b2149850ce198744376382c6c68127e9b187b78e3cdee5a20536ed4d3941",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionFill": {
+    "source": "d4c6f07a5f64dd7662524459327f6ce189fdcd348e821d06bc58c0e9d1f76b28",
+    "translation": "1ced63656a6e9f0581008bb671ef5fde526bcc4839e0930d7112fa00769c33a2",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionComet": {
+    "source": "d09e3fa9bc243d365ad77ab12f3fe7078f4e46f3ca8a140f2af041657a2e1be2",
+    "translation": "9bd6e9a8064553f05b8d94830932d209bcb8362e307d5f6ff99016f153fb3384",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionRainbowSparkle": {
+    "source": "a200d2f1288538f27397ea43be8e581dfa69e7227b2afcd1e83670cf24adc50c",
+    "translation": "1c530eb5f196e16359e44a5d0ed8ebba193f7fb3fa0ff05d35b3e39105651487",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionSweep": {
+    "source": "446b8f3320e4c93a850d504d15e2b1771a47bbf6750a0b682fa2f98417566b04",
+    "translation": "0dd6c8481ec3026f4fa71bc2f6c5fa7a4f125547658c549b83636201c677a2d6",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionForest": {
+    "source": "f339c366915a669bfa1a69695110223980c9619eeef8f935f1520120c9cde33f",
+    "translation": "bdaddc3866b8b5f58bb3eb7e519ea626d27475bf620f41849f12f6b98e123675",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionRainbow": {
+    "source": "fe232b18115d0f5c33829de2821c5ca6c8dcb2c757af244ee8d3e5fdfb641e6e",
+    "translation": "8e07451aaee779843c655f58d4dc7b01cb8c80383863bb1adfc4317998f63973",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionCandlelight": {
+    "source": "f3f2350f96984114ae321cb9901a4147449c78eaf5fa1c7f647794e4723fd3ca",
+    "translation": "b59f94bea2d262bfe47fb56ca1bd4086ba399308eaeb5e309ab1780e9469d0de",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionHoliday": {
+    "source": "61f602238382a91e05aaeaee45828857507bd9ac83b1d85a57a6f43abbf8e228",
+    "translation": "5ecc00286f3a15c16a689c3562fb77cd04975aa12d249d426f5d2244790f8136",
+    "author": "Xavier Larrea"
+  },
+  "settingLedIdleStyleOptionColorCycle": {
+    "source": "8668227025aa85de2b5370e6f48425e22ee5d20f9fb8bf7667f38331807dc1f0",
+    "translation": "6fb4844d7d3723dc0b3bac013e953d1d29fff9302a7b7ab24d0c581980fa5532",
+    "author": "Xavier Larrea"
   }
 }

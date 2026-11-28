@@ -37624,6 +37624,370 @@
       ]
     }
   },
+  "settingLedIdleStyleOptionPulse": "Pulsation",
+  "@settingLedIdleStyleOptionPulse": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionHeartbeat": "Battement de cœur",
+  "@settingLedIdleStyleOptionHeartbeat": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionWave": "Vague",
+  "@settingLedIdleStyleOptionWave": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionShimmer": "Miroitement",
+  "@settingLedIdleStyleOptionShimmer": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionSparkle": "Scintillement",
+  "@settingLedIdleStyleOptionSparkle": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFlicker": "Vacillement",
+  "@settingLedIdleStyleOptionFlicker": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionComet": "Comète",
+  "@settingLedIdleStyleOptionComet": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionMarquee": "Chenillard",
+  "@settingLedIdleStyleOptionMarquee": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionSweep": "Balayage",
+  "@settingLedIdleStyleOptionSweep": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFan": "Ventilateur",
+  "@settingLedIdleStyleOptionFan": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFill": "Remplissage",
+  "@settingLedIdleStyleOptionFill": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionTwinOrbit": "Double orbite",
+  "@settingLedIdleStyleOptionTwinOrbit": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionPendulum": "Pendule",
+  "@settingLedIdleStyleOptionPendulum": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionRainbow": "Arc-en-ciel",
+  "@settingLedIdleStyleOptionRainbow": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionColorCycle": "Cycle de couleurs",
+  "@settingLedIdleStyleOptionColorCycle": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionRainbowComet": "Comète arc-en-ciel",
+  "@settingLedIdleStyleOptionRainbowComet": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionRainbowSparkle": "Scintillement arc-en-ciel",
+  "@settingLedIdleStyleOptionRainbowSparkle": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionCandlelight": "Lueur de bougie",
+  "@settingLedIdleStyleOptionCandlelight": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionCampfire": "Feu de camp",
+  "@settingLedIdleStyleOptionCampfire": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionLava": "Lave",
+  "@settingLedIdleStyleOptionLava": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionNorthernLights": "Aurore boréale",
+  "@settingLedIdleStyleOptionNorthernLights": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionSunset": "Coucher de soleil",
+  "@settingLedIdleStyleOptionSunset": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionOcean": "Océan",
+  "@settingLedIdleStyleOptionOcean": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionFrost": "Givre",
+  "@settingLedIdleStyleOptionFrost": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionForest": "Forêt",
+  "@settingLedIdleStyleOptionForest": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionCandyCane": "Sucre d'orge",
+  "@settingLedIdleStyleOptionCandyCane": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionHoliday": "Fêtes",
+  "@settingLedIdleStyleOptionHoliday": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
+  "settingLedIdleStyleOptionNeon": "Néon",
+  "@settingLedIdleStyleOptionNeon": {
+    "context": "Settings > LED Control",
+    "description": "Option of the Effect setting.",
+    "x-locations": {
+      "device": [
+        "Settings > LED Control > Idle > Effect"
+      ],
+      "remoteAdmin": [
+        "LED Control > Idle > Effect"
+      ]
+    }
+  },
   "settingLedVoiceEnabledTitle": "Afficher l'activité vocale",
   "@settingLedVoiceEnabledTitle": {
     "context": "Settings > LED Control",

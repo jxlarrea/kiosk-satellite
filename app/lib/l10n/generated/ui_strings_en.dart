@@ -9962,6 +9962,90 @@ class UiStringsEn extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => 'Breathing';
 
   @override
+  String get settingLedIdleStyleOptionPulse => 'Pulse';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => 'Heartbeat';
+
+  @override
+  String get settingLedIdleStyleOptionWave => 'Wave';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => 'Shimmer';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => 'Sparkle';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => 'Flicker';
+
+  @override
+  String get settingLedIdleStyleOptionComet => 'Comet';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => 'Marquee';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => 'Sweep';
+
+  @override
+  String get settingLedIdleStyleOptionFan => 'Fan';
+
+  @override
+  String get settingLedIdleStyleOptionFill => 'Fill';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => 'Twin orbit';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => 'Pendulum';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => 'Rainbow';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => 'Color cycle';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => 'Rainbow comet';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => 'Rainbow sparkle';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => 'Candlelight';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => 'Campfire';
+
+  @override
+  String get settingLedIdleStyleOptionLava => 'Lava';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => 'Northern lights';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => 'Sunset';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => 'Ocean';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => 'Frost';
+
+  @override
+  String get settingLedIdleStyleOptionForest => 'Forest';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => 'Candy cane';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => 'Holiday';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => 'Neon';
+
+  @override
   String get settingLedVoiceEnabledTitle => 'Show voice activity';
 
   @override

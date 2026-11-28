@@ -10069,6 +10069,90 @@ class UiStringsPl extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => 'Oddychanie';
 
   @override
+  String get settingLedIdleStyleOptionPulse => 'Puls';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => 'Bicie serca';
+
+  @override
+  String get settingLedIdleStyleOptionWave => 'Fala';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => 'Połysk';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => 'Iskrzenie';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => 'Migotanie';
+
+  @override
+  String get settingLedIdleStyleOptionComet => 'Kometa';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => 'Wędrujące światła';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => 'Przemiatanie';
+
+  @override
+  String get settingLedIdleStyleOptionFan => 'Wiatrak';
+
+  @override
+  String get settingLedIdleStyleOptionFill => 'Wypełnianie';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => 'Podwójna orbita';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => 'Wahadło';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => 'Tęcza';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => 'Zmiana kolorów';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => 'Tęczowa kometa';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => 'Tęczowe iskrzenie';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => 'Blask świecy';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => 'Ognisko';
+
+  @override
+  String get settingLedIdleStyleOptionLava => 'Lawa';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => 'Zorza polarna';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => 'Zachód słońca';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => 'Ocean';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => 'Szron';
+
+  @override
+  String get settingLedIdleStyleOptionForest => 'Las';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => 'Laska cukrowa';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => 'Świąteczny';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => 'Neon';
+
+  @override
   String get settingLedVoiceEnabledTitle => 'Pokazuj aktywność głosową';
 
   @override

@@ -2890,6 +2890,44 @@ final _messages = <String, String Function(UiStrings)>{
   'settingLedIdleStyleDescription': (s) => s.settingLedIdleStyleDescription,
   'settingLedIdleStyleOptionSolid': (s) => s.settingLedIdleStyleOptionSolid,
   'settingLedIdleStyleOptionBreathe': (s) => s.settingLedIdleStyleOptionBreathe,
+  'settingLedIdleStyleOptionPulse': (s) => s.settingLedIdleStyleOptionPulse,
+  'settingLedIdleStyleOptionHeartbeat': (s) =>
+      s.settingLedIdleStyleOptionHeartbeat,
+  'settingLedIdleStyleOptionWave': (s) => s.settingLedIdleStyleOptionWave,
+  'settingLedIdleStyleOptionShimmer': (s) => s.settingLedIdleStyleOptionShimmer,
+  'settingLedIdleStyleOptionSparkle': (s) => s.settingLedIdleStyleOptionSparkle,
+  'settingLedIdleStyleOptionFlicker': (s) => s.settingLedIdleStyleOptionFlicker,
+  'settingLedIdleStyleOptionComet': (s) => s.settingLedIdleStyleOptionComet,
+  'settingLedIdleStyleOptionMarquee': (s) => s.settingLedIdleStyleOptionMarquee,
+  'settingLedIdleStyleOptionSweep': (s) => s.settingLedIdleStyleOptionSweep,
+  'settingLedIdleStyleOptionFan': (s) => s.settingLedIdleStyleOptionFan,
+  'settingLedIdleStyleOptionFill': (s) => s.settingLedIdleStyleOptionFill,
+  'settingLedIdleStyleOptionTwinOrbit': (s) =>
+      s.settingLedIdleStyleOptionTwinOrbit,
+  'settingLedIdleStyleOptionPendulum': (s) =>
+      s.settingLedIdleStyleOptionPendulum,
+  'settingLedIdleStyleOptionRainbow': (s) => s.settingLedIdleStyleOptionRainbow,
+  'settingLedIdleStyleOptionColorCycle': (s) =>
+      s.settingLedIdleStyleOptionColorCycle,
+  'settingLedIdleStyleOptionRainbowComet': (s) =>
+      s.settingLedIdleStyleOptionRainbowComet,
+  'settingLedIdleStyleOptionRainbowSparkle': (s) =>
+      s.settingLedIdleStyleOptionRainbowSparkle,
+  'settingLedIdleStyleOptionCandlelight': (s) =>
+      s.settingLedIdleStyleOptionCandlelight,
+  'settingLedIdleStyleOptionCampfire': (s) =>
+      s.settingLedIdleStyleOptionCampfire,
+  'settingLedIdleStyleOptionLava': (s) => s.settingLedIdleStyleOptionLava,
+  'settingLedIdleStyleOptionNorthernLights': (s) =>
+      s.settingLedIdleStyleOptionNorthernLights,
+  'settingLedIdleStyleOptionSunset': (s) => s.settingLedIdleStyleOptionSunset,
+  'settingLedIdleStyleOptionOcean': (s) => s.settingLedIdleStyleOptionOcean,
+  'settingLedIdleStyleOptionFrost': (s) => s.settingLedIdleStyleOptionFrost,
+  'settingLedIdleStyleOptionForest': (s) => s.settingLedIdleStyleOptionForest,
+  'settingLedIdleStyleOptionCandyCane': (s) =>
+      s.settingLedIdleStyleOptionCandyCane,
+  'settingLedIdleStyleOptionHoliday': (s) => s.settingLedIdleStyleOptionHoliday,
+  'settingLedIdleStyleOptionNeon': (s) => s.settingLedIdleStyleOptionNeon,
   'settingLedVoiceEnabledTitle': (s) => s.settingLedVoiceEnabledTitle,
   'settingLedVoiceEnabledDescription': (s) =>
       s.settingLedVoiceEnabledDescription,

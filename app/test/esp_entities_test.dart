@@ -1606,11 +1606,17 @@ void main() {
       expect(light['name'], 'LED Control Idle');
       expect(light['colorCapable'], true);
       expect(light['category'], 1);
+      final labels = [
+        for (final o in defs.ledIdleStyle.options!)
+          defs.ledIdleStyle.optionLabels![o],
+      ];
+      expect(light['effects'], labels);
+      expect(labels, containsAll(['Solid', 'Breathing', 'Rainbow']));
       final effect = catalog.firstWhere(
         (d) => d['objectId'] == 'led_idle_effect',
       );
       expect(effect['name'], 'LED Control Idle Effect');
-      expect(effect['options'], ['Solid', 'Breathing']);
+      expect(effect['options'], labels);
 
       await settings.set(defs.ledEnabled, false);
       ids = [for (final d in await surface.build()) '${d['objectId']}'];
@@ -1625,6 +1631,7 @@ void main() {
       Object? led() => pushed.lastWhere((p) => p.$1 == 'led_idle').$2;
       expect(led(), {
         'on': false,
+        'effect': 'Solid',
         'brightness': 0.1,
         'red': 1.0,
         'green': 1.0,
@@ -1643,6 +1650,7 @@ void main() {
       expect(settings.get(defs.ledIdleLightColor), '255,128,0');
       expect(led(), {
         'on': true,
+        'effect': 'Solid',
         'brightness': 0.5,
         'red': 1.0,
         'green': 128 / 255,
@@ -1655,6 +1663,32 @@ void main() {
 
       await surface.handleCommand('led_idle', {'on': false});
       expect(settings.get(defs.ledIdleEnabled), isFalse);
+    });
+
+    test('the light picks an effect by label in any case', () async {
+      lights();
+      await surface.build();
+      await attach();
+      Object? led() => pushed.lastWhere((p) => p.$1 == 'led_idle').$2;
+
+      await surface.handleCommand('led_idle', {
+        'on': true,
+        'effect': 'Candy Cane',
+      });
+      expect(settings.get(defs.ledIdleStyle), 'candy_cane');
+      expect((led() as Map)['effect'], 'Candy cane');
+
+      await surface.handleCommand('led_idle', {'effect': 'northern_lights'});
+      expect(settings.get(defs.ledIdleStyle), 'northern_lights');
+
+      // An effect the kiosk does not have leaves the look as it was.
+      await surface.handleCommand('led_idle', {'effect': 'None'});
+      expect(settings.get(defs.ledIdleStyle), 'northern_lights');
+
+      // The select changing the look moves the light's effect too.
+      await surface.handleCommand('led_idle_effect', 'Sparkle');
+      await Future<void>.delayed(Duration.zero);
+      expect((led() as Map)['effect'], 'Sparkle');
     });
 
     test('the effect select speaks in labels, stores the value', () async {

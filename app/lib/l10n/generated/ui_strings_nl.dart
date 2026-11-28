@@ -10072,6 +10072,90 @@ class UiStringsNl extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => 'Ademend';
 
   @override
+  String get settingLedIdleStyleOptionPulse => 'Puls';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => 'Hartslag';
+
+  @override
+  String get settingLedIdleStyleOptionWave => 'Golf';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => 'Glinstering';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => 'Fonkeling';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => 'Flikkering';
+
+  @override
+  String get settingLedIdleStyleOptionComet => 'Komeet';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => 'Looplicht';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => 'Zwaai';
+
+  @override
+  String get settingLedIdleStyleOptionFan => 'Ventilator';
+
+  @override
+  String get settingLedIdleStyleOptionFill => 'Vullen';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => 'Dubbele baan';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => 'Slinger';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => 'Regenboog';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => 'Kleurenwissel';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => 'Regenboogkomeet';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => 'Regenboogfonkeling';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => 'Kaarslicht';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => 'Kampvuur';
+
+  @override
+  String get settingLedIdleStyleOptionLava => 'Lava';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => 'Noorderlicht';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => 'Zonsondergang';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => 'Oceaan';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => 'Vorst';
+
+  @override
+  String get settingLedIdleStyleOptionForest => 'Bos';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => 'Zuurstok';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => 'Feestelijk';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => 'Neon';
+
+  @override
   String get settingLedVoiceEnabledTitle => 'Spraakactiviteit tonen';
 
   @override

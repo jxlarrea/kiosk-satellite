@@ -10132,6 +10132,90 @@ class UiStringsEs extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => 'Respiración';
 
   @override
+  String get settingLedIdleStyleOptionPulse => 'Pulso';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => 'Latido';
+
+  @override
+  String get settingLedIdleStyleOptionWave => 'Ola';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => 'Resplandor';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => 'Destellos';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => 'Parpadeo';
+
+  @override
+  String get settingLedIdleStyleOptionComet => 'Cometa';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => 'Marquesina';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => 'Barrido';
+
+  @override
+  String get settingLedIdleStyleOptionFan => 'Ventilador';
+
+  @override
+  String get settingLedIdleStyleOptionFill => 'Llenado';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => 'Órbita doble';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => 'Péndulo';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => 'Arcoíris';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => 'Ciclo de colores';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => 'Cometa arcoíris';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => 'Destellos arcoíris';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => 'Luz de vela';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => 'Fogata';
+
+  @override
+  String get settingLedIdleStyleOptionLava => 'Lava';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => 'Aurora boreal';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => 'Atardecer';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => 'Océano';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => 'Escarcha';
+
+  @override
+  String get settingLedIdleStyleOptionForest => 'Bosque';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => 'Bastón de caramelo';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => 'Festivo';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => 'Neón';
+
+  @override
   String get settingLedVoiceEnabledTitle => 'Mostrar la actividad de voz';
 
   @override

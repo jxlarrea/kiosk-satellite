@@ -17409,6 +17409,174 @@ abstract class UiStrings {
   /// **'Breathing'**
   String get settingLedIdleStyleOptionBreathe;
 
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Pulse'**
+  String get settingLedIdleStyleOptionPulse;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Heartbeat'**
+  String get settingLedIdleStyleOptionHeartbeat;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave'**
+  String get settingLedIdleStyleOptionWave;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Shimmer'**
+  String get settingLedIdleStyleOptionShimmer;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparkle'**
+  String get settingLedIdleStyleOptionSparkle;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Flicker'**
+  String get settingLedIdleStyleOptionFlicker;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Comet'**
+  String get settingLedIdleStyleOptionComet;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Marquee'**
+  String get settingLedIdleStyleOptionMarquee;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep'**
+  String get settingLedIdleStyleOptionSweep;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Fan'**
+  String get settingLedIdleStyleOptionFan;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill'**
+  String get settingLedIdleStyleOptionFill;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Twin orbit'**
+  String get settingLedIdleStyleOptionTwinOrbit;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Pendulum'**
+  String get settingLedIdleStyleOptionPendulum;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainbow'**
+  String get settingLedIdleStyleOptionRainbow;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Color cycle'**
+  String get settingLedIdleStyleOptionColorCycle;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainbow comet'**
+  String get settingLedIdleStyleOptionRainbowComet;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainbow sparkle'**
+  String get settingLedIdleStyleOptionRainbowSparkle;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Candlelight'**
+  String get settingLedIdleStyleOptionCandlelight;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Campfire'**
+  String get settingLedIdleStyleOptionCampfire;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lava'**
+  String get settingLedIdleStyleOptionLava;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Northern lights'**
+  String get settingLedIdleStyleOptionNorthernLights;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset'**
+  String get settingLedIdleStyleOptionSunset;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Ocean'**
+  String get settingLedIdleStyleOptionOcean;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Frost'**
+  String get settingLedIdleStyleOptionFrost;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Forest'**
+  String get settingLedIdleStyleOptionForest;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Candy cane'**
+  String get settingLedIdleStyleOptionCandyCane;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Holiday'**
+  String get settingLedIdleStyleOptionHoliday;
+
+  /// Option of the Effect setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon'**
+  String get settingLedIdleStyleOptionNeon;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

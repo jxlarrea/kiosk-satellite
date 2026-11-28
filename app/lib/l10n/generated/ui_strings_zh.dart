@@ -9530,6 +9530,90 @@ class UiStringsZh extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => '呼吸';
 
   @override
+  String get settingLedIdleStyleOptionPulse => '脉冲';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => '心跳';
+
+  @override
+  String get settingLedIdleStyleOptionWave => '波浪';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => '微光';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => '闪烁';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => '摇曳';
+
+  @override
+  String get settingLedIdleStyleOptionComet => '彗星';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => '跑马灯';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => '扫动';
+
+  @override
+  String get settingLedIdleStyleOptionFan => '风扇';
+
+  @override
+  String get settingLedIdleStyleOptionFill => '填充';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => '双轨道';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => '钟摆';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => '彩虹';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => '颜色循环';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => '彩虹彗星';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => '彩虹闪烁';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => '烛光';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => '篝火';
+
+  @override
+  String get settingLedIdleStyleOptionLava => '熔岩';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => '北极光';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => '日落';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => '海洋';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => '霜冻';
+
+  @override
+  String get settingLedIdleStyleOptionForest => '森林';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => '拐杖糖';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => '节日';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => '霓虹';
+
+  @override
   String get settingLedVoiceEnabledTitle => '显示语音活动';
 
   @override
@@ -26301,6 +26385,90 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingLedIdleStyleOptionBreathe => '呼吸';
+
+  @override
+  String get settingLedIdleStyleOptionPulse => '脉冲';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => '心跳';
+
+  @override
+  String get settingLedIdleStyleOptionWave => '波浪';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => '微光';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => '闪烁';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => '摇曳';
+
+  @override
+  String get settingLedIdleStyleOptionComet => '彗星';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => '跑马灯';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => '扫动';
+
+  @override
+  String get settingLedIdleStyleOptionFan => '风扇';
+
+  @override
+  String get settingLedIdleStyleOptionFill => '填充';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => '双轨道';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => '钟摆';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => '彩虹';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => '颜色循环';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => '彩虹彗星';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => '彩虹闪烁';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => '烛光';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => '篝火';
+
+  @override
+  String get settingLedIdleStyleOptionLava => '熔岩';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => '北极光';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => '日落';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => '海洋';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => '霜冻';
+
+  @override
+  String get settingLedIdleStyleOptionForest => '森林';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => '拐杖糖';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => '节日';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => '霓虹';
 
   @override
   String get settingLedVoiceEnabledTitle => '显示语音活动';

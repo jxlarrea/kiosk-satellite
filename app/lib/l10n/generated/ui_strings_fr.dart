@@ -10130,6 +10130,91 @@ class UiStringsFr extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => 'Respiration';
 
   @override
+  String get settingLedIdleStyleOptionPulse => 'Pulsation';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => 'Battement de cœur';
+
+  @override
+  String get settingLedIdleStyleOptionWave => 'Vague';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => 'Miroitement';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => 'Scintillement';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => 'Vacillement';
+
+  @override
+  String get settingLedIdleStyleOptionComet => 'Comète';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => 'Chenillard';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => 'Balayage';
+
+  @override
+  String get settingLedIdleStyleOptionFan => 'Ventilateur';
+
+  @override
+  String get settingLedIdleStyleOptionFill => 'Remplissage';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => 'Double orbite';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => 'Pendule';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => 'Arc-en-ciel';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => 'Cycle de couleurs';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => 'Comète arc-en-ciel';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle =>
+      'Scintillement arc-en-ciel';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => 'Lueur de bougie';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => 'Feu de camp';
+
+  @override
+  String get settingLedIdleStyleOptionLava => 'Lave';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => 'Aurore boréale';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => 'Coucher de soleil';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => 'Océan';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => 'Givre';
+
+  @override
+  String get settingLedIdleStyleOptionForest => 'Forêt';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => 'Sucre d\'orge';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => 'Fêtes';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => 'Néon';
+
+  @override
   String get settingLedVoiceEnabledTitle => 'Afficher l\'activité vocale';
 
   @override

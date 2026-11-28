@@ -723,6 +723,12 @@ class EspEntitySurface {
           'name': 'LED Control Idle',
           'icon': 'mdi:led-on',
           'colorCapable': true,
+          // The Effect setting's looks, so an automation can pick one
+          // with the light.
+          'effects': [
+            for (final option in _settings.optionsFor(defs.ledIdleStyle))
+              defs.ledIdleStyle.optionLabels?[option] ?? option,
+          ],
           'category': 1,
         },
       {
@@ -2490,6 +2496,20 @@ class EspEntitySurface {
             source: 'esphome',
           );
         }
+        // The effect by its label or its stored value, in any case, so
+        // "Candy Cane" works as well as "candy_cane".
+        final effect = map['effect'];
+        if (effect is String) {
+          final want = effect.trim().toLowerCase();
+          final def = defs.ledIdleStyle;
+          for (final option in _settings.optionsFor(def)) {
+            if (option == want ||
+                def.optionLabels?[option]?.toLowerCase() == want) {
+              await _settings.set(def, option, source: 'esphome');
+              break;
+            }
+          }
+        }
         // A command that changed nothing gets its answer too.
         await _sendLedIdle();
       case 'screensaver_active':
@@ -2774,6 +2794,8 @@ class EspEntitySurface {
       unawaited(_sendLedIdle());
       return;
     }
+    // The effect shows on the light and on its own select below.
+    if (e.key == defs.ledIdleStyle.key) unawaited(_sendLedIdle());
     for (final entry in _settingSwitches.entries) {
       if (entry.value.$3.key == e.key) {
         _send(entry.key, e.value == true);
@@ -3080,8 +3102,10 @@ class EspEntitySurface {
     final channels = [
       for (final c in color) (int.tryParse(c.trim()) ?? 255).clamp(0, 255),
     ];
+    final style = _settings.get(defs.ledIdleStyle);
     await _send('led_idle', {
       'on': _settings.get(defs.ledIdleEnabled),
+      'effect': defs.ledIdleStyle.optionLabels?[style] ?? style,
       'brightness': (_settings.get(defs.ledIdleBrightness) / 100).clamp(
         0.0,
         1.0,

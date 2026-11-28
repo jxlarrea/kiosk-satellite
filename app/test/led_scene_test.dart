@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/managers/led/led_scene.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 
 /// The status light frames (LedManager): any number of lights, every
 /// effect, brightness applied last.
@@ -135,5 +136,132 @@ void main() {
     expect(scene(LedEffect.countdown).animated, isFalse);
     expect(scene(LedEffect.spin).animated, isTrue);
     expect(scene(LedEffect.breathe).animated, isTrue);
+  });
+
+  group('the idle looks', () {
+    LedScene look(String style, {double brightness = 1}) {
+      final l = ledIdleLooks[style]!;
+      return LedScene(
+        name: 'idle',
+        effect: l.effect,
+        color: blue,
+        palette: l.palette,
+        brightness: brightness,
+      );
+    }
+
+    test('are the Effect setting options, in order', () {
+      expect(ledIdleLooks.keys, defs.ledIdleStyle.options);
+      expect(
+        defs.ledIdleStyle.optionLabels!.keys,
+        unorderedEquals(ledIdleLooks.keys),
+      );
+    });
+
+    test('render any number of lights with valid colors', () {
+      for (final style in ledIdleLooks.keys) {
+        for (final pixels in [1, 5, 12, 24]) {
+          for (final ms in [0, 137, 777, 2400, 9001, 60000]) {
+            final frame = renderLedFrame(
+              look(style),
+              pixels: pixels,
+              t: Duration(milliseconds: ms),
+            );
+            expect(frame, hasLength(pixels), reason: style);
+            for (final c in frame) {
+              expect(c, inInclusiveRange(0, 0xFFFFFF), reason: style);
+            }
+          }
+        }
+      }
+    });
+
+    test('move over time and show something', () {
+      for (final style in ledIdleLooks.keys) {
+        final scene = look(style);
+        final frames = {
+          for (var ms = 0; ms < 12000; ms += 250)
+            renderLedFrame(
+              scene,
+              pixels: 12,
+              t: Duration(milliseconds: ms),
+            ).join(','),
+        };
+        expect(
+          frames.any((f) => f.split(',').any((c) => c != '0')),
+          isTrue,
+          reason: '$style is dark',
+        );
+        if (style != 'solid') {
+          expect(frames.length, greaterThan(1), reason: '$style stands still');
+        }
+      }
+    });
+
+    test('the still pose of every look shows light', () {
+      for (final style in ledIdleLooks.keys) {
+        final scene = look(style);
+        final frame = renderLedFrame(
+          scene,
+          pixels: 12,
+          t: ledStillPose(scene.effect),
+        );
+        expect(frame.any((c) => c != 0), isTrue, reason: style);
+      }
+    });
+
+    test('single color looks use the chosen color', () {
+      for (final MapEntry(:key, :value) in ledIdleLooks.entries) {
+        if (value.palette != null) continue;
+        for (var ms = 0; ms < 4000; ms += 100) {
+          final frame = renderLedFrame(
+            look(key),
+            pixels: 12,
+            t: Duration(milliseconds: ms),
+          );
+          // Every light is some shade of blue or dark.
+          for (final c in frame) {
+            expect(c & 0xFFFF00, 0, reason: key);
+          }
+        }
+      }
+    });
+
+    test('looks with colors of their own ignore the chosen color', () {
+      final frame = renderLedFrame(look('rainbow'), pixels: 7);
+      expect(frame.toSet(), hasLength(7));
+      // Blocks of two lights, one color each, stepping a light at a time.
+      expect(renderLedFrame(look('candy_cane'), pixels: 4), [
+        0xFF0000,
+        0xFF0000,
+        0xFFFFFF,
+        0xFFFFFF,
+      ]);
+      expect(
+        renderLedFrame(
+          look('candy_cane'),
+          pixels: 4,
+          t: const Duration(milliseconds: 250),
+        ),
+        [0xFF0000, 0xFFFFFF, 0xFFFFFF, 0xFF0000],
+      );
+    });
+
+    test('brightness dims every look', () {
+      final full = renderLedFrame(look('holiday'), pixels: 4);
+      final half = renderLedFrame(look('holiday', brightness: 0.5), pixels: 4);
+      for (var i = 0; i < 4; i++) {
+        expect(
+          (half[i] >> 16) & 0xFF,
+          closeTo(((full[i] >> 16) & 0xFF) / 2, 1),
+        );
+      }
+    });
+
+    test('a scene with another palette is another scene', () {
+      expect(look('frost'), isNot(look('forest')));
+      expect(look('frost'), look('frost'));
+      expect(look('frost').hashCode, look('frost').hashCode);
+    });
   });
 }

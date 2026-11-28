@@ -127,8 +127,8 @@ Every item in this list corresponds directly to a kiosk setting. They are fully 
 | **Camera facing** | select | Requires both a front and back physical camera. |
 | **Intercom do not disturb** | switch | The [intercom's](intercom.md) answer mode as Do not disturb, on or off. Listed while the intercom is on. |
 | **Intercom answer mode** | select | Ring, Answer automatically or Do not disturb. Listed while the intercom is on. |
-| **LED Control Idle** | light | Turns **Light up when idle** on the [LED Control](led-control.md) page on or off and sets its brightness and color. Listed on devices with lights Kiosk Satellite can drive, such as the Echo Dot, while **Enable LED Control** is on. |
-| **LED Control Idle Effect** | select | Solid or Breathing, the idle **Effect** on the [LED Control](led-control.md) page. Listed with the **LED Control Idle** light. |
+| **LED Control Idle** | light | Turns **Light up when idle** on the [LED Control](led-control.md) page on or off and sets its brightness, color and effect. Listed on devices with lights Kiosk Satellite can drive, such as the Echo Dot, while **Enable LED Control** is on. |
+| **LED Control Idle Effect** | select | The idle **Effect** on the [LED Control](led-control.md) page, such as Solid, Breathing or Rainbow. Listed with the **LED Control Idle** light. |
 | **Intercom volume** | number | The share of the master volume the other kiosk's voice and announcements play at, in percentage. Listed while the intercom is on. |
 
 ### Diagnostics

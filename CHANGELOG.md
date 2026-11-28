@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **More LED effects for the idle light.** The **Effect** setting of the **Idle** group under **Settings > LED Control** has 28 new effects. Pulse, Heartbeat, Wave, Shimmer, Sparkle, Flicker, Comet, Marquee, Sweep, Fan, Fill, Twin orbit and Pendulum use the group's color. Rainbow, Color cycle, Rainbow comet, Rainbow sparkle, Candlelight, Campfire, Lava, Northern lights, Sunset, Ocean, Frost, Forest, Candy cane, Holiday and Neon have colors of their own. The **LED Control Idle** light in Home Assistant now lists every effect, so an automation can set the color, brightness and effect with one `light.turn_on` action (lineageos-echo-kiosk-satellite#64). See [Idle effects](docs/led-control.md#idle-effects).
+
 ### Fixed
 - **A realtime assistant answered "Timer is already running" to a new timer.** Gemini Live sometimes asks for the same timer twice in one turn. The second request never reaches Home Assistant, so only one timer starts (#1475), but its answer to the model said the timer was already running and the model read that out instead of confirming the timer (#1630). The second request now gets a plain success that says the timer is set.
 

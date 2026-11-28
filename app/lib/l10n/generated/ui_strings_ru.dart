@@ -10032,6 +10032,90 @@ class UiStringsRu extends UiStrings {
   String get settingLedIdleStyleOptionBreathe => 'Дыхание';
 
   @override
+  String get settingLedIdleStyleOptionPulse => 'Пульсация';
+
+  @override
+  String get settingLedIdleStyleOptionHeartbeat => 'Сердцебиение';
+
+  @override
+  String get settingLedIdleStyleOptionWave => 'Волна';
+
+  @override
+  String get settingLedIdleStyleOptionShimmer => 'Переливы';
+
+  @override
+  String get settingLedIdleStyleOptionSparkle => 'Искры';
+
+  @override
+  String get settingLedIdleStyleOptionFlicker => 'Мерцание';
+
+  @override
+  String get settingLedIdleStyleOptionComet => 'Комета';
+
+  @override
+  String get settingLedIdleStyleOptionMarquee => 'Бегущие огни';
+
+  @override
+  String get settingLedIdleStyleOptionSweep => 'Размах';
+
+  @override
+  String get settingLedIdleStyleOptionFan => 'Вентилятор';
+
+  @override
+  String get settingLedIdleStyleOptionFill => 'Заполнение';
+
+  @override
+  String get settingLedIdleStyleOptionTwinOrbit => 'Двойная орбита';
+
+  @override
+  String get settingLedIdleStyleOptionPendulum => 'Маятник';
+
+  @override
+  String get settingLedIdleStyleOptionRainbow => 'Радуга';
+
+  @override
+  String get settingLedIdleStyleOptionColorCycle => 'Смена цветов';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowComet => 'Радужная комета';
+
+  @override
+  String get settingLedIdleStyleOptionRainbowSparkle => 'Радужные искры';
+
+  @override
+  String get settingLedIdleStyleOptionCandlelight => 'Свет свечи';
+
+  @override
+  String get settingLedIdleStyleOptionCampfire => 'Костёр';
+
+  @override
+  String get settingLedIdleStyleOptionLava => 'Лава';
+
+  @override
+  String get settingLedIdleStyleOptionNorthernLights => 'Северное сияние';
+
+  @override
+  String get settingLedIdleStyleOptionSunset => 'Закат';
+
+  @override
+  String get settingLedIdleStyleOptionOcean => 'Океан';
+
+  @override
+  String get settingLedIdleStyleOptionFrost => 'Иней';
+
+  @override
+  String get settingLedIdleStyleOptionForest => 'Лес';
+
+  @override
+  String get settingLedIdleStyleOptionCandyCane => 'Леденцовая трость';
+
+  @override
+  String get settingLedIdleStyleOptionHoliday => 'Праздничный';
+
+  @override
+  String get settingLedIdleStyleOptionNeon => 'Неон';
+
+  @override
   String get settingLedVoiceEnabledTitle => 'Показывать голосовую активность';
 
   @override
